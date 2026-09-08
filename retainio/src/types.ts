@@ -175,6 +175,18 @@ export interface Account {
   shapFactors: ShapFactor[];
   geminiExplanationSummary?: string;
 
+  // Freshness. Both optional and both YYYY-MM-DD:
+  //   scoredAt        when these predictions were computed
+  //   usageCapturedAt when the readings they were computed FROM were taken
+  // They differ when an account is re-scored over an older usage row, and the UI has to be
+  // able to say which one it is talking about.
+  //
+  // Optional deliberately: an account with no prediction has neither, and typing a
+  // sometimes-absent field as always-present is what took the whole app down when
+  // shapFactors above came back undefined.
+  scoredAt?: string;
+  usageCapturedAt?: string;
+
   // Retention / Discount State
   currentDiscountApproved: number; // e.g. 0 or 10
   // Months of the term that discount covers. 0 when no discount is applied.

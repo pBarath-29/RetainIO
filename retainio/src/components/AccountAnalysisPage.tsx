@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   MONTHS_PER_TERM, givebackValue, selfApprovalCap, discountedTermValue,
   needsDirectorApproval, describeDiscount, formatMoney, blocksNewOffer, formatTermDate, addMonths,
-  OFFER_WINDOW_DAYS, daysUntil,
+  OFFER_WINDOW_DAYS, daysUntil, daysAgo,
 } from '../../pricing';
 import { Account, UserProfile, DiscountRequest } from '../types';
 import { FaceVerificationModal } from './FaceVerificationModal';
@@ -38,7 +38,8 @@ import {
   Wrench,
   Percent,
   Flag,
-  Gauge
+  Gauge,
+  RefreshCw
 } from 'lucide-react';
 
 // ── Discount Uplift Advisor ────────────────────────────────────────────────
@@ -130,6 +131,9 @@ interface AccountAnalysisPageProps {
   ) => void;
   onApproveDiscountRequest?: (requestId: string, matchedName?: string) => void;
   onRejectDiscountRequest?: (requestId: string, reason: string) => void;
+  // Reload after an on-demand re-score, so the panel shows the numbers that were just
+  // written rather than the ones it was rendered with.
+  onRescored?: () => void;
 }
 
 export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
@@ -142,7 +146,8 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
   onCorrectSentiment,
   onApplyDiscount,
   onApproveDiscountRequest,
-  onRejectDiscountRequest
+  onRejectDiscountRequest,
+  onRescored
 }) => {
   const [activeTab, setActiveTab] = useState<'fusion' | 'shap' | 'uplift' | 'discount'>(initialTab || 'fusion');
   // How many SHAP factors the user wants visible. The API returns every
@@ -176,9 +181,52 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
   const [showEmailModal, setShowEmailModal] = useState<boolean>(false);
   const [emailVerificationStatus, setEmailVerificationStatus] = useState<'Direct Approval (Within Manager Limit)' | 'Face Verified (Biometric Pass)'>('Direct Approval (Within Manager Limit)');
   const [isRequestBannerDismissed, setIsRequestBannerDismissed] = useState<boolean>(false);
+  const [isRescoring, setIsRescoring] = useState<boolean>(false);
 
   const { showToast } = useToast();
   const isDirector = currentUser?.role === 'account_director';
+
+  // How stale the displayed numbers are, in whole days.
+  //
+  // daysAgo, not daysUntil: scoredAt is a date-only value, and comparing it against the
+  // current instant made a score written this morning read as a day old by the afternoon,
+  // which would have turned the badge amber a full day early. Shared with the server so the
+  // two cannot disagree — this codebase has already had two competing "days to renewal"
+  // implementations drift apart.
+  const scoreAgeDays = account.scoredAt ? daysAgo(account.scoredAt) : null;
+  const isScoreStale = scoreAgeDays !== null && scoreAgeDays >= 2;
+
+  // Re-runs the models for this account only, against its CURRENT usage reading. It does
+  // not generate missing days — that stays with the scheduled job, because filling a gap
+  // means inventing telemetry.
+  const handleRescore = async () => {
+    if (isRescoring) return;
+    setIsRescoring(true);
+    try {
+      const res = await fetch(`/api/accounts/${account.id}/rescore`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error || 'Could not re-score this account.', 'error');
+        return;
+      }
+      // Says which readings were used, not just that something ran. Re-scoring over an old
+      // usage row produces a score dated today, and reporting only that would tell someone
+      // their stale data was refreshed when the underlying readings had not moved at all.
+      showToast(
+        data.usageStaleDays > 0
+          ? `Re-scored, but using readings from ${formatTermDate(data.usageCapturedAt)} — ${data.usageStaleDays} day(s) of telemetry are missing.`
+          : `Re-scored against today's readings. Fusion risk ${data.fusionScore}/100.`,
+        data.usageStaleDays > 0 ? 'info' : 'success',
+      );
+      // The parent owns reloading, and its refreshData re-points the open panel at the
+      // refreshed account — the fix that stopped every action leaving a stale panel behind.
+      onRescored?.();
+    } catch {
+      showToast('Could not reach the server to re-score.', 'error');
+    } finally {
+      setIsRescoring(false);
+    }
+  };
 
   // Check for active or previous discount request for this account
   const globalReq = discountRequests.find(r => r.accountId === account.id);
@@ -534,6 +582,30 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
             <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
               <span>Usage Model: <strong className="text-white">{account.churnModelScore}%</strong></span>
               <span>NLP Sentiment: <strong className="text-white">{account.sentimentClassification}</strong></span>
+            </div>
+
+            {/* When these numbers were computed, and a way to recompute them.
+                Without this line nothing on screen separates a score produced this morning
+                from one produced last week, so a scheduled job that quietly stopped would
+                leave every account looking exactly as current as before. The amber state is
+                the point of it. */}
+            <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-700/70">
+              <span className={`text-[11px] ${isScoreStale ? 'text-amber-400 font-semibold' : 'text-slate-500'}`}>
+                {account.scoredAt
+                  ? isScoreStale
+                    ? `Scored ${formatTermDate(account.scoredAt)} · ${scoreAgeDays} days ago`
+                    : `Scored ${formatTermDate(account.scoredAt)}`
+                  : 'Not yet scored'}
+              </span>
+              <button
+                onClick={handleRescore}
+                disabled={isRescoring}
+                title="Re-run the churn, sentiment and fusion models for this account using its current usage reading"
+                className="flex items-center space-x-1 text-[11px] font-semibold text-slate-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+              >
+                <RefreshCw className={`w-3 h-3 ${isRescoring ? 'animate-spin' : ''}`} />
+                <span>{isRescoring ? 'Re-scoring…' : 'Re-score'}</span>
+              </button>
             </div>
           </div>
 

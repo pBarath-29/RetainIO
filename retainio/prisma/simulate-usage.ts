@@ -35,9 +35,18 @@ import {
  * the present with fiction — and the current values are the ones the existing fusion
  * scores, SHAP explanations and risk bands were computed from.
  */
-// import.meta.dirname, not __dirname: this file uses top-level await, so it is an ES
-// module and __dirname does not exist in one.
-const MANIFEST = path.join(import.meta.dirname, '.simulation-manifest.json');
+// Resolved from the working directory, NOT from this file's own location.
+//
+// It was `import.meta.dirname`, which works under tsx but not in the production build:
+// `npm run build` bundles the server to CommonJS (esbuild --format=cjs), and `import.meta`
+// does not exist there. The path became undefined, path.join threw at module load, and
+// because server.ts imports this file dynamically inside a try/catch the failure surfaced
+// only as "Usage simulation skipped" — so the deployed app would have advanced no account,
+// ever, while looking healthy.
+//
+// Both entry points run from retainio/: the server starts there, and the CLI is invoked as
+// `npx tsx prisma/simulate-usage.ts`. So this resolves to the same file either way.
+const MANIFEST = path.join(process.cwd(), 'prisma', '.simulation-manifest.json');
 
 type Trajectory = 'collapsing' | 'declining' | 'drifting' | 'stable' | 'healthy';
 
@@ -501,12 +510,23 @@ async function reset() {
   console.log(`Now: ${await prisma.usageSnapshot.count()} usage snapshots, ${await prisma.fusionScore.count()} fusion scores, ${await prisma.fusionMonthlySummary.count()} monthly summaries.`);
 }
 
-// Only dispatch when run directly. server.ts imports simulateOneDay from this file for
-// the SIMULATE_USAGE hook, and without this guard that import would execute the CLI —
-// printing usage text on boot and disconnecting the shared Prisma client out from under
-// the server.
-const isDirectRun = process.argv[1] && import.meta.url.endsWith(path.basename(process.argv[1]));
-if (isDirectRun) {
+// Only dispatch when run directly. server.ts imports fillUsageGaps from this file for the
+// SIMULATE_USAGE hook, and without this guard that import would execute the CLI — printing
+// usage text on boot and disconnecting the shared Prisma client out from under the server.
+//
+// Compares argv against this file's NAME rather than using import.meta.url, for the same
+// reason as MANIFEST above: import.meta does not survive the CJS production bundle, and
+// `undefined.endsWith(...)` would throw at module load — inside server.ts's try/catch,
+// where it would be swallowed as "Usage simulation skipped". Bundled into server.cjs,
+// argv[1] is the server; run through tsx, it is this script.
+const invokedAs = process.argv[1] ? path.basename(process.argv[1]) : '';
+const isDirectRun = invokedAs.startsWith('simulate-usage');
+
+// Inside a function, not at the top level. server.ts is bundled to CommonJS, which has no
+// top-level await — esbuild rejects it outright, so with these awaits at module scope the
+// production build did not merely misbehave, it failed to produce dist/server.cjs at all.
+// That is why `npm start` had never run.
+async function runCli() {
   const [cmd, arg] = process.argv.slice(2);
   if (cmd === 'status') await status();
   else if (cmd === 'backfill') await backfill(Number(arg) || 180);
@@ -523,4 +543,8 @@ if (isDirectRun) {
   else console.log('Usage: npx tsx prisma/simulate-usage.ts <status|backfill [days]|catchup|daily|reset>');
 
   await prisma.$disconnect();
+}
+
+if (isDirectRun) {
+  runCli().catch((err) => { console.error(err); process.exit(1); });
 }

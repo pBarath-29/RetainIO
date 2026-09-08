@@ -382,6 +382,7 @@ export default function App() {
             onApplyDiscount={handleApplyDiscount}
             onApproveDiscountRequest={handleApproveDiscountRequest}
             onRejectDiscountRequest={handleRejectDiscountRequest}
+            onRescored={refreshData}
           />
         ) : (
           <>

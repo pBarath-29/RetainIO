@@ -38,6 +38,23 @@ export const OFFER_WINDOW_DAYS = 180;
 export const daysUntil = (date: Date | string, asOf: Date = new Date()): number =>
   Math.round((new Date(date).getTime() - asOf.getTime()) / 86400000);
 
+// Midnight UTC of whatever day the given instant falls on.
+export const startOfUTCDay = (d: Date | string = new Date()): Date => {
+  const x = new Date(d);
+  return new Date(Date.UTC(x.getUTCFullYear(), x.getUTCMonth(), x.getUTCDate()));
+};
+
+/**
+ * How many whole days ago a date-only value was. 0 for today or anything future.
+ *
+ * daysUntil compares instants, which is right for a renewal date but wrong here: a stored
+ * date like "2026-09-08" is midnight UTC, so measuring it against 1pm the same day gives
+ * -0.56, rounds to -1, and reports a reading taken this morning as a day old. Both sides
+ * have to be normalised to the start of their day before the subtraction means anything.
+ */
+export const daysAgo = (date: Date | string, asOf: Date = new Date()): number =>
+  Math.max(0, -daysUntil(startOfUTCDay(date), startOfUTCDay(asOf)));
+
 export const isWithinOfferWindow = (renewalDate: Date | string, asOf: Date = new Date()): boolean =>
   daysUntil(renewalDate, asOf) <= OFFER_WINDOW_DAYS;
 

@@ -1,0 +1,32 @@
+# Pinned to the environment the models were trained and pickled in.
+#
+# scikit-learn, numpy and scipy matter most: a .pkl is a snapshot of object structure, not
+# portable data, so loading one under a different library version is where a model silently
+# behaves differently or fails outright. These versions produced models/*.pkl.
+scikit-learn==1.5.2
+numpy==2.0.2
+scipy==1.13.1
+pandas==2.2.3
+joblib==1.4.2
+
+# SHAP pulls numba and llvmlite itself; leaving those unpinned lets pip pick the pair that
+# matches the numba build for this Python.
+shap==0.49.1
+
+fastapi==0.128.8
+uvicorn==0.39.0
+pydantic==2.13.4
+
+# Face verification. Two deliberate substitutions from what is installed locally:
+#
+#   tensorflow-cpu, not tensorflow — on Linux the default package drags in around a
+#   gigabyte of NVIDIA CUDA wheels that a CPU instance can never use.
+#
+#   opencv-python-headless, not opencv-python — the full build links GUI libraries that do
+#   not exist in a slim container, and the service only ever decodes and crops images.
+#
+# Both are imported lazily (app.py:354), so a failure here degrades to "face verification
+# unavailable" rather than taking churn, sentiment, fusion and uplift down with it.
+tensorflow-cpu==2.20.0
+keras-facenet==0.3.2
+opencv-python-headless==4.13.0.92

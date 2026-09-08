@@ -1,12 +1,16 @@
 import { GoogleGenAI } from '@google/genai';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { cosineSimilarity, embedTexts, embedOne } from './embeddingUtils';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const DOCS_DIR = path.join(__dirname, 'docs');
+// Resolved from the working directory, which is retainio/ for both `tsx server.ts` and the
+// built `node dist/server.cjs`.
+//
+// This used to resolve relative to THIS FILE via import.meta.url. Under tsx that landed on
+// retainio/docs and worked; in the production bundle the file is dist/server.cjs, so it
+// looked for retainio/dist/docs — a directory `vite build` never creates — and the first
+// readdirSync threw. The retrieval-backed answers would have failed only once deployed.
+const DOCS_DIR = path.join(process.cwd(), 'docs');
 
 export interface DocChunk {
   source: string;

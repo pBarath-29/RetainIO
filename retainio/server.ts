@@ -20,12 +20,12 @@ import {
   MONTHS_PER_TERM, describeDiscount, givebackValue, needsDirectorApproval,
   selfApprovalCap, discountedTermValue, formatMoney, annualContractValue,
   discountStatus, describeDiscountStatus, blocksNewOffer, TIER_MONTHLY_RATE, addMonths,
-  OFFER_WINDOW_DAYS, daysUntil, formatTermDate,
+  OFFER_WINDOW_DAYS, daysUntil, daysAgo, formatTermDate,
 } from './pricing';
 import {
   computeRealFusion, runDailySnapshotForToday, loadModelFeatures, fusionRiskCategory,
   deriveDominantDriver, classifyReviewCategory, rescoreAccountToday,
-  SENTIMENT_RISK_WEIGHT, captureIndexSnapshot, captureDueIndexSnapshots,
+  SENTIMENT_RISK_WEIGHT, captureIndexSnapshot, captureDueIndexSnapshots, dateOnlyUTC,
   type SentimentClassValue,
 } from './fusionSnapshot';
 import { runRenewalsForToday, isRetained } from './renewals';
@@ -1329,6 +1329,10 @@ function mapAccount(a: any) {
   if (latestFusion) {
     mlOverrides.fusionRiskScore = Math.round(latestFusion.fusionScore);
     mlOverrides.riskCategory = RISK_BAND_LABEL[latestFusion.riskCategory];
+    // When these numbers were last computed. Without it nothing on screen distinguishes a
+    // score produced this morning from one produced a week ago, so a daily job that quietly
+    // stopped would leave every account looking exactly as trustworthy as before.
+    mlOverrides.scoredAt = latestFusion.snapshotDate.toISOString().substring(0, 10);
 
     const churnPrediction = latestFusion.churnPrediction;
     if (churnPrediction) {
@@ -1400,6 +1404,10 @@ function mapAccount(a: any) {
     accountAgeDays: usage?.accountAgeDays,
     dailyUsageMinutes: usage?.dailyUsageMins,
     supportTicketCount: usage?.supportTickets90Days,
+    // When the readings above were taken, which is not the same question as when the score
+    // was computed: a re-score today over a usage row from three days ago produces a score
+    // dated today from stale inputs. Both dates are exposed so the UI can say which it means.
+    usageCapturedAt: usage?.capturedAt?.toISOString().substring(0, 10),
     // The churn model's own two remaining inputs, previously only available
     // as invented raw numbers (apiUsageRate / apiBenchmark, a logins-per-month
     // count) rather than the real values the model is actually given.
@@ -2166,6 +2174,65 @@ app.post('/api/admin/run-renewals', requireAuth, async (_req, res) => {
 // This changes NOTHING about the account now. It is held until the renewal date and
 // resolved by the daily job there — which is what makes it safe to accept without a
 // second person confirming it: while pending it is visible and can be cancelled.
+// Re-run the models for one account, on demand.
+//
+// The nightly pass already does this for everyone; this exists for the cases where waiting
+// until 00:15 UTC is wrong — a review was just added or edited, a plan tier changed, or the
+// model service was unreachable when the scheduled run happened and today has no score.
+//
+// It re-scores TODAY from the account's current usage row. It deliberately does NOT
+// generate missing days: filling a gap invents telemetry, and that stays the scheduled
+// job's business rather than something any Account Manager can trigger by clicking.
+const RESCORE_COOLDOWN_MS = 30_000;
+const lastRescoreAt = new Map<string, number>();
+
+app.post('/api/accounts/:id/rescore', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // rescoreAccountToday upserts the fusion score but CREATES a churn and a sentiment
+    // prediction row every call, so an impatient double-click leaves orphaned prediction
+    // rows for the same day. The button is disabled while in flight; this is the guard for
+    // everything that does not go through the button.
+    const since = Date.now() - (lastRescoreAt.get(id) ?? 0);
+    if (since < RESCORE_COOLDOWN_MS) {
+      return res.status(429).json({
+        error: `Just re-scored. Try again in ${Math.ceil((RESCORE_COOLDOWN_MS - since) / 1000)}s.`,
+      });
+    }
+
+    const account = await prisma.account.findUnique({
+      where: { id },
+      include: { usageSnapshots: { orderBy: { capturedAt: 'desc' }, take: 1 } },
+    });
+    if (!account) return res.status(404).json({ error: 'Account not found' });
+
+    const usage = account.usageSnapshots[0];
+    if (!usage) {
+      return res.status(422).json({ error: `${account.name} has no usage reading to score.` });
+    }
+
+    lastRescoreAt.set(id, Date.now());
+    const result = await rescoreAccountToday(id);
+
+    // The date of the readings actually used, not just the date of the score. Re-scoring
+    // over a three-day-old usage row produces a score dated today, and reporting only that
+    // would tell someone their stale data had been refreshed when it had not.
+    const usageDate = dateOnlyUTC(usage.capturedAt);
+    const staleDays = daysAgo(usage.capturedAt);
+
+    res.json({
+      ...result,
+      scoredAt: dateOnlyUTC().toISOString().substring(0, 10),
+      usageCapturedAt: usageDate.toISOString().substring(0, 10),
+      usageStaleDays: staleDays,
+    });
+  } catch (error: any) {
+    console.error('Error in POST /api/accounts/:id/rescore:', error);
+    res.status(502).json({ error: error.message || 'Could not re-score — the model service may be unavailable.' });
+  }
+});
+
 app.post('/api/accounts/:id/renewal-intent', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
@@ -2537,8 +2604,44 @@ async function startServer() {
       console.warn('Renewal pass skipped — database unavailable:', err.message || err);
     }
   };
+  // Runs at a FIXED time each day rather than on an interval counted from boot.
+  //
+  // It used to be setInterval(6h), which fires six hours after whenever the process last
+  // started — so the time of day drifted with every restart and every deploy, and there was
+  // no hour you could point at and say "that is when accounts update". 00:15 UTC is just
+  // after the date rolls over, and snapshotDate is keyed on UTC, so each day is captured at
+  // the start of the day it belongs to.
+  const DAILY_RUN_UTC = { hour: 0, minute: 15 };
+
+  function msUntilNextDailyRun(now = new Date()): number {
+    const next = new Date(now);
+    next.setUTCHours(DAILY_RUN_UTC.hour, DAILY_RUN_UTC.minute, 0, 0);
+    if (next <= now) next.setUTCDate(next.getUTCDate() + 1);
+    return next.getTime() - now.getTime();
+  }
+
+  // setTimeout re-armed after each run, never setInterval(24h): a 24-hour interval drifts
+  // against the wall clock and never re-aligns, so recomputing the next 00:15 each time is
+  // what keeps it pinned to the hour.
+  function scheduleDailyRun() {
+    const wait = msUntilNextDailyRun();
+    console.log(`Next daily update at 00:15 UTC — in ${Math.round(wait / 60000)} minute(s).`);
+    setTimeout(async () => {
+      await runSnapshotSafely();
+      scheduleDailyRun();
+    }, wait);
+  }
+
+  // On boot as well: every deploy restarts this process, and a deploy at 09:00 would
+  // otherwise skip that day entirely. Safe to repeat — fillUsageGaps only fills days that
+  // are missing and the fusion snapshot skips accounts already scored today.
   runSnapshotSafely();
-  setInterval(runSnapshotSafely, 6 * 60 * 60 * 1000); // re-check every 6h, catches a UTC-midnight rollover
+  scheduleDailyRun();
+
+  // Safety net, and cheap: if the timer above is ever missed, this repairs the day without
+  // waiting for a restart. When the day is already done it costs one indexed lookup per
+  // account and stops, so it does no work on the three passes that find nothing to do.
+  setInterval(runSnapshotSafely, 6 * 60 * 60 * 1000);
 
   // Expired sessions are already refused by requireAuth, but nothing deleted
   // them — the table only ever grew. Swept on boot and hourly thereafter.

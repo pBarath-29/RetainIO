@@ -1,0 +1,21 @@
+# The build context is the whole repo, so without this every image build would first upload
+# retainio/node_modules — hundreds of megabytes the Python service has no use for.
+retainio/
+weekly_report/
+Major Project Rubrics/
+.git/
+.claude/
+
+# Training data and notebooks. Only Datasets/Churn.csv is read at runtime — the rest is
+# ~20 MB of uplift CSVs. The negation is required: an ignored path cannot be COPYed, so
+# excluding the directory outright would break the Dockerfile's `COPY Datasets/Churn.csv`.
+Datasets/*
+!Datasets/Churn.csv
+*.ipynb
+
+# Unused model variants are still copied by `COPY models/`, but these never are.
+__pycache__/
+*.pyc
+.env
+.env.*
+*.log
