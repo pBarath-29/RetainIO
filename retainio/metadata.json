@@ -1,0 +1,6 @@
+{
+  "name": "RetainIO",
+  "description": "AI-Powered Customer Churn Prediction & Retention Platform for B2B SaaS featuring fusion models, SHAP explainability, face verification discount approval, EXA risk intelligence, and AI Retention Advisor.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

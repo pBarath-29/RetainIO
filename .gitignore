@@ -1,0 +1,32 @@
+# Secrets. Both .env files hold live credentials — the root one a Gemini API key, and
+# retainio/.env the Supabase connection strings. A pattern with no slash matches at every
+# level, so this covers both.
+.env
+.env.*
+!.env.example
+
+# Dependencies and build output
+node_modules/
+dist/
+build/
+coverage/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+
+# Local logs and OS noise
+*.log
+.DS_Store
+Thumbs.db
+
+# Playwright / scratch artefacts
+probe*.png
+test-results/
+playwright-report/
+
+# NOTE: models/ and Datasets/ are deliberately NOT ignored. The FastAPI service loads the
+# pickles from models/ and reads Datasets/Churn.csv at import time to rebuild its SHAP
+# background sample, so both have to be in the repo for a deploy to boot.

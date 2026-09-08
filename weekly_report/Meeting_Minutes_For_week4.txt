@@ -1,0 +1,9 @@
+Meeting minutes with MP supervisor
+
+Discussed the ongoing implementation of the continuous learning feature, specifically focusing on Reinforcement Learning from Human Feedback (RLHF) methods shared by Ms. Goh.
+
+Advised by Ms. Goh to document the current progress as researching different methods and finding ways to utilize human feedback data for model retraining.
+
+Addressed the technical issues encountered while building the automation layer for feedback extraction, with troubleshooting currently underway.
+
+Ms. Goh offered further consultation and resources to assist with any uncertainties regarding the RLHF implementation.

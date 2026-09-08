@@ -1,0 +1,628 @@
+review_text,sentiment,text_length
+We've had to redo the same integration setup twice because it silently reset after a platform update.,Frustrated,101
+The recent price increase was the smallest we've seen among all the tools we currently pay for.,Satisfied,95
+We switched our billing contact recently and the transition was handled without a single hiccup.,Satisfied,96
+"Five months in, heavy use through the API, and the total lack of bugs this early has been a genuinely good sign.",Satisfied,112
+The recent outage postmortem raised more questions than it answered about data integrity.,Frustrated,89
+Half our reports broke overnight and support's first response was to ask if we'd tried refreshing.,Frustrated,98
+"The export format changed recently, took a short adjustment period.",Neutral,67
+"We're a year in, heavy use across the team through the API, and the total absence of real bugs has made renewal an easy call.",Satisfied,125
+The recent consolidation of admin settings buried options our IT team relies on daily.,Frustrated,86
+We've had three separate incidents this year where data just didn't save.,Frustrated,73
+We were quoted a two-week fix for the sync bug. That was two months ago.,Frustrated,72
+The export feature now needs a manual retry almost every single time.,Frustrated,69
+The mobile notifications come through reliably enough for our purposes.,Neutral,71
+We haven't run into any billing surprises since we signed up.,Neutral,61
+The recent price lock offer for early renewal was a nice surprise.,Satisfied,66
+The recent redesign of the reporting module made a genuinely complex process feel simple.,Satisfied,89
+"Our team's onboarding feedback was uniformly positive, which is rare for us.",Satisfied,76
+Our finance team hasn't raised any questions about the recent invoices.,Neutral,71
+"We haven't had strong feelings about the recent visual changes, just different.",Neutral,79
+"Still setting things up on our end, too early to say much either way.",Neutral,69
+"Our account rep reached out for a routine check-in, nothing specific came out of it.",Neutral,84
+"Honestly, the documentation hasn't kept up with the product for a while now.",Frustrated,76
+"A teammate asked about the API limits, support gave a clear answer.",Neutral,67
+"The dashboard scaled smoothly as our team grew, never missed a beat.",Satisfied,68
+Our procurement team said this was the easiest renewal negotiation they've had all year.,Satisfied,88
+A recent feature announcement didn't apply to how we currently use the product.,Neutral,79
+"About eight months of heavy daily use, and we genuinely can't think of a single bug worth mentioning.",Satisfied,101
+We're still waiting on a callback from an escalation filed almost two weeks ago.,Frustrated,80
+"We're a newer account, so still calibrating what normal usage looks like for us.",Neutral,80
+"We've had mixed experiences with support response times, some fast, some slower.",Neutral,80
+Our team's trust in this tool has only grown the longer we've used it.,Satisfied,70
+"Light users for most of the year, but even our occasional weekly logins have hit the same recurring bug twice now.",Frustrated,114
+"We noticed a small change in how totals are displayed, took a moment to get used to.",Neutral,84
+We've had this account for a year and a half without a single formal complaint filed.,Satisfied,85
+Support's answer to a tricky integration question was thorough and genuinely helpful.,Satisfied,85
+Every quarter brings a UI change that breaks something our team had built a habit around.,Frustrated,89
+Our team's saved dashboards broke after the visual refresh with no migration path offered.,Frustrated,90
+The pricing calculator at renewal quoted a number that didn't match the actual invoice.,Frustrated,87
+We're mid-contract and haven't had a reason to revisit the terms yet.,Neutral,69
+Our team's process now includes a manual double-check because we no longer trust the automated one.,Frustrated,99
+"The recent update changed a couple of menu locations, took a bit to adjust.",Neutral,75
+The recent update genuinely addressed feedback we'd given months earlier.,Satisfied,73
+The export throttling kicks in earlier than the documented limit actually says it should.,Frustrated,89
+Our team's first year with this tool has genuinely exceeded expectations.,Satisfied,73
+The recent update improved battery usage on the mobile app noticeably.,Satisfied,70
+Support caught a subtle configuration issue we hadn't even noticed ourselves.,Satisfied,77
+Support macro responses keep coming back that don't actually address what we asked.,Frustrated,83
+"Had one bug early on, got sorted out within a few days.",Neutral,55
+Our team split on whether the new layout is better or just different.,Neutral,69
+"The interface took some getting used to at first, but we've adjusted fine.",Neutral,74
+"We noticed the mobile app icon changed in the last update, otherwise business as usual.",Neutral,87
+Support's fix for our integration bug was to suggest switching to an unrelated tool entirely.,Frustrated,93
+The recent price match offer when we mentioned a competitor's quote was handled fairly and quickly.,Satisfied,99
+Our team's confidence in the platform means we've stopped keeping a manual backup process.,Satisfied,90
+The recent update to the permissions system made onboarding new admins much simpler.,Satisfied,84
+The recent consolidation of settings pages took a bit of relearning but nothing major.,Neutral,86
+Our finance team said the invoicing process is the cleanest they deal with across all our vendors.,Satisfied,98
+Our team appreciated that support followed up after the fix to confirm everything was still working.,Satisfied,100
+"About seven months as a customer, light weekly logins, and even at that pace we've never once hit a bug worth reporting.",Satisfied,120
+This year's renewal quietly removed the cancellation grace period we used to have.,Frustrated,82
+A minor bug came up last quarter and got resolved without much drama.,Neutral,69
+The platform's permissions model handled our complex org structure better than we expected.,Satisfied,91
+The onboarding call covered edge cases we hadn't even thought to ask about.,Satisfied,75
+"We've never had a renewal conversation that felt like a negotiation, just a formality.",Satisfied,86
+"Our team's usage patterns are pretty routine, same handful of reports each week.",Neutral,80
+"Support resolved a billing question in a single reply, clearly and completely.",Satisfied,78
+We upgraded our plan last quarter and the transition was seamless.,Satisfied,66
+"About ten months as a customer, mostly weekly use, and we're genuinely losing patience with the bug count.",Frustrated,106
+Usage has dropped off a bit as our needs changed.,Neutral,49
+Support proactively suggested a setting change that improved our workflow before we'd even noticed the friction.,Satisfied,112
+The recent price adjustment letter cited 'increased value' without listing anything that actually changed.,Frustrated,106
+I don't think our account rep has read a single ticket we've filed this year.,Frustrated,77
+We switched providers two years ago and this has outperformed the old one on every front.,Satisfied,89
+"The API rate limits have never once gotten in our way, even during peak usage.",Satisfied,78
+The recent price restructuring effectively doubled our costs for the same feature set we've always used.,Frustrated,104
+"The recent settings page reorganization took a minute to find things again, then it was fine.",Neutral,93
+"We're a year and a half in, and the last quarter has genuinely felt like a step backward.",Frustrated,89
+Nobody proactively told us about the breaking API change; we found out when things stopped working.,Frustrated,99
+The status page said everything was fine while we were actively experiencing an outage.,Frustrated,87
+"Nearly three years in, light API use, and even so we've never had a reason to open a bug report.",Satisfied,96
+The platform's export accuracy has held up even as our data volume has grown significantly.,Satisfied,91
+The API sandbox drifted out of sync with production and cost us two failed deploys.,Frustrated,83
+We've had genuinely helpful support interactions every single time we've reached out this year.,Satisfied,95
+"The API integration took less than a day to set up, start to finish.",Satisfied,68
+"The team lead handles most of the day-to-day, so I don't see every detail.",Neutral,74
+"About a year and a half in, running it daily through the API, and the reliability has genuinely earned our trust.",Satisfied,113
+The recent price change wasn't really a deciding factor for us one way or the other.,Neutral,84
+Our team's satisfaction with this tool has only grown since the last major release.,Satisfied,83
+Our audit log has gaps corresponding to exactly the days we had open support tickets.,Frustrated,85
+Our team's overall verdict after renewal season: no reason to look elsewhere.,Satisfied,77
+Our team's overall take is that it does the job without being especially memorable.,Neutral,83
+Our team's trust in the export process means it's now part of our automated reporting pipeline.,Satisfied,95
+Support's canned reply didn't reference a single thing we'd actually asked about.,Frustrated,81
+Two invoices in a row have had errors we had to catch ourselves.,Frustrated,64
+"The last invoice matched what we expected, no surprises there.",Neutral,62
+The account's two-factor setup locked out three team members in the same week.,Frustrated,78
+"Two invoices, two different billing errors, same billing cycle.",Frustrated,63
+Our ops lead had to escalate the support ticket twice before anyone even replied.,Frustrated,81
+We're seeing the same crash on the reporting page for the third time this month.,Frustrated,80
+The recent consolidation of two legacy features actually made training new hires faster.,Satisfied,88
+"About a year as a customer, heavy daily use, and it's become the one tool on our team nobody complains about.",Satisfied,109
+The dashboard's recent redesign somehow made a busy interface feel calmer.,Satisfied,74
+The export tool handles our largest reports without any noticeable lag.,Satisfied,71
+"The dashboard covers what we need, though we haven't tested the limits of it much.",Neutral,82
+Our IT team spent a full day debugging an issue that turned out to be a documented but unflagged breaking change.,Frustrated,113
+We're still waiting on documentation for a feature that shipped over two months ago.,Frustrated,84
+"We caught duplicate records after the last sync, and support blamed it on our side without evidence.",Frustrated,100
+Support's escalation process worked exactly as described the one time we needed it.,Satisfied,83
+"A colleague ran into a permissions quirk, cleared up with a quick support message.",Neutral,82
+Our API quota reset time changed without notice and threw off every job built around it.,Frustrated,88
+Our billing has matched the contract so far this year.,Neutral,54
+The last data export corrupted the currency formatting on every single row.,Frustrated,75
+The recent price restructuring landed harder than any increase we've seen before.,Frustrated,81
+"Session cookies changed recently and logged out our entire team at the same moment, no warning.",Frustrated,95
+"We caught the same duplicate-entry bug a fourth time, across two different reps, still unfixed.",Frustrated,95
+"A teammate mentioned the search felt slightly slower this week, nothing dramatic.",Neutral,81
+"The audit turned up permissions nobody remembers granting, and support couldn't explain them either.",Frustrated,100
+"A couple of bugs came up, support handled them within a reasonable window.",Neutral,74
+Getting genuinely tired of re-explaining our setup to a new support rep every single time.,Frustrated,90
+"Pricing has stayed the same, and so has our usage.",Neutral,50
+The account setup for our new team members has become close to instant.,Satisfied,71
+The export tool's recent speed improvements cut our monthly reporting time by a real margin.,Satisfied,92
+We're testing out a couple of the newer features but haven't reached a verdict yet.,Neutral,83
+Support answered a question outside business hours faster than we expected.,Satisfied,75
+The onboarding specialist anticipated a question we hadn't even asked yet.,Satisfied,74
+"Our team uses this for a narrow set of tasks, so our view might not reflect the full product.",Neutral,93
+Half our saved filters vanished after the last update. No explanation given.,Frustrated,76
+Our loyalty discount from signing quietly disappeared at this year's renewal.,Frustrated,77
+The recent price increase was modest and clearly explained ahead of time.,Satisfied,73
+"The recent password policy change required a reset for everyone, mildly inconvenient but understandable.",Neutral,104
+"The API keeps timing out during our nightly jobs, and nobody's given us a real explanation why.",Frustrated,95
+"We use this daily across the whole team, and the number of unresolved bugs has started to wear on people.",Frustrated,105
+The default timezone silently changed during a routine update and threw off a week of scheduled reports.,Frustrated,104
+We've had this running in production for years without a single major incident.,Satisfied,79
+"One of our team members handles this tool exclusively, so feedback is limited.",Neutral,78
+"Our team's biggest praise is honestly just consistency, quarter after quarter, nothing goes wrong.",Satisfied,98
+"Ten months in, running it daily through the API, and the reliability has been consistent enough that renewal wasn't even a discussion.",Satisfied,134
+Our finance lead said the renewal terms this year were the most reasonable we've seen from any vendor.,Satisfied,102
+Our team's overall sentiment going into this renewal is genuinely enthusiastic.,Satisfied,79
+"The onboarding call covered the essentials, nothing beyond that really.",Neutral,71
+We disputed an overage charge that shouldn't have applied to our plan in the first place.,Frustrated,89
+Our finance team is still trying to reconcile an invoice from two months back.,Frustrated,78
+About nine months in and we're already on our fourth thread about the same unresolved sync issue.,Frustrated,97
+We keep hitting the same session-timeout bug across three different browsers.,Frustrated,77
+Support handled our account transfer between departments without losing any historical data.,Satisfied,92
+"Light weekly users for around eight months, and in that time we haven't run into anything worth complaining about.",Satisfied,114
+"The support experience has been fine, nothing that stands out as especially good or bad.",Neutral,88
+Honestly the support chat routed us through three different queues before anyone answered.,Frustrated,90
+The API has handled everything we've thrown at it without a hiccup.,Satisfied,67
+The recent update to the reporting module made our monthly close noticeably faster.,Satisfied,83
+We had to disable two-factor auth because it kept locking legitimate users out.,Frustrated,79
+"A couple of small bugs, both got fixed within a week or so.",Neutral,59
+The recent consolidation of two dashboards into one actually reduced the clicks needed for our daily tasks.,Satisfied,107
+"Heavy daily use for a year now, a handful of small bugs along the way, about what we'd expect from any tool this size.",Neutral,118
+Renewal terms stayed roughly the same as last year.,Neutral,51
+Woke up to another outage this morning. Second one in two weeks.,Frustrated,64
+The account flagged our own scheduled automation as suspicious and locked us out for days.,Frustrated,90
+The support team resolved our one ticket within the expected window.,Neutral,68
+Our data import corrupted roughly a tenth of the records with no error shown at all.,Frustrated,84
+I've reported the same login bug three separate times and it keeps coming back.,Frustrated,79
+Our data exports have been accurate as far as we've checked.,Neutral,60
+We've scaled our usage up significantly and it's handled the load without issue.,Satisfied,80
+The platform scaled with us through a company-wide reorg without any hiccups.,Satisfied,77
+The recent consolidation of support tools means our ticket history from before the switch is just gone.,Frustrated,103
+It's the second year running the annual report export has needed a manual workaround.,Frustrated,85
+We're still fairly new to this and haven't formed strong opinions in either direction.,Neutral,86
+"The storage limit dropped mid-cycle without notice, and we only found out when uploads started failing.",Frustrated,103
+The last two feature releases each required us to redo custom configurations from scratch.,Frustrated,90
+The API documentation examples reference endpoints that were deprecated over a year ago.,Frustrated,88
+"Quick check-in from our side, nothing specific to report this week.",Neutral,67
+The permissions system is serviceable; session timeouts show up occasionally but rarely block us.,Neutral,97
+Still getting a feel for the reporting side of things.,Neutral,54
+Support's proactive outage notice gave us enough time to adjust before it even affected us.,Satisfied,91
+The API's error messages are vague enough that debugging usually means guessing and checking.,Frustrated,93
+The recent redesign hid the export option two menus deeper than it used to be.,Frustrated,78
+We onboarded a whole new department last quarter and it went off without a hitch.,Satisfied,81
+"Our contract is up for renewal soon, and we're weighing it against a couple of alternatives.",Neutral,92
+"Usage has stayed pretty steady lately, no major changes to note.",Neutral,64
+Our team has had zero data accuracy issues since we started tracking it closely.,Satisfied,80
+Usage has been split fairly evenly between a few team members.,Neutral,62
+"A year of weekly use, one bug that came and went, otherwise a pretty unremarkable experience overall.",Neutral,101
+"Our support ticket history shows a handful of resolved questions, nothing recurring.",Neutral,84
+"The recent mobile update finally brought feature parity with the web app, and it shows.",Satisfied,87
+"Coming up on two years as a customer, heavy daily use across the team, and we genuinely haven't hit a single real bug.",Satisfied,118
+Our finance team caught a billing error the support team never flagged on their end.,Frustrated,84
+The platform's recent changes have been incremental enough that nothing really stood out.,Neutral,89
+"Nine months of light weekly use, and we still haven't found anything to point to as a downside.",Satisfied,95
+The recent price adjustment came with a clear breakdown of what changed and why.,Satisfied,80
+"Two years of light weekly use, and the experience has stayed pretty consistent the whole way through.",Neutral,101
+"The export format is fine for our purposes, though we haven't tried the newer options yet.",Neutral,90
+Our team's workflow has gotten noticeably faster since we started using the API integration.,Satisfied,92
+"Support acknowledged our question the same day, answered it the next.",Neutral,69
+The platform's search has consistently returned exactly what we're looking for.,Satisfied,79
+The account's recovery codes stopped working with no notice they'd been rotated.,Frustrated,80
+The recent feature addition hasn't changed our day-to-day much either way.,Neutral,74
+Half the team has started avoiding the export feature because it fails often enough that nobody trusts it.,Frustrated,106
+The account dashboard undercounts our actual API usage by a noticeable margin.,Frustrated,78
+"The tool has become part of our routine, not much else to add.",Neutral,62
+Support's chat widget connected us to a real person within a minute.,Satisfied,68
+Nothing about this quarter's support experience has felt like an improvement.,Frustrated,77
+Support reopened the same closed ticket instead of addressing the new details we'd added.,Frustrated,89
+Our team's feedback on this has been fairly split between mild positives and mild negatives.,Neutral,92
+"We're on our fourth support thread about the same sync issue, and it's not getting any closer to fixed.",Frustrated,103
+The billing portal has never once shown an incorrect charge in the time we've used it.,Satisfied,86
+We've had this account since early on and watched it improve steadily every year.,Satisfied,81
+Our team's overall experience continues to be the kind that just doesn't generate complaints.,Satisfied,93
+"The dashboard widgets keep rearranging themselves after certain updates, with no way to lock the layout.",Frustrated,104
+Data didn't save. Again. This is the third time this quarter.,Frustrated,61
+"Ran into one login hiccup, resolved itself the next day.",Neutral,56
+The consolidation of two products under one login broke access for a chunk of our users.,Frustrated,88
+Our onboarding took about the amount of time we were told to expect.,Neutral,68
+The recent feature release addressed exactly what we'd been hoping for.,Satisfied,71
+Migrating our data over was smoother than we expected going in.,Satisfied,63
+The changelog rarely mentions breaking changes before they actually break something.,Frustrated,84
+"The webhook retries started failing silently, and it cost us a full day tracing the gap.",Frustrated,88
+We're paying more this year for a support tier that hasn't felt any faster.,Frustrated,75
+Nobody from the account team has checked in with us in three renewal cycles.,Frustrated,76
+The API's rate limits are generous enough that we've never had to think about them.,Satisfied,83
+The export formatting has matched our template requirements perfectly every time.,Satisfied,81
+The export tool hasn't particularly impressed or disappointed us over the past couple of weeks.,Neutral,95
+"About a year and a half in, light use, and the couple of bugs we've seen were minor enough not to matter much.",Neutral,110
+"Three years in and daily use across the team, and this has been the buggiest stretch we've seen yet.",Frustrated,100
+Our contract renewal quietly added terms that weren't in last year's version.,Frustrated,77
+The renewal call this year felt more like a retention script than an actual conversation.,Frustrated,89
+Support's technical writeup after a rare incident was thorough enough that we didn't need to ask follow-up questions.,Satisfied,117
+"Support's response quality has been consistent, if not especially fast.",Neutral,71
+"Our team's onboarding of the API took a single afternoon, faster than we expected.",Satisfied,82
+"We're a fairly light user of the platform, so we haven't formed a strong opinion yet.",Neutral,85
+The uptime page shows fewer incidents than what we've actually experienced this quarter.,Frustrated,88
+Support told us to try again later for a bug that's been happening for over a month.,Frustrated,84
+The platform's data retention policy gave us exactly the flexibility our compliance team needed.,Satisfied,96
+We're still building out our internal documentation for how our team uses this tool.,Neutral,84
+So far it's matched what we expected going in.,Neutral,46
+Support's willingness to explain the technical reasoning behind a limit made it easier to plan around.,Satisfied,102
+We've had the same conversation with support about the same bug for going on two months now.,Frustrated,92
+"Coming up on eight months, weekly use across the team, and it's been dependable from day one.",Satisfied,93
+"Been with them a year, light usage, and even that's been enough to run into three separate unresolved bugs.",Frustrated,107
+Our monthly usage report looked about the same as it has all year.,Neutral,66
+Support's fix required us to redo a week's worth of manual entry.,Frustrated,65
+The recent consolidation of the help center made finding answers noticeably quicker.,Satisfied,84
+We've kept usage roughly flat while we figure out our broader tooling strategy.,Neutral,79
+The recent maintenance window ran nearly three hours past its announced end time.,Frustrated,81
+The recent API changelog entry didn't affect any of our current integrations.,Neutral,77
+The mobile app has been a genuine time-saver for our field team.,Satisfied,64
+"About eight months as a customer, light use through the API, nothing has really stood out in either direction.",Neutral,110
+"Support closed our ticket after one exchange, which felt appropriate for the question we asked.",Neutral,95
+The recent redesign removed the bulk-edit feature our team used almost every day.,Frustrated,81
+We're still deciding whether to expand to the higher-tier plan.,Neutral,63
+Our monthly report needed a manual workaround to generate correctly again this year.,Frustrated,84
+"The account's usage numbers don't match our own internal tracking, and nobody can explain the gap.",Frustrated,98
+Our team's monthly review of this tool didn't turn up anything worth flagging either way.,Neutral,89
+We use a handful of features regularly and haven't touched the rest.,Neutral,68
+"Support followed up a week later to confirm the earlier fix was still holding, appreciated the check.",Neutral,101
+We compared support response times against two other vendors and this one won clearly.,Satisfied,86
+"About four months as a customer, and daily use across the team has already turned up more bugs than we expected this early.",Frustrated,123
+We're paying for a plan tier that got quietly renamed and now shows the wrong label everywhere.,Frustrated,95
+Support resolved a fairly complex integration issue in under a day.,Satisfied,67
+"The recent price hike came with a genuine feature upgrade, so it felt justified.",Satisfied,80
+"Support's answer to our escalation was just to reopen the same ticket, nothing new addressed.",Frustrated,93
+The team hasn't raised any concerns about it in our last few check-ins.,Neutral,71
+"One export ran slow last week, otherwise unremarkable.",Neutral,54
+"Our team uses this alongside a couple of other tools, so it only handles part of our workflow.",Neutral,94
+The account somehow got downgraded during a routine review we never requested.,Frustrated,78
+The onboarding specialist checked in twice in the first month just to make sure things were going well.,Satisfied,103
+"The recent price adjustment was modest and roughly matched inflation, from what we can tell.",Neutral,92
+Support pointed us to a help article that mostly answered our question.,Neutral,71
+The desktop app now takes upward of thirty seconds just to load the home screen.,Frustrated,80
+"The last outage happened during our busiest week of the month, of course.",Frustrated,73
+"A recent status update mentioned scheduled maintenance, which went as planned.",Neutral,78
+The support team's response quality has stayed consistently high even as we've scaled up.,Satisfied,89
+We haven't had a reason to escalate anything this year.,Neutral,55
+We've never had a single billing dispute in the years we've been a customer.,Satisfied,76
+Support macros keep landing in our inbox that clearly don't match what we actually asked.,Frustrated,89
+The export scheduler has missed its run time on and off for the past month straight.,Frustrated,84
+The recent consolidation of two support tools means our history from before the switch is gone.,Frustrated,95
+"We're a small account, so our experience has probably been pretty typical.",Neutral,74
+The recent redesign kept everything we liked and fixed the one thing we didn't.,Satisfied,79
+Our second onboarding call still didn't get SSO configured correctly.,Frustrated,69
+We're now on our second dedicated account manager who's never actually reached out to introduce themselves.,Frustrated,107
+Our billing contact somehow got dropped from invoice notifications after the last account update.,Frustrated,97
+We caught the export scheduler silently stopped running after a plan change nobody flagged.,Frustrated,91
+We caught a duplicate charge on our card that took three weeks to get refunded.,Frustrated,79
+The recent bug in the tagging system has mislabeled records across three separate reports.,Frustrated,90
+"Same crash on the reporting page, third time this month.",Frustrated,56
+"Nearly two years in, and it's the accumulation of small bugs, not any one big thing, that's worn us down.",Frustrated,105
+The recent leadership change at the vendor has clearly deprioritized the features we actually care about.,Frustrated,105
+"We mostly use the API, haven't touched the dashboard much.",Neutral,58
+Our workflow hasn't changed much since we started.,Neutral,50
+Not thrilled with how this renewal negotiation went. Felt more like a sales pitch than a conversation.,Frustrated,102
+The recent price review actually lowered our costs after we mentioned our usage had dropped.,Satisfied,92
+The reporting export is a bit slow but usable.,Neutral,46
+The onboarding team caught a misconfiguration on our end before it caused any real issue.,Satisfied,89
+It shouldn't take three emails to get a straightforward refund processed.,Frustrated,73
+"Our usage dipped a bit over the holidays, back to normal since.",Neutral,63
+"Our team ran a comparison against a competitor last quarter, and this came out ahead on almost every metric.",Satisfied,108
+Every scheduled job we built around the old quota reset time broke when it changed without notice.,Frustrated,98
+Onboarding took nearly a month longer than we were told it would.,Frustrated,65
+A scheduled maintenance window was announced ahead of time and didn't disrupt our day.,Neutral,86
+It's rare that a tool this central to our workflow causes this little friction.,Satisfied,79
+Support's technical depth on a niche API question genuinely impressed our engineering team.,Satisfied,91
+The recent price adjustment felt fair given what we're actually getting.,Satisfied,72
+"A recent update changed some terminology in the settings, took a moment to find things again.",Neutral,93
+"Coming up on two years, heavy weekly use, and this stretch has been as clean as any we've had.",Satisfied,94
+The mobile notifications have been dependable enough that we rely on them fully now.,Satisfied,84
+"Our usage has been fairly consistent, no real ups or downs to mention.",Neutral,70
+"The reporting numbers seem to line up with what we're tracking internally, more or less.",Neutral,88
+The recent infrastructure change added noticeable lag that wasn't there before.,Frustrated,79
+"A minor UI tweak in the last release took a moment to notice, then it was fine.",Neutral,79
+"We've had the same two people managing this account since the start, so continuity hasn't been an issue.",Neutral,104
+Support's suggestion for our integration bug was to switch to a completely different tool.,Frustrated,90
+The status page didn't get updated until hours after the outage actually started.,Frustrated,81
+"Our overall experience this year has been fairly unremarkable, in a good way and a plain way.",Neutral,93
+Our team's trust in the export accuracy has never wavered.,Satisfied,58
+We're now paying for a feature tier we downgraded from two months ago.,Frustrated,70
+Two support reps gave us contradictory answers to the same question within the same week.,Frustrated,89
+Onboarding took a little longer than expected but got there in the end.,Neutral,71
+"About nine months as a customer, heavy API use, with a handful of bugs that got resolved in a reasonable time.",Neutral,110
+Single sign-on broke for about a third of our users after the product consolidation.,Frustrated,84
+The platform's recent security certification renewal gave our compliance team real peace of mind.,Satisfied,97
+Our procurement team is still comparing this against a couple of other options before the renewal decision.,Neutral,107
+"Support walked us through a complex setup patiently, even though it took a while.",Satisfied,81
+The mobile app covers everything we need when we're away from our desks.,Satisfied,72
+"Two years of daily use, and this past quarter's bugs have been bad enough that we're actively looking at alternatives.",Frustrated,118
+The dashboard's default view works for most of what we need day to day.,Neutral,71
+The recent outage recovery left several of our automated workflows in a broken half-state.,Frustrated,90
+"The recent consolidation of two products under one login made our admin work easier, not harder.",Satisfied,96
+The recent consolidation of settings actually simplified things for our admins.,Satisfied,79
+"Our nightly sync has dropped records roughly once a week for the past month, with nothing logged to explain why.",Frustrated,112
+"The export queue has never once backed up on us, even during our busiest reporting periods.",Satisfied,91
+The recent redesign of the mobile dashboard has genuinely improved how our field team works.,Satisfied,92
+Half our team's admin permissions reset themselves after the last major update.,Frustrated,79
+"A feature we don't use got bundled with one we needed, raising the cost either way.",Frustrated,83
+Our team no longer trusts the scheduled exports enough to skip the manual check.,Frustrated,80
+"Prices went up slightly this year, in line with what we expected.",Neutral,65
+"The dashboard occasionally lags when pulling a large date range, otherwise it's fine.",Neutral,85
+The API's uptime has been flawless through two of our busiest seasons.,Satisfied,70
+"The API keys we generated last week already stopped working, with zero explanation.",Frustrated,83
+The permissions bug that locks out new team members has never actually been resolved.,Frustrated,85
+Our team's onboarding of new hires onto this tool takes less than a day now.,Satisfied,76
+"Nine months in, running it through the API daily, and the number of open bugs is genuinely embarrassing for a paid product.",Frustrated,123
+The API's pagination behavior changed without warning and broke every script that depended on it.,Frustrated,97
+The onboarding video walkthrough matched our actual product version exactly.,Satisfied,76
+The recent onboarding email covered the basics clearly enough.,Neutral,62
+Our team's overall sentiment is neither particularly positive nor negative at this point.,Neutral,89
+"A scheduled report arrived a few minutes late once, otherwise on time.",Neutral,70
+"We haven't compared pricing against competitors recently, so can't say if it's still competitive.",Neutral,97
+We've had to reset our integration credentials twice this quarter after unexplained expirations.,Frustrated,96
+We're still deciding whether the API is worth integrating more deeply into our stack.,Neutral,85
+Support was responsive to our onboarding questions.,Neutral,51
+"We've never had to escalate a support ticket, which says a lot on its own.",Satisfied,74
+Our account rep proactively flagged a plan change that saved us money.,Satisfied,70
+"The account manager checks in periodically, nothing urgent has come up on either side.",Neutral,86
+Search results have gotten noticeably less reliable since the last major update.,Frustrated,80
+"A teammate ran into a permissions question, support cleared it up quickly.",Neutral,74
+A year in and the permissions system still can't handle our org chart properly.,Frustrated,79
+The account got suspended over a payment issue we'd already resolved a week earlier.,Frustrated,84
+We're still on the fence about upgrading to the next tier.,Neutral,58
+Support's suggested fix involved a manual process that eats almost an hour every week.,Frustrated,86
+"Nine months in, weekly use across the team, and our experience has been fairly middle-of-the-road so far.",Neutral,105
+We compared it against another provider recently and it came out roughly even.,Neutral,78
+"The mobile app has started crashing on export, which it never used to do.",Frustrated,73
+We've escalated the same issue four times and it keeps getting reassigned before anyone resolves it.,Frustrated,100
+The recent update didn't change much for how our team actually uses it.,Neutral,71
+The platform handled our end-of-year reporting crunch without a single delay.,Satisfied,77
+"Our second escalation this month, same root cause both times.",Frustrated,61
+The recent consolidation of billing across our subsidiaries actually made things clearer for our accountants.,Satisfied,109
+It took a formal complaint before anyone addressed the recurring overcharge.,Frustrated,76
+The platform's uptime has been about what we'd expect for a tool like this.,Neutral,75
+Our compliance review this year went smoothly thanks to how well the audit trail is maintained.,Satisfied,95
+The integration setup took a couple of tries to get right.,Neutral,58
+We haven't had strong opinions form yet since our usage has been fairly limited.,Neutral,80
+Every quarter it feels like something we relied on quietly stops working.,Frustrated,73
+"We're a year in, heavy use across the team through the API, and honestly the bug count this year has made us question renewing.",Frustrated,127
+A recent bug got flagged and fixed before it really affected our team.,Neutral,70
+Support proactively reached out about an upcoming change so we could prepare ahead of time.,Satisfied,91
+The platform's reliability has made it one of the few tools nobody on our team complains about.,Satisfied,95
+We've had this integrated for over two years and it's never been the source of a single incident.,Satisfied,97
+Our department head ran the cost comparison and this came out ahead on value.,Satisfied,77
+"Support resolved our question in the first message, no back and forth needed.",Satisfied,77
+"Support answered within a day, which felt about right for a non-urgent question.",Neutral,80
+"The search feature has been broken since the last release. No fix, no timeline given.",Frustrated,85
+Our team's renewal conversation this year was mostly just confirming we wanted to continue.,Satisfied,91
+The billing portal has shown the wrong plan name for two months now despite us flagging it twice.,Frustrated,97
+It took escalating to a manager just to get a straight answer about a refund we were owed.,Frustrated,90
+The recent consolidation of our sub-accounts actually simplified billing instead of complicating it.,Satisfied,100
+Our team has started keeping screenshots of every bug because verbal reports go nowhere.,Frustrated,88
+Three years as a customer and the reliability has genuinely earned our trust.,Satisfied,77
+We've had this account for three years and it's never once given us a reason to look elsewhere.,Satisfied,95
+We flagged a security concern about shared credentials over a month ago. Still no real response.,Frustrated,96
+The recent email notification about the update was clear enough to act on.,Neutral,74
+The last three releases have each introduced a bug in the same module.,Frustrated,70
+We've had consistently fast page loads even as our account has grown substantially.,Satisfied,83
+Our team's onboarding of the newest feature took less time than the internal training we usually plan for.,Satisfied,106
+"The account's two-factor setup was a bit fiddly to configure initially, works fine now.",Neutral,87
+"The onboarding specialist who set up our account left the company, and the loose ends never got picked up.",Frustrated,106
+Our contract renewal added a minimum seat requirement we weren't told about upfront.,Frustrated,84
+The platform's consistency has made it easy to build long-term plans around it with confidence.,Satisfied,95
+"Heavy daily use for over a year, and the API has started throwing errors that never used to happen.",Frustrated,99
+"Two and a quarter years of use, and we still haven't accumulated a single bug worth flagging this year.",Satisfied,103
+"Support's hours don't overlap perfectly with ours, but it hasn't caused real problems.",Neutral,86
+"Daily use across the team for around eight months now, one or two minor bugs, nothing that's shifted our opinion either way.",Neutral,124
+"After about eight months as a customer, running this heavily through the API, the reliability just isn't there anymore.",Frustrated,119
+Nothing in particular to report this quarter.,Neutral,45
+The recent outage notice included a clear root cause and a fix timeline that was actually met.,Satisfied,94
+Support routed us through a bot that just repeated the help docs back at us.,Frustrated,76
+This is the first year the loyalty pricing wasn't automatically applied at renewal.,Frustrated,83
+"We're not power users, so most of the advanced settings are untouched.",Neutral,70
+"The onboarding process was about what we expected, nothing stood out as especially good or bad.",Neutral,95
+"Had to reach out to support once, got a reasonable answer within a day.",Neutral,71
+The feature we were promised at signing still hasn't shipped. We've stopped asking about it.,Frustrated,92
+"Ten months as a customer, and the export files have started coming through with missing columns.",Frustrated,96
+We caught a bug where deleting a record doesn't actually remove it from the exports.,Frustrated,84
+Haven't needed to contact support much this year.,Neutral,49
+"Our team's read on the recent update is that it's neither better nor worse, just different.",Neutral,91
+Support's clear communication during a recent maintenance window meant zero surprises for our team.,Satisfied,99
+Our compliance concern about shared credentials still hasn't gotten a substantive response.,Frustrated,91
+"Five months of daily use so far, one tiny bug early on that got fixed same-day, otherwise flawless.",Satisfied,99
+"One outage this year, resolved within a few hours.",Neutral,50
+"Been a customer for close to two years now, and the bug count this past stretch has genuinely piled up.",Frustrated,103
+"A couple of minor bugs here and there, nothing that's held us up.",Neutral,65
+The account setup process was refreshingly straightforward compared to what we expected.,Satisfied,88
+"Our team's overall experience has been so steady that it barely comes up as a topic anymore, in a good way.",Satisfied,107
+"The export limit dropped without notice, so now our monthly report needs three separate downloads.",Frustrated,98
+Support handled a complex multi-account migration without a single error on their end.,Satisfied,86
+"Daily use for a year and a half, and it feels like every update trades one bug for a new one.",Frustrated,93
+We were told the outage was a one-off. It's happened twice more since.,Frustrated,70
+We're keeping an eye on usage to decide if we need to adjust our plan next renewal.,Neutral,83
+"A colleague mentioned the export took a bit longer than usual once, hasn't recurred since.",Neutral,90
+A support reply came back within the timeframe listed on their site.,Neutral,68
+"Support suggested a workaround for a minor issue, it did the trick.",Neutral,67
+"Two years of weekly use, and we can count the bugs we've hit on one hand, all of them minor.",Satisfied,92
+Support's clear escalation path meant we knew exactly who to contact for our recent urgent issue.,Satisfied,97
+Notifications either flood us constantly or don't show up at all. No middle ground.,Frustrated,83
+Our team's biggest compliment is that we genuinely forget this is third-party software sometimes.,Satisfied,97
+"Nine months in, running it through the API daily, and the near-zero bug count is genuinely impressive for a product we lean on this hard.",Satisfied,137
+"Our team lead mentioned renewal is coming up, haven't discussed specifics yet.",Neutral,78
+Our compliance team signed off on the recent security review without a single follow-up question.,Satisfied,97
+Our team's experience onboarding a second business unit was even smoother than the first.,Satisfied,89
+"The dashboard filters reset themselves every time the page refreshes, which is often.",Frustrated,85
+"Compared to last year, response times from support have really slipped.",Frustrated,71
+The promised onboarding call never got scheduled despite two follow-up emails.,Frustrated,78
+A small glitch in the search bar came and went without us needing to report it.,Neutral,79
+"The account has had a couple of admin changes on our end, nothing on the platform's side.",Neutral,89
+"About a year and a half in, running this daily through the API, and it's never once let us down.",Satisfied,96
+The API rate limits haven't been an issue for how we're currently using it.,Neutral,75
+Our finance team said reconciling invoices here takes a fraction of the time compared to other vendors.,Satisfied,103
+The uptime has been essentially perfect for as long as we've been tracking it.,Satisfied,78
+We're still finding permissions that were never set up correctly during onboarding.,Frustrated,83
+Our team's overall read is that this has quietly become one of our most dependable vendors.,Satisfied,91
+Support resolved a data discrepancy for us before we'd even finished describing the issue.,Satisfied,90
+The export naming convention changed mid-quarter and broke every script that depended on it.,Frustrated,92
+The recent redesign of the export flow cut our reporting time nearly in half.,Satisfied,77
+Our last support interaction was brief and resolved the question we had.,Neutral,72
+We're satisfied enough with the current plan that renewal hasn't been much of a discussion.,Neutral,91
+It's hard to plan around a status page that doesn't reflect what we're actually experiencing.,Frustrated,93
+The export tool handled a much larger dataset than usual without any issues last week.,Satisfied,86
+Our team has recommended this tool internally more than any other software we use.,Satisfied,82
+"The API silently drops fields from the response now, with nothing in the changelog about it.",Frustrated,92
+The recent update improved load times noticeably across the board.,Satisfied,66
+"Three years as a customer now, and the bug-free stretch we've had this past year has been genuinely impressive.",Satisfied,111
+Support closed our bug report as 'working as intended.' It clearly wasn't.,Frustrated,74
+Our team's onboarding of a new office location went smoothly using the same setup process.,Satisfied,90
+The recent consolidation of billing contacts dropped our finance team off the notifications list.,Frustrated,97
+"Nothing broke this month, nothing particularly impressed either.",Neutral,64
+Our team's overall impression after the first quarter has been overwhelmingly positive.,Satisfied,87
+"Six months of weekly use across the team, no strong complaints, no strong praise either.",Neutral,88
+Every renewal seems to bring a price increase with nothing new to show for it.,Frustrated,78
+Our experience has been steady enough that it rarely comes up in team meetings.,Neutral,79
+Our ops lead is still reviewing whether the subscription cost lines up with how much we actually use it.,Neutral,104
+Support's knowledge base answered a fairly technical question in enough depth that we didn't need to follow up.,Satisfied,111
+The last renewal conversation covered the basics without much back and forth.,Neutral,77
+Not much to add this cycle. Usage has been light and uneventful.,Neutral,64
+"Eight months of heavy daily use, and we've hit more bugs in that window than in years with our previous vendor.",Frustrated,111
+The platform's reporting accuracy has held up under every audit we've run against it.,Satisfied,85
+We've genuinely never had a reason to open more than a couple of support tickets total.,Satisfied,87
+We've had this integrated with four other tools and every connection has stayed stable.,Satisfied,87
+"We genuinely enjoy using this, which isn't something we say about most software.",Satisfied,80
+"About a year and a half as a customer, weekly use, and the bug reports we've filed keep going nowhere.",Frustrated,102
+"A support macro answered our question correctly this time, which was appreciated.",Neutral,81
+The recent price lock for multi-year customers made this an easy renewal decision.,Satisfied,82
+"Coming up on ten months, light use through the API, and it's been quietly reliable this whole time.",Satisfied,99
+Our team's day-to-day has gotten noticeably smoother since we adopted the API integration fully.,Satisfied,96
+"We're light users, maybe weekly, but even at that pace we've hit more bugs than we'd expect from a mature product.",Frustrated,114
+It just works. Not much more to say than that.,Satisfied,46
+The last renewal quote came in almost forty percent higher with no new features to justify it.,Frustrated,94
+The onboarding experience for our newest hire was the smoothest we've seen across any of our tools.,Satisfied,99
+We've recommended this tool in two separate industry forums now.,Satisfied,64
+The export formatting has been consistent and clean every time we've used it.,Satisfied,77
+Our department head specifically asked that we keep this vendor when budgets were reviewed.,Satisfied,91
+"Coming up on a year, daily API use, and we've never once had to file a bug report, which says a lot.",Satisfied,100
+"Response times from support have been consistently fast, even for minor questions.",Satisfied,82
+"Ever since the last update, exports have been unreliable at best.",Frustrated,65
+Our team's ticket volume has dropped to nearly zero because things just don't break anymore.,Satisfied,92
+"Our weekly usage hasn't changed, but the bugs we keep running into have gotten harder to ignore.",Frustrated,96
+"The recent feature request we submitted shipped within the quarter, ahead of the estimate we were given.",Satisfied,104
+Support's documentation answered our question before we even had to open a ticket.,Satisfied,82
+"We've had a genuinely positive experience at every stage, from sales through renewal.",Satisfied,85
+The account got flagged for suspicious activity because of our own scheduled automation. Took days to unblock.,Frustrated,110
+"About four months in, light daily use, and our opinion is still forming since we haven't used it heavily yet.",Neutral,109
+"Our team's confidence in this vendor was reinforced again this quarter, nothing but smooth sailing.",Satisfied,99
+The mobile app hasn't had a meaningful update in over a year at this point.,Frustrated,75
+We caught the platform quietly lowering the export limit with nothing noted in the changelog.,Frustrated,93
+Our department head called this the smoothest vendor relationship we've had in years.,Satisfied,85
+The API's authentication flow changed and broke every integration that hadn't been updated in advance.,Frustrated,102
+Our team's trust in the platform's uptime lets us schedule client demos without a backup plan.,Satisfied,94
+"Support followed up proactively after a minor bug, even though we hadn't asked them to.",Satisfied,87
+The rate limit got cut in half last quarter with zero heads-up to existing customers.,Frustrated,85
+"Our data volume has grown steadily, and performance has kept pace so far.",Neutral,73
+Support's proactive suggestion during a routine check-in saved us from a configuration issue down the line.,Satisfied,107
+Our team's dashboard customizations have survived every update without breaking.,Satisfied,80
+"The recent audit came back clean, which reflected well on how the platform handles our data.",Satisfied,92
+"The export tool's recent update fixed the one small annoyance we'd had, and nothing else changed.",Satisfied,97
+"About six months as a customer, daily use across the team, and the lack of bugs alone has made this an easy tool to champion internally.",Satisfied,136
+Support's proactive check-in ahead of our renewal made the whole process feel less transactional.,Satisfied,97
+The changelog buried a breaking change in a minor version bump nobody thought to flag for us.,Frustrated,93
+"Coming up on a year, daily API use, and the bug reports we keep filing have made us seriously consider cancelling.",Frustrated,114
+The recent consolidation of the billing dashboard made our monthly reconciliation noticeably faster.,Satisfied,100
+Things have been steady for our team over the past quarter.,Neutral,59
+Our team's data has never once needed a manual correction after an export.,Satisfied,74
+"The account permissions took some getting used to, but they work as documented.",Neutral,79
+Our finance team was quoted one renewal price and billed a different one.,Frustrated,73
+"The mobile app still can't do half of what the web version can, years after launch.",Frustrated,83
+"Nine weeks as a customer and we've already had our first unexplained outage, right during a demo to our own clients.",Frustrated,116
+The recent price structure change actually worked out cheaper for how we use it.,Satisfied,80
+Our escalation sat untouched for two weeks before anyone even acknowledged it.,Frustrated,78
+"Our team is still getting used to the new navigation, no strong feelings yet.",Neutral,77
+The last three invoices have each had an error we had to catch ourselves.,Frustrated,73
+"Two and a quarter years of use, and the bug backlog has grown enough this year that it's become a running frustration on our team.",Frustrated,130
+"Our team's usage is concentrated in one department, so feedback here is fairly narrow.",Neutral,86
+"Nothing major has come up, we just don't use it that often.",Neutral,59
+We renewed early this year because there was no reason to wait and reconsider.,Satisfied,78
+Still comparing it against how our old process used to work.,Neutral,60
+Support walked a new hire through the whole setup patiently on their first day.,Satisfied,79
+"A teammate asked support about a setting, got a clear answer within the day.",Neutral,76
+We've never needed to escalate beyond the first support contact.,Satisfied,64
+Our team hasn't had a single outage affect us directly in the time we've used this.,Satisfied,83
+"Nearly three years as a customer, heavy use across the team, without a single outage that's ever actually affected us.",Satisfied,118
+"We occasionally see a delay in notifications, but it hasn't caused any real problems.",Neutral,85
+"Coming up on three years now, daily use across the team, and it's settled into being just part of the routine.",Neutral,110
+"Renewal was straightforward, no complaints or praise really.",Neutral,60
+Our finance team hasn't flagged anything unusual about the invoices this year.,Neutral,78
+We caught the account showing the wrong billing contact even after updating it twice.,Frustrated,85
+"We've had one small bug in over a year, and it was fixed the same day we reported it.",Satisfied,85
+"Our usage pattern is fairly predictable, mostly weekday mornings.",Neutral,65
+The recent outage was brief and didn't really affect our workflow that day.,Neutral,75
+"General status update: no issues, nothing notable this quarter.",Neutral,63
+Prices keep climbing every renewal and nobody on our end can point to why.,Frustrated,74
+Our workflow depended on a keyboard shortcut the recent redesign quietly removed.,Frustrated,81
+Our reseller-routed support path has added real delay compared to going direct.,Frustrated,79
+"We noticed a small delay in the export queue last week, resolved by the next day.",Neutral,81
+The recent outage during our fiscal close could not have come at a worse time.,Frustrated,78
+Our team's day-to-day workflow hasn't shifted much because of this tool either way.,Neutral,83
+"The account manager actually remembers our setup between calls, which we appreciate.",Satisfied,84
+"About six months as a customer, daily use across the team, and the bug count alone has us reconsidering the whole relationship.",Frustrated,127
+The recent redesign of the export flow got positive feedback from the whole team.,Satisfied,81
+The recent consolidation of settings pages was intuitive enough that nobody needed a walkthrough.,Satisfied,97
+Every automated report has needed manual verification since the sync bug started.,Frustrated,81
+The recent template update broke the formatting on every report we'd built before it.,Frustrated,85
+The mobile app's recent redesign got unprompted compliments from two team members.,Satisfied,82
+The recent consolidation of two regional data centers caused a sync delay that's still not resolved.,Frustrated,100
+"Coming up on three years, heavy use across the team, and the reliability this year has been the worst yet.",Frustrated,106
+"About eighteen months as a customer, weekly use across the team, and it's the total absence of small bugs that's kept us loyal.",Satisfied,127
+"Still forming an opinion as we go, early days for us.",Neutral,53
+Our team's day-to-day trust in the numbers here means fewer manual sanity checks than we used to do.,Satisfied,100
+Our compliance team said the recent certification renewal was the easiest one on their list this year.,Satisfied,102
+"We're still on the original plan we signed up for, no changes since.",Neutral,68
+"Roughly ten months in, heavy weekly use, and the bug count has been about average for a tool we rely on this much.",Neutral,114
+Support's canned response didn't reference a single detail from what we'd actually reported.,Frustrated,92
+The onboarding checklist matched exactly what we needed to get set up correctly.,Satisfied,80
+"Our scheduled reports just didn't send, twice in the same week.",Frustrated,63
+"It's fine for the dashboard stuff, does the job.",Neutral,48
+The recent server migration caused about twenty minutes of data loss that nobody has fully explained.,Frustrated,101
+Our finance team ran the numbers and this beats at least two other vendors we looked at.,Satisfied,88
+The recent feature we requested shipped almost exactly as we'd described it.,Satisfied,76
+The free trial terms changed and retroactively affected accounts already past their trial period.,Frustrated,97
+The support satisfaction survey feels like a formality nobody actually reads the answers to.,Frustrated,92
+"Five months in, running it through the API daily, and we've already logged more bugs than we're comfortable with.",Frustrated,113
+"Our team's take after the renewal call: straightforward, fair, and no pressure either way.",Satisfied,90
+"Support answered our one question promptly, nothing else to flag.",Neutral,65
+"Coming up on two years, heavy weekly use, and this stretch has had more unresolved bugs than the rest combined.",Frustrated,111
+We mainly use it for one specific report each month.,Neutral,52
+The recent price adjustment was accompanied by a feature set that justified it clearly.,Satisfied,87
+"We haven't had a reason to test the disaster recovery process, so can't speak to that.",Neutral,86
+Our sub-accounts got consolidated under one billing entity and double-charged us for the transition month.,Frustrated,106
+Two years in and it's still the most reliable part of our stack.,Satisfied,64
+The account setup process had a couple of extra steps compared to what we expected.,Neutral,83
+"Five months in, heavy use through the API, and the volume of bugs this early has been a genuinely bad sign.",Frustrated,107
+"About ten months as a customer, heavy use through the API, without a single issue serious enough to mention.",Satisfied,108
+"We've had the same account rep for two years now, and the continuity has been genuinely valuable.",Satisfied,97
+We're mid-way through evaluating whether to renew at the current tier or scale down.,Neutral,84
+"Two small bugs in two years, both resolved quickly and without drama.",Satisfied,69
+The export tool has been rock solid since we started using it.,Satisfied,62
+The recent price review actually resulted in a discount for our renewal.,Satisfied,72
+"One notification setting is a little confusing, otherwise fine.",Neutral,63
+"Support remembered a detail from a conversation months ago, which felt genuinely attentive.",Satisfied,91
+The recent update added a setting we haven't had a reason to touch yet.,Neutral,71
+"We're coming up on two years, mostly weekly through the API, and it's been steady enough that we don't think about it much.",Neutral,123
+"Nothing has stood out so far either way, still early days.",Neutral,58
+Our developers specifically praised how well-documented the webhook system is.,Satisfied,78
+"Light use for about six months, and the one bug we ran into got fixed before it really mattered to us.",Neutral,102
+"Our team hasn't needed the API much this quarter, mostly using the dashboard.",Neutral,77
+Our team's dashboards have survived three major platform updates without breaking once.,Satisfied,87
+Support walked us through a migration on a weekend call without any hesitation.,Satisfied,79
+"Our team's overall take after two years: reliable, well-supported, and worth what we pay.",Satisfied,89
+Our IT team said the SSO setup was the cleanest they've configured all year.,Satisfied,76
+"A support agent walked us through a setting change over chat, worked as expected.",Neutral,81
+The trial-to-paid transition somehow reset all of our saved preferences.,Frustrated,72
+"Our team's overall experience has been so smooth that this rarely comes up in meetings, which is a good sign.",Satisfied,109
+"We've had this integrated into three different workflows now, and each one has been trouble-free.",Satisfied,97
+"We haven't compared this against alternatives in a while, so can't speak to how it stacks up now.",Neutral,97
+"Nearly three years as a customer, and the last renewal call felt like talking to someone who'd never used the product.",Frustrated,118
+"Still broken. Same bug as last week, no fix in sight.",Frustrated,53
+"We've been customers for eight months, light API use, and even that's surfaced enough bugs to make us cautious.",Frustrated,111
+"The recent changelog was longer than usual, but most of it didn't apply to our setup.",Neutral,85
+The recent bug fix for the export issue somehow introduced a new bug in the import process.,Frustrated,91
+The account dashboard shows usage trends that roughly match what we expected.,Neutral,77
+The recent update to notifications made them more useful without becoming noisy.,Satisfied,80
+The recent consolidation of user roles removed a permission our compliance team actually needs.,Frustrated,95
+"Two and a half years of daily use, and the number of issues this year alone has outpaced the previous two combined.",Frustrated,115
+"About a year as a customer, light daily use, and we've had such a smooth run that renewal barely needed discussion.",Satisfied,115
+Two years of use and the recent redesign feels like it was shipped without talking to a single customer.,Frustrated,104
+The recent bug we reported got fixed and deployed within the same afternoon.,Satisfied,76
+The trial extension we were promised over email never actually got applied.,Frustrated,75
+Our team genuinely looks forward to the monthly report this generates.,Satisfied,70
+We caught a sync bug that's been quietly dropping about one record a week for over a month.,Frustrated,91
+We've kept the same plan for a while now since our needs haven't really changed.,Neutral,80
+"Our reporting cadence is monthly, so we don't interact with this as often as some teams might.",Neutral,94

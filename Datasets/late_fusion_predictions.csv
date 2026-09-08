@@ -1,0 +1,377 @@
+Customer_ID,Review,Sentiment,Sentiment_Score,Churn_Proba_Model,Churn_Pred_Model,Stacking (LR meta)_Proba,Stacking (LR meta)_Pred_Default,Stacking (LR meta)_Pred_Tuned,Actual_Churn
+2703eb5f-acf1-4e1c-a177-0729262ef43a,Budget conversations about the admin console have been low-key for a small team over the last onboarding round.,Satisfied,0.17303679396924343,0.0833,0,0.0866,0,0,0
+dc8b4df2-fb8e-4c44-b8a9-982aff091864,Our IT team asked how to set up conditional logic in the analytics module.,Satisfied,0.38896241651210445,0.8935,1,0.7994,1,1,1
+adce29e5-8343-43c1-8f96-1af5aa1cd569,Our engineering lead migrated a big workload onto the billing system and it performed flawlessly.,Frustrated,0.5209244755427102,0.0076,0,0.1099,0,0,0
+f36467fe-248d-415f-9f06-b1c9e64dbc06,Our department head asked how to set up conditional logic in the workflow builder.,Satisfied,0.07285692724177131,0.1072,0,0.0813,0,0,0
+50b1a5a7-79e7-48c7-b318-d33c8b2aaaa5,The renewal price increase on customer support is hard to justify given what a small team actually uses.,Frustrated,0.6248217521531508,0.3323,0,0.3626,0,0,0
+ddb9f772-20f6-434a-bfce-bcc5d841915a,We've had repeated failed uploads on the notification system for the last six months now with no real fix.,Frustrated,0.7934119441188028,0.0407,0,0.1826,0,0,0
+b0fed901-e8fc-49ba-bab9-225264d4cab3,Our ops lead expected better account management given how long we've been customers.,Satisfied,0.4112251609257257,0.9775,1,0.8544,1,1,1
+cbab31b6-3e86-4d89-b16e-5aa40073d29a,"The billing system works fine overall, though we've noticed a few dashboard glitches over the past quarter.",Neutral,0.45477465013097074,0.6406,1,0.6077,1,1,0
+9def4953-1b96-4bfd-a330-deddaf94a4d9,A growing team has been blocked by session timeouts on the permissions system for the last billing cycle.,Neutral,0.6958535833589193,0.9709,1,0.9018,1,1,1
+c8670269-594c-4c39-a14d-f7d4b12508c8,A small team switched from a lower-cost competitor and the cost savings alone justified it.,Satisfied,0.13235637238037828,0.7919,1,0.6296,1,1,1
+4b5f5bc2-b940-4396-bb9c-2136bb8a1d04,The second outage of customer support in the last few days is starting to erode our trust.,Frustrated,0.7302959927905592,0.0701,0,0.1852,0,0,0
+76840b4e-348c-4457-84a2-114b75788725,The reporting dashboard is serviceable for multiple business units; broken links shows up occasionally but rarely blocks us.,Neutral,0.4955577368896611,0.9225,1,0.8431,1,1,1
+45e9ad2b-a7e6-43e4-8130-b47f21f57b25,Our IT team is mid-review on whether the subscription cost matches usage from multiple business units.,Neutral,0.48147744548904625,0.0623,0,0.1268,0,0,0
+1b869a35-adb9-4b86-9cca-5a9ed578a44c,The API continues to exceed our finance team's technical expectations after this quarter.,Satisfied,0.1264683265463819,0.0626,0,0.0744,0,0,0
+1148cd8b-4dee-4dae-8efd-7e1f0d519360,Nobody has responded to our complaint about slow load times on the integration in the last onboarding round.,Satisfied,0.27369737600838007,0.9944,1,0.8335,1,1,1
+3d13ad21-c2a3-4140-b4aa-e03a7bad38b4,"The permissions system works fine overall, though we've noticed a few session timeouts over this quarter.",Neutral,0.481142515517992,0.9711,1,0.8653,1,1,1
+f918ebe8-67d7-4789-b78a-aa636c06bfc3,The support experience for a growing team has gotten noticeably worse over the last six months.,Satisfied,0.4743154029673813,0.0854,0,0.1365,0,0,0
+083f28c5-718e-4836-960e-8e455d49bf10,A growing team has been blocked by permission errors on the integration for the last onboarding round.,Frustrated,0.7780131314861936,0.959,1,0.9093,1,1,1
+b000117c-90cd-4146-a4a8-0e4702b127e5,Billing on the onboarding flow keeps creeping up and it's hard to see the added value over the past few sprints.,Frustrated,0.8330348033304144,0.0789,0,0.2187,0,0,0
+d195485b-252b-4a53-9cb1-6060eb4bf9dc,Our department head specifically praised how responsive support has been over this week.,Satisfied,0.050750087576120186,0.005,0,0.0528,0,0,0
+c0c40901-aec9-463b-b05f-cb730767692b,"For the price, a growing team is getting far more value than our ops lead expected.",Neutral,0.5098413642041026,0.8451,1,0.7994,1,1,1
+768bf8a7-9e41-4a6a-8d43-22216e5c4e28,Our procurement team feels well taken care of after the last billing cycle as a customer.,Frustrated,0.7495893634131859,0.6525,1,0.727,1,1,0
+defd667c-3b78-4283-9f80-5efc4cade554,"The audit log performs adequately for our whole department, though there's room for polish.",Frustrated,0.5245618499612206,0.1573,0,0.1883,0,0,0
+3e4b74c6-bd39-46bd-ab7a-930e64936739,We reported report generation errors on the collaboration tools the past month ago and it's still unresolved.,Frustrated,0.9754943364740434,0.9885,1,0.9403,1,1,1
+cc86ae53-4612-405f-9d87-7b0066d8e6d2,Our IT team is close to recommending a rival platform purely on cost grounds.,Satisfied,0.36762015693999806,0.0557,0,0.1046,0,0,0
+62b9d188-2134-4ce0-85a4-8a30ffc3841c,Nothing major to report on customer support over the last few days - does the job as expected.,Neutral,0.5224983933368179,0.9826,1,0.8784,1,1,1
+d1c8561d-b368-4b31-bd35-1984daa902ef,"General feedback: the workflow builder is fine, session timeouts handling could be faster over several days.",Neutral,0.5045598446536834,0.1168,0,0.1593,0,0,0
+53fefe35-4515-4a8f-b0ec-f1b7bd66b58a,"We've escalated data export bugs on the admin console third time now, still no resolution.",Frustrated,0.8396810026392892,0.9908,1,0.9269,1,1,1
+0d196a99-a13f-41e1-b2b7-d82854feacd9,The reporting dashboard is serviceable for a 40-person team; data export bugs shows up occasionally but rarely blocks us.,Neutral,0.4339332686971624,0.8054,1,0.7484,1,1,1
+c5609b41-a2cc-4d35-9e66-8a5d5fd1f64f,"Our IT team logged one instance of broken links on the audit log during the past year, resolved quickly.",Frustrated,0.636513385921238,0.7016,1,0.7302,1,1,0
+b4b43992-2ac7-42c4-8c30-2eb40699de90,The fifth outage of the collaboration tools in the past quarter is starting to erode our trust.,Frustrated,0.6165346267295615,0.4792,0,0.5086,1,0,0
+b59b7902-02a0-4c97-bad4-df843182de7b,We've had repeated API timeouts on the mobile app for the last six months now with no real fix.,Frustrated,0.5540203523530692,0.371,0,0.3726,0,0,1
+24b94178-63bd-4b57-a21c-bfbda3088cfa,Our account manager here is happy to keep paying for the analytics module - it pays for itself many times over.,Frustrated,0.7484067567073696,0.9681,1,0.9083,1,1,0
+61fa057e-0e50-4249-adcc-b18a06358320,Our whole department has had zero downtime issues with the API in the past year.,Satisfied,0.20827849654662114,0.9638,1,0.798,1,1,0
+4ca2e81b-1151-4321-afec-cf037cd4614d,"Our department head hasn't flagged cost as an issue for the onboarding flow, but hasn't praised it either.",Satisfied,0.2090764278138244,0.1041,0,0.0989,0,0,0
+acde5efd-907b-45ba-95b7-e9694b4cead2,Support acknowledged the integration failures on the analytics module but the last onboarding round later it's still broken.,Frustrated,0.7428117296337488,0.1656,0,0.2568,0,0,0
+5fddb8cd-cec0-4c2d-8b22-04bc4e5828db,"Our account manager here had a small question about the onboarding flow, support got back within the last two weeks.",Neutral,0.5113948787302136,0.9913,1,0.8802,1,1,1
+34695107-920e-49e3-b402-33a9dbb98e02,"Our ops lead had a small question about the reporting dashboard, support got back within the past few sprints.",Neutral,0.5210102560806726,0.2568,0,0.2588,0,0,0
+4da2ba04-9ec8-45b1-a326-a8e91be2e880,We've had repeated session timeouts on the workflow builder for the past few sprints now with no real fix.,Neutral,0.6549052513525715,0.8153,1,0.8176,1,1,1
+b00c48cc-968e-4f27-95bc-1beb8ba5141d,A distributed team has had zero technical issues with the admin console over the last few days. It just works.,Satisfied,0.1368132257433908,0.1491,0,0.105,0,0,0
+ec880a66-a0a4-460a-9562-403d927b4bd4,We reported failed uploads on the analytics module several days ago and it's still unresolved.,Frustrated,0.9377358418441933,0.892,1,0.9082,1,1,1
+93782d5d-819d-4282-991f-1806e73c3465,We are locked out of the mobile app again during this quarter - this keeps happening.,Frustrated,0.8718022179618772,0.369,0,0.5003,1,0,0
+14fefd74-a530-4e56-937e-56975861d721,"We've escalated API timeouts on the mobile app fourth time now, still no resolution.",Frustrated,0.8188735407805059,0.0184,0,0.1752,0,0,0
+6dab090c-7e4b-4d9f-a9f0-860cd8ca60a4,"The search feature crashed again this cycle, on top of report generation errors from several days.",Frustrated,0.9039201408152493,0.979,1,0.9308,1,1,1
+64eb9d06-c46f-41e7-ba93-2cce0b1726b6,Our procurement team is really happy with how stable the API has been over the past month.,Neutral,0.5436996013047409,0.4733,0,0.4721,0,0,0
+7040dbe1-3c64-4132-bc4c-064b5aa37f47,Support has been fantastic whenever our ops lead has reached out over the past year.,Neutral,0.605786964255831,0.3387,0,0.3614,0,0,0
+c83a79e2-d57d-4a50-ae59-c016da7577f7,Support has been fantastic whenever our IT team has reached out over the past year.,Satisfied,0.39525480315313694,0.1638,0,0.1611,0,0,0
+39f41e91-7373-4da4-bcca-4465e7487568,Several days of intermittent dashboard glitches on the search feature has really hurt our workflow.,Neutral,0.6315791596960392,0.2418,0,0.2829,0,0,0
+18cae43d-f0c0-4b41-8f4e-66cee350eede,Is there a way for our whole department to bulk-export records across projects in the analytics module?,Frustrated,0.581908862807178,0.0669,0,0.149,0,0,0
+98d01bb0-d7ad-48a7-a0cf-3fcbf5dd9748,Our account manager here expected better account management given how long we've been customers.,Satisfied,0.2561187995578193,0.7505,1,0.6375,1,1,1
+e21cd418-0533-4a73-8b11-60d01aa12377,The recent improvements to customer support have made a real difference for our whole department.,Satisfied,0.12356820543023046,0.9886,1,0.7919,1,1,1
+0c6e183c-4af4-4062-b0aa-875f47a0e0d1,"Our engineering lead hasn't flagged cost as an issue for the reporting dashboard, but hasn't praised it either.",Neutral,0.4752654041580354,0.0073,0,0.1026,0,0,0
+e808f8cf-534b-4cc8-a2fe-b5054eba0e61,No strong opinion on cost yet from our engineering lead - we'll reassess at the next renewal.,Neutral,0.4915578272941876,0.8855,1,0.8206,1,1,1
+3a43f99c-9cbd-44f0-9e3a-61691a7702b3,"Our IT team logged one instance of integration failures on the analytics module during the past year, resolved quickly.",Satisfied,0.3291530524165103,0.9573,1,0.8247,1,1,1
+60212df1-8fb8-42a1-a9b4-136e824495af,Our procurement team flagged that a lower-cost competitor offers similar the billing system functionality for less.,Satisfied,0.3850704978441612,0.0173,0,0.093,0,0,0
+4fed53b3-0083-4cb2-8fda-c81b15922cc2,Our engineering lead asked how to set up conditional logic in the integration.,Satisfied,0.35885683413570335,0.9784,1,0.8437,1,1,1
+f627fa05-e979-40fa-a206-64c7280cf6c9,The integration scaled smoothly as our whole department grew over the past few sprints.,Satisfied,0.05042058127891835,0.1015,0,0.0769,0,0,0
+3e3a8fa9-1348-4570-9953-8d597c117a86,"A general status update from our department head - no issues, no notable wins over the past few sprints.",Neutral,0.45443814088958406,0.2874,0,0.262,0,0,0
+1cc87030-50bd-42f2-9935-f33d841d29b8,Nobody followed up after our procurement team flagged this issue the last few days ago.,Neutral,0.49745116002426254,0.2241,0,0.2265,0,0,0
+cb552c4f-d880-4612-b45a-6a1440d9371e,Our finance team appreciated the proactive outreach from your side over the last two weeks.,Satisfied,0.29308966490964783,0.2279,0,0.1746,0,0,0
+0b2024a9-f8eb-4adb-80ef-a405eed435e0,"Our finance team requested a walkthrough of the mobile app for a new hire, nothing else to note.",Satisfied,0.13234810093976745,0.0095,0,0.0611,0,0,0
+f337c888-7eed-482f-9cbc-a95d138fef0f,A growing team has come to rely on the reporting dashboard precisely because it never breaks.,Neutral,0.4783500147720766,0.0057,0,0.1024,0,0,0
+03507060-2553-4558-aa6c-a21aa72cb840,The performance of the permissions system has been excellent for our whole department throughout this quarter.,Satisfied,0.3125692449105416,0.0124,0,0.0817,0,0,0
+82d9add5-98be-41c3-88be-5dd4e3a0a787,Multiple business units has had an unremarkable but functional experience with the reporting dashboard lately.,Neutral,0.43187216735654693,0.1537,0,0.1637,0,0,0
+7dbe7928-506d-4a0a-bc7d-434fc0893e88,Nothing major to report on the permissions system over the past year - does the job as expected.,Neutral,0.5178439720013449,0.0236,0,0.1161,0,0,0
+fccd9fe0-0266-46f5-9772-b3d20e016900,Onboarding a growing team was smooth and the team has been responsive since.,Satisfied,0.2554641659787066,0.0206,0,0.0773,0,0,0
+eab6b57d-3d82-4831-bfb0-2e499fd783df,A small team has come to rely on the permissions system precisely because it never breaks.,Neutral,0.5221329152130375,0.1665,0,0.1936,0,0,0
+33dfe9c7-d4e2-4124-bf5a-96e7c24e745a,"Cost over the past quarter is about what our finance team expected - no complaints, no major praise.",Neutral,0.49112279994063246,0.3207,0,0.3025,0,0,0
+0b45cd5b-924a-4150-8000-8f8f2c99579a,Communication from your team has been inconsistent over the past few sprints.,Satisfied,0.4216293532344525,0.076,0,0.1222,0,0,0
+244e049f-dda7-4160-b9e0-6688db06c6fe,We are locked out of the API again during the last few days - this keeps happening.,Frustrated,0.9390494565142129,0.8249,1,0.8823,1,1,1
+3afb01fc-dd8b-4776-90ae-93f1354b3af0,Billing on the onboarding flow keeps creeping up and it's hard to see the added value over the last onboarding round.,Frustrated,0.7317131468360041,0.9594,1,0.9028,1,1,1
+a8cc2915-5fda-45dd-8731-52e00c08e215,Pricing hasn't been a deciding factor for a growing team over the last six months.,Neutral,0.5291724303243626,0.9837,1,0.88,1,1,1
+27b14952-cfe2-4092-8fbd-ef83c88709d3,Our engineering lead is questioning whether the API justifies its cost after this week of use.,Frustrated,0.5728341151151939,0.5049,0,0.5172,1,0,1
+34d1eac0-1f76-4ea4-a59b-a82ca2388edd,Our account manager here renewed without hesitation - the price-to-value ratio on the workflow builder is hard to beat.,Satisfied,0.1693702902434283,0.2303,0,0.1481,0,0,0
+700c7a0e-d092-4d95-bec1-9c5d9699f7f3,Our department head tested the billing system over the last few days and it performed about as expected.,Satisfied,0.23671551026847107,0.9219,1,0.7768,1,1,1
+054bebfb-c5ae-4e67-9869-897a3a14e984,Our finance team is still deciding if the current plan tier fits a small team's budget.,Neutral,0.523752897765348,0.4324,0,0.4218,0,0,1
+719e4fab-bd7c-44cb-876a-6d622d109597,Multiple business units has had zero downtime issues with the export tool in the past year.,Satisfied,0.11193850126676205,0.9574,1,0.7661,1,1,1
+58dea017-a7f2-4b33-9245-8cc60f37687b,The analytics module going down during the past few sprints caused real disruption for multiple business units.,Satisfied,0.34230416125767205,0.9523,1,0.8249,1,1,1
+9477c74b-fc76-42b8-b9af-7f66f0dd64b2,A 40-person team has come to rely on the API precisely because it never breaks.,Neutral,0.44683855704764275,0.1676,0,0.1754,0,0,0
+a057dbaa-702e-4a30-8a21-d1ecf4b46b84,"Over the past month, the billing system has neither impressed nor disappointed our ops lead.",Neutral,0.6380346557458947,0.039,0,0.1461,0,0,0
+3749590f-3e8e-4f5e-8791-146e6622172f,The fourth outage of the collaboration tools in the past few sprints is starting to erode our trust.,Frustrated,0.7143455771938335,0.9736,1,0.9055,1,1,1
+ca46363d-899d-4550-a8b1-2ab9e07b26dc,The integration continues to exceed our department head's technical expectations after the last onboarding round.,Satisfied,0.016817277776849736,0.0078,0,0.0506,0,0,0
+13f85395-23a8-427e-b651-81082d3b4de8,"Given what multiple business units gets, the pricing on the permissions system feels very fair.",Frustrated,0.5435440880138955,0.0118,0,0.1154,0,0,0
+b2b1d687-2133-46b0-9a06-0429b934f99c,"The renewal cost on the mobile app was flat this cycle, which our engineering lead appreciated.",Neutral,0.44602532578017273,0.0281,0,0.1061,0,0,0
+2926c12b-ed2a-4317-a5a0-ffe7edb84a60,The broken links problem on the permissions system has cost us real time over the last billing cycle.,Frustrated,0.8930126937454494,0.9845,1,0.9311,1,1,1
+a3eb82e1-a360-45ef-aea0-2cda7a4add2a,The past month of intermittent permission errors on the collaboration tools has really hurt our workflow.,Frustrated,0.8869443176737248,0.9942,1,0.933,1,1,1
+57098616-2566-441e-8c96-8eae7f49720a,"A minor dashboard glitches on the billing system appeared during this quarter, low impact overall.",Satisfied,0.28397496720446425,0.9542,1,0.8116,1,1,1
+f0e3b3cf-281b-432d-97c3-e8461fa9e381,"The audit log crashed again this cycle, on top of notification delays from the past few sprints.",Frustrated,0.8131422756041222,0.0912,0,0.2218,0,0,1
+35d79427-ba0e-4b79-a069-ff7ba6f86e04,Our whole department has been blocked by slow load times on the search feature for several days.,Satisfied,0.4823690897784434,0.0314,0,0.1134,0,0,0
+47214520-7cce-4da4-a86d-3ea206b6f0fd,A growing team has come to rely on customer support precisely because it never breaks.,Neutral,0.5465967604866135,0.0246,0,0.1216,0,0,0
+8eef7a12-bb93-40f2-9ee1-0735993c8557,Our ops lead feels like an afterthought compared to how things were this week ago.,Frustrated,0.9017060865723251,0.0322,0,0.2053,0,0,0
+1fb10d61-95bf-49c3-b0c9-d899d0928f51,Our department head migrated a big workload onto the workflow builder and it performed flawlessly.,Satisfied,0.1110040033417197,0.7625,1,0.592,1,1,0
+13db5327-8da7-4ffc-8619-fb66b4648486,A 40-person team keeps getting passed between different support reps with no continuity.,Frustrated,0.8157200789621687,0.7921,1,0.8418,1,1,1
+caa65281-0927-405d-93ab-9c2211562cb9,"The renewal cost on the analytics module was flat this cycle, which our ops lead appreciated.",Neutral,0.618039513823119,0.1939,0,0.24,0,0,1
+17fa23a4-d4a0-4755-bd92-166acf07b961,A small team has felt genuinely supported by your team throughout several days.,Satisfied,0.23780352498901475,0.0081,0,0.0716,0,0,0
+2510e8f2-7912-466d-ac59-1d2e03e92d09,"Our engineering lead had a small question about the permissions system, support got back within the last onboarding round.",Neutral,0.4223681749939827,0.0413,0,0.1076,0,0,0
+bbfcba8a-5836-4c71-84ed-822d11759dd1,The past quarter of intermittent slow load times on the analytics module has really hurt our workflow.,Neutral,0.52240813878186,0.3407,0,0.3318,0,0,0
+7fa75527-315f-476e-b947-2dc09384a375,Support acknowledged the slow load times on the admin console but the last few days later it's still broken.,Neutral,0.6733834924956835,0.3551,0,0.4042,0,0,1
+1502f290-31a3-4a4e-9f86-ff1b747914bb,The audit log handles our whole department's workload without a hitch. No complaints on the technical side.,Satisfied,0.15006576478496325,0.1846,0,0.1222,0,0,0
+a63357ba-caa9-4ddb-a941-03e3fc844a9a,"Over the past few sprints, the collaboration tools has neither impressed nor disappointed our department head.",Satisfied,0.2274213934614887,0.2794,0,0.1903,0,0,0
+a6d4c105-bfe0-4801-b207-1e259a99c63c,"General feedback: the collaboration tools is fine, session timeouts handling could be faster over the last few days.",Neutral,0.5084954225014872,0.3603,0,0.3449,0,0,0
+8e77fcfe-432d-4d2e-b5b4-57a5316a78ce,Our procurement team asked how to set up conditional logic in the admin console.,Satisfied,0.32178809929074714,0.0066,0,0.0811,0,0,1
+565fe4b8-562b-4fd4-a1d5-702af214420f,Our engineering lead is questioning whether the API justifies its cost after the past few sprints of use.,Frustrated,0.5466146492445828,0.0155,0,0.1175,0,0,0
+4451e5be-c58e-4911-b8da-25b49e4695a8,This is the second time the past year we've had trouble with the API.,Frustrated,0.5243571835953741,0.991,1,0.8824,1,1,1
+2a4101c1-20b2-499b-8a31-bc86192f0767,The dashboard glitches problem on the export tool has cost us real time over several days.,Satisfied,0.3715749630028199,0.2057,0,0.1803,0,0,0
+84f82aad-76e5-414d-b839-b0264e0c95fc,We've had repeated broken links on the export tool for recent weeks now with no real fix.,Frustrated,0.5132285020917117,0.0464,0,0.1254,0,0,0
+2ce1ebd7-9f1b-4a55-af9a-7a8c69191196,Our account manager here appreciated the proactive outreach from your side over the past quarter.,Neutral,0.48723909010469557,0.0055,0,0.1037,0,0,0
+85e007a4-e1d9-420c-9387-e9a6f4150560,The slow load times problem on the billing system has cost us real time over the past year.,Satisfied,0.454079667764229,0.9822,1,0.8654,1,1,1
+a98e4d4b-972e-4483-be5e-029d40eb7d7b,A small team has been blocked by slow load times on the API for the past few sprints.,Satisfied,0.3413073693692428,0.3341,0,0.2631,0,0,0
+f86151bf-0766-47b2-bf81-a1b54b015f25,The audit log going down during the last onboarding round caused real disruption for a distributed team.,Frustrated,0.5003776137414261,0.964,1,0.8656,1,1,1
+828aad5e-5967-42f8-b4f3-46153d6e1157,Multiple business units switched from another provider in this space and the cost savings alone justified it.,Satisfied,0.19552583291240788,0.072,0,0.0858,0,0,0
+6d64172e-b2be-4f46-a3a1-499dd2e39712,Our procurement team called the pricing on the mobile app a pleasant surprise after this quarter of use.,Satisfied,0.21229350592507806,0.0108,0,0.0696,0,0,0
+5ba727ac-1203-4add-8f0c-5469f8f040b3,"The search feature performs adequately for a growing team, though there's room for polish.",Frustrated,0.7146048471558374,0.2242,0,0.2963,0,0,0
+96962aac-209b-4579-a33f-e99dfcaf7c1a,Slow load times on the search feature has been a recurring headache for the past few sprints.,Frustrated,0.6950494381071125,0.9938,1,0.9098,1,1,1
+1b121df6-fa0f-4fd5-bfaf-96aa65bd373c,The duplicate records problem on the mobile app has cost us real time over the last two weeks.,Frustrated,0.9245243803364703,0.7679,1,0.8523,1,1,0
+e325d283-d743-44f5-8c3b-d9a62b9f0d3c,Overall a great experience for a growing team working with your team over the past month.,Frustrated,0.6143573004330795,0.0288,0,0.1362,0,0,0
+d9df6129-b864-49a9-ac67-86f7dd00039d,"A small team has had a smooth, low-friction experience across this quarter.",Satisfied,0.10079172805620702,0.0306,0,0.0632,0,0,0
+d17c1ea6-1ca3-4007-a6ae-9eab293bedde,Nothing major to report on the collaboration tools over the past year - does the job as expected.,Neutral,0.50022163683519,0.9803,1,0.8733,1,1,1
+fd1c3960-573e-4860-bf5f-2e504ddc170f,Our procurement team specifically called out how dependable the search feature has been over the last six months.,Satisfied,0.13527068769369482,0.557,0,0.3908,0,0,0
+e57d38fc-edad-4ff4-a63f-877d1fc1f880,"Our IT team is weighing a rival platform's pricing against ours, no conclusion yet.",Neutral,0.5009628439512944,0.9844,1,0.8753,1,1,1
+a5d2940b-732d-4482-8e26-859908e9430c,Things have been steady for a small team over the past year.,Neutral,0.44960481361587135,0.002,0,0.0968,0,0,0
+4471aca1-daca-4266-b61e-4f8faa007a5f,Our IT team was impressed the reporting dashboard handled several days of peak usage without issue.,Satisfied,0.23707568908603327,0.0247,0,0.0763,0,0,0
+29cbd288-505d-45d4-bd20-c4f49ebbbc38,The recent improvements to the admin console have made a real difference for a 40-person team.,Satisfied,0.19911121910234092,0.1134,0,0.1009,0,0,0
+73f59582-c806-472c-b81d-1567cdb7ad7e,The reliability of the onboarding flow over the last two weeks has genuinely earned our account manager here's trust.,Satisfied,0.14364962752430502,0.0309,0,0.0676,0,0,0
+c1d4a02b-2a1f-4220-9f51-ca5940ac7489,"Our account manager here logged one instance of data export bugs on the analytics module during recent weeks, resolved quickly.",Frustrated,0.6517647372580821,0.9146,1,0.8709,1,1,1
+492bbf3f-4043-46b4-a22f-fd6e4190202c,Every time a small team relies on the analytics module it fails us. the last six months has been rough.,Frustrated,0.7287325989994844,0.1079,0,0.2097,0,0,1
+010ef614-6364-4501-ac5c-1f58e32a8fed,The collaboration tools's pricing has stayed fair even as a 40-person team scaled up usage over the last two weeks.,Satisfied,0.2676537324735029,0.0067,0,0.0746,0,0,0
+d62a10db-1ae3-4111-88b9-327ea2b68f79,The ROI on the notification system has been obvious to our finance team since the past few sprints ago.,Neutral,0.6078112639907639,0.0346,0,0.1378,0,0,0
+fbc4df3a-99c8-488c-bf00-bc57104c21a2,The reliability of the permissions system over the last billing cycle has genuinely earned our engineering lead's trust.,Satisfied,0.2129612854549157,0.2216,0,0.1527,0,0,0
+2cc8885f-fccc-4653-895f-e5629d44f2b4,Our whole department has had zero downtime issues with the search feature in this quarter.,Satisfied,0.4182234770783423,0.0341,0,0.1041,0,0,0
+b4a0ead0-e0b4-4904-b23f-5b150efd5771,Our finance team would recommend this to other teams after recent weeks of good experience.,Neutral,0.46399404855566584,0.1301,0,0.1576,0,0,0
+ad091135-3422-49e9-9976-f1b0278209c9,A growing team has come to rely on the export tool precisely because it never breaks.,Neutral,0.3505734800346565,0.2138,0,0.18,0,0,0
+23779cc8-7669-434e-881a-ba18604f1d8c,We've had repeated broken links on the notification system for the last few days now with no real fix.,Frustrated,0.8160545109703827,0.8674,1,0.8793,1,1,1
+8e33352d-1aa5-49bc-877e-9e0e4d23cec6,Every time a growing team relies on the notification system it fails us. the past year has been rough.,Frustrated,0.7335795786514594,0.0142,0,0.1533,0,0,0
+f83d898b-309d-4b25-9d6b-f0cb50728504,Our finance team is still getting familiar with the mobile app after several days.,Neutral,0.5895862463965088,0.2416,0,0.2688,0,0,1
+49151ef7-102c-4a62-b00f-6044881f42b9,We've had repeated data export bugs on the analytics module for this quarter now with no real fix.,Frustrated,0.7605976780155416,0.1055,0,0.217,0,0,0
+37e9c010-fa36-47e1-915a-8fa01878ff87,Nobody has responded to our complaint about notification delays on the notification system in the last six months.,Neutral,0.5062761779751612,0.4515,0,0.4341,0,0,1
+524bc180-f7e0-48b0-82a3-d094eadce372,Onboarding a 40-person team was smooth and the team has been responsive since.,Satisfied,0.18217669035542033,0.0064,0,0.0653,0,0,0
+9c453f0e-f6c6-4c6e-b0a1-fe3c4fb94cdb,Every time a growing team relies on the billing system it fails us. the last onboarding round has been rough.,Frustrated,0.7837454893983644,0.998,1,0.9225,1,1,1
+5bc7e040-f87d-4605-8888-25ae922e8d8c,We reported sync failures on the permissions system the past quarter ago and it's still unresolved.,Frustrated,0.9633446677457854,0.0744,0,0.2545,0,0,0
+ebbe688c-bc61-4e1b-8cc9-ff66f9fe1997,The reliability of the reporting dashboard over recent weeks has genuinely earned our ops lead's trust.,Satisfied,0.20334979970793454,0.0381,0,0.0762,0,0,0
+9b0a21a0-a54b-4c4a-86ed-754498b50984,The account team has been proactive and easy for our IT team to work with.,Satisfied,0.1728915230422367,0.1666,0,0.1182,0,0,0
+d71ea0b8-97ce-4a98-8a6e-84f1ee58d993,The cost-to-value ratio on the billing system just hasn't worked for a growing team over the last six months.,Neutral,0.48352463546462293,0.0049,0,0.1029,0,0,0
+b625d752-9c68-447c-a216-d099618cc91e,"A minor session timeouts on the billing system appeared during the past year, low impact overall.",Neutral,0.4567501427961382,0.1732,0,0.1812,0,0,0
+9ef9c227-1864-4dbc-a6dd-d8e5ff5989d8,Our department head is mid-review on whether the subscription cost matches usage from a growing team.,Satisfied,0.2996723250022375,0.8696,1,0.7565,1,1,1
+9dea9a1a-ed65-4d1a-8dc6-def529d8fa21,Pricing hasn't been a deciding factor for multiple business units over this quarter.,Neutral,0.5255414502467723,0.9513,1,0.8643,1,1,1
+d63c7def-f845-472f-bfa9-e9c76484256f,The reporting dashboard has been broken for the last two weeks and it's affecting our whole department.,Frustrated,0.6014743929523035,0.404,0,0.4246,0,0,1
+2c25ac06-317b-47f3-8149-024857ff9e87,Our account manager here is close to recommending at least two other vendors purely on cost grounds.,Satisfied,0.3870284692382999,0.9922,1,0.857,1,1,1
+366a14d7-f0b7-4dbb-9605-d86ec3cc2831,Our procurement team is close to recommending another provider in this space purely on cost grounds.,Neutral,0.3605726028358345,0.0077,0,0.0864,0,0,0
+6eb33186-8e5b-4978-885b-44733fdcc765,The renewal price increase on the export tool is hard to justify given what a 40-person team actually uses.,Satisfied,0.3818855003200704,0.9832,1,0.8513,1,1,1
+7065b776-2646-426f-a685-3e82a835be2e,Our IT team ran the numbers and the billing system beats a rival platform on cost per seat.,Satisfied,0.15695356665254645,0.0094,0,0.0635,0,0,0
+b5783987-2cb1-4508-b836-b346df6fff76,"A minor permission errors on the API appeared during the last onboarding round, low impact overall.",Satisfied,0.487210451919035,0.0699,0,0.1315,0,0,0
+1e5614f5-3b94-482f-839a-8b461c7ac66c,This is the sixth time recent weeks we've had trouble with the collaboration tools.,Satisfied,0.4023284823412355,0.9839,1,0.8559,1,1,1
+b4c2904b-e80c-40e8-a3cf-9b03d2f00e4a,The analytics module has been broken for the past quarter and it's affecting a growing team.,Frustrated,0.8364714952018724,0.8983,1,0.8956,1,1,1
+a9808689-de4d-4731-9673-f75eb0a6878d,Every time a distributed team relies on the analytics module it fails us. the last billing cycle has been rough.,Frustrated,0.9056054013053194,0.0858,0,0.2454,0,0,0
+90e27faa-beae-48b0-bcf4-cb6d20ddb260,Our whole department can't keep absorbing the cost increases on the notification system seen over this quarter.,Neutral,0.4010996228682955,0.8259,1,0.7541,1,1,0
+08a48416-23e5-45a2-8805-7b2df595d988,The recent improvements to customer support have made a real difference for a growing team.,Satisfied,0.20114452514037767,0.008,0,0.0676,0,0,0
+5b9b4916-9261-4b76-b167-aca4f3f0f29c,The onboarding flow going down during the last onboarding round caused real disruption for a 40-person team.,Satisfied,0.19423094781962408,0.9803,1,0.8052,1,1,1
+9826f825-bc19-4829-bc5b-2f34b81283d1,We reported session timeouts on the mobile app the last two weeks ago and it's still unresolved.,Frustrated,0.894864601709019,0.9793,1,0.9299,1,1,1
+066a630e-297a-41c1-8f60-c5b1b0fd6836,"For the price, a growing team is getting far more value than our finance team expected.",Neutral,0.41572433823948896,0.011,0,0.0951,0,0,0
+9f00e3bd-dec4-4509-a87a-d2f5a4260d66,The report generation errors problem on the mobile app has cost us real time over the past month.,Frustrated,0.9214173436302833,0.8074,1,0.8712,1,1,1
+e29e8568-6743-46e5-8818-4b36b9a669f3,We are locked out of the collaboration tools again during the past year - this keeps happening.,Frustrated,0.8531022539696866,0.9556,1,0.918,1,1,1
+5deae017-a857-42ba-b651-657ef79a5537,"The notification system met expectations for a growing team across the last two weeks, nothing more to add.",Neutral,0.4613800471392065,0.4238,0,0.3881,0,0,0
+4911365c-b005-4880-9d9b-1a70caa707c4,Our engineering lead is close to recommending another provider in this space purely on cost grounds.,Satisfied,0.4548772917089057,0.1959,0,0.1952,0,0,0
+60242ee0-cfce-4d96-8e4c-e75eb3c7dbf0,"General feedback: the workflow builder is fine, integration failures handling could be faster over the last onboarding round.",Neutral,0.3615743805541643,0.7348,1,0.6626,1,1,1
+1001fc90-d592-45e5-91f5-f9b6ffa48c72,Our department head has lost confidence after this week of unanswered account requests.,Satisfied,0.06667632115633422,0.0568,0,0.0663,0,0,0
+344eb449-2c9e-41b5-aefb-2291f3799b1c,"We've escalated login errors on the reporting dashboard fifth time now, still no resolution.",Frustrated,0.7912922300509405,0.0102,0,0.1639,0,0,0
+cb2ff046-c150-4751-aae8-e81ec2d965a3,A 40-person team switched from at least two other vendors and the cost savings alone justified it.,Satisfied,0.051521389492735915,0.8011,1,0.6068,1,1,0
+ef81ce56-a9b8-4861-926a-7af15284e82b,We are locked out of the permissions system again during the last two weeks - this keeps happening.,Frustrated,0.962972303864393,0.2623,0,0.4276,0,0,0
+0b61248d-c37c-4fdd-b8af-6d6d01ee7dc9,This is the fourth time the past quarter we've had trouble with the admin console.,Frustrated,0.8532408623088377,0.0343,0,0.1938,0,0,0
+358a909e-6850-4c88-891b-3fef1a868058,"The workflow builder works fine overall, though we've noticed a few notification delays over several days.",Neutral,0.4801266402826853,0.8091,1,0.7654,1,1,1
+4f495ec8-35ae-488c-bdbf-d6db40630c36,The API scaled smoothly as our whole department grew over the last billing cycle.,Satisfied,0.1265126718139459,0.0889,0,0.0824,0,0,0
+5d598cea-ea6f-4447-a9a3-d0eac8a0d710,The overall experience over the last onboarding round has just felt neglected for a distributed team.,Satisfied,0.12021210959147939,0.1944,0,0.1212,0,0,0
+7cd0ed91-cb09-47aa-91b0-b6d978731ad3,A small team has had zero technical issues with the collaboration tools over the last onboarding round. It just works.,Satisfied,0.0414018166601507,0.0605,0,0.0647,0,0,0
+1bd6a9da-294d-4bae-abfb-ae0b85590862,Things have been mostly stable on the onboarding flow for a distributed team over the last six months.,Satisfied,0.23171657563504394,0.1,0,0.1008,0,0,0
+38ecfe94-16ff-4a89-a2f3-3eb5e1cf1465,Our department head is really happy with how stable the audit log has been over the last onboarding round.,Satisfied,0.17656241300240008,0.886,1,0.7304,1,1,0
+8c514340-6fa6-4ada-a684-761e1143ed39,The sync failures problem on the integration has cost us real time over several days.,Frustrated,0.8569011421759738,0.9786,1,0.9254,1,1,1
+1ffe9922-c7ff-462f-bc27-9784301edf7a,The renewal price increase on the workflow builder is hard to justify given what a 40-person team actually uses.,Frustrated,0.5534990512454037,0.9333,1,0.8609,1,1,1
+28a5bcb7-68d2-496c-a770-e326b561c8e0,The API has been broken for this quarter and it's affecting a 40-person team.,Frustrated,0.5498046854302335,0.6846,1,0.6856,1,1,1
+1b1cb186-e564-4ff6-965f-8ba01aa5845e,Communication from your team has been inconsistent over the last six months.,Satisfied,0.25989614013947987,0.9721,1,0.8168,1,1,1
+6b29210c-1446-4f5a-8963-dba8cb71f539,The subscription cost is more than justified by how much time the analytics module saves multiple business units.,Satisfied,0.2994609372921969,0.0053,0,0.0779,0,0,0
+dcd18555-c6d1-46a0-905e-2f3e0a3b250e,Nobody has responded to our complaint about duplicate records on customer support in the last two weeks.,Frustrated,0.959764763218484,0.1677,0,0.3337,0,0,0
+28236f23-a9e0-4c72-b155-f6d0761f8c0d,A small team is a light user of the platform so hasn't formed strong opinions yet.,Neutral,0.4995399078282735,0.4552,0,0.4352,0,0,0
+bb10e84d-d297-4aa0-811b-d3bb5d8f6c92,The third outage of the billing system in the last few days is starting to erode our trust.,Frustrated,0.6262687901022558,0.8106,1,0.8074,1,1,1
+778335a5-a94d-48b8-925a-cbc6f3de000d,Our whole department keeps getting passed between different support reps with no continuity.,Frustrated,0.7967441137826922,0.9329,1,0.9027,1,1,1
+d1d7cbe3-ce62-4666-86d6-5044e83d2416,Nobody followed up after our ops lead flagged this issue the last onboarding round ago.,Frustrated,0.6289188783675208,0.2218,0,0.2654,0,0,0
+44f8a094-2936-4f31-81ad-15b71ce9ba73,The performance of the export tool has been excellent for a small team throughout this quarter.,Satisfied,0.2714876202721418,0.0246,0,0.0804,0,0,0
+4437a0fb-69d7-454b-8792-c6fc1fdbed30,A 40-person team is a light user of the platform so hasn't formed strong opinions yet.,Neutral,0.49846362485852186,0.0605,0,0.1291,0,0,0
+f35b6e94-e65b-41f3-950b-d8e576ba15ad,Every time a small team relies on the notification system it fails us. this quarter has been rough.,Frustrated,0.6846095783825726,0.6374,1,0.6917,1,1,0
+72359640-2d73-4a36-a41f-dc78b7a996ad,Everything from onboarding to support has gone well for our whole department over the past year.,Satisfied,0.3944505558432861,0.0282,0,0.0983,0,0,0
+8015de26-9c20-4766-8c88-823892487b43,The pricing model for a distributed team stopped making sense to our procurement team around the last onboarding round ago.,Satisfied,0.22660362866908734,0.7671,1,0.6421,1,1,1
+99a5bf95-1554-4eea-a41b-78ea6272d0f6,"Our account manager here had a small question about the admin console, support got back within the last six months.",Neutral,0.4923403700872332,0.411,0,0.3877,0,0,0
+27413214-d28a-423f-98c4-54c48ac1403f,Our procurement team looked at a cheaper alternative recently and honestly this is the better deal.,Satisfied,0.2076293867672661,0.0637,0,0.0847,0,0,0
+faa3be14-954f-413d-bdac-f7e310d2e758,Our engineering lead specifically called out how reasonable the renewal cost on the collaboration tools was.,Satisfied,0.17385262729368806,0.1524,0,0.1123,0,0,0
+85471111-ef4d-4964-8a94-481f38590266,The pricing model for a distributed team stopped making sense to our department head around the last six months ago.,Satisfied,0.23681338966528223,0.1723,0,0.1325,0,0,1
+14889d5e-4beb-4749-9658-9b5d18048d3c,The integration continues to exceed our procurement team's technical expectations after several days.,Satisfied,0.15339887174815392,0.0836,0,0.0841,0,0,0
+ca2c5127-e8b2-4280-bb17-225e346c834d,Our ops lead was quoted a much higher renewal rate the last billing cycle ago with no explanation.,Frustrated,0.9326357586600581,0.2576,0,0.4105,0,0,0
+c043d200-2bcb-4612-9310-939ecce56cb2,Our account manager here looked at at least two other vendors recently and honestly this is the better deal.,Satisfied,0.23993612920020402,0.2304,0,0.1637,0,0,0
+6191e43a-f021-4c36-9a42-2817018c2a72,The support experience for multiple business units has gotten noticeably worse over the last onboarding round.,Satisfied,0.31536843474434456,0.7647,1,0.6731,1,1,1
+430ac277-1a88-463f-865a-2ea5129898a1,Our procurement team specifically called out how reasonable the renewal cost on the onboarding flow was.,Satisfied,0.12280116135515196,0.0107,0,0.0605,0,0,0
+ec73d3a7-6647-41f4-82f2-7d48b14f1c91,This is the second time the last onboarding round we've had trouble with the export tool.,Satisfied,0.10522742410488357,0.0909,0,0.0803,0,0,1
+8987389f-5238-4d53-8c26-0d4c6992a175,A growing team switched from a lower-cost competitor and the cost savings alone justified it.,Satisfied,0.14589011780403321,0.256,0,0.1569,0,0,0
+696fb53f-2995-4c6e-a6eb-bca9df7b3790,Our whole department has had an unremarkable but functional experience with the collaboration tools lately.,Neutral,0.3931450264798034,0.1889,0,0.1753,0,0,0
+6e600180-ceea-4a24-8059-2daaa3c0ce2d,We are locked out of the search feature again during this quarter - this keeps happening.,Frustrated,0.9442926916535828,0.1402,0,0.3032,0,0,0
+897fe99a-ff09-410d-a727-556af96caa66,We reported report generation errors on the search feature the last billing cycle ago and it's still unresolved.,Frustrated,0.9703328095466435,0.1626,0,0.3328,0,0,0
+863a3867-fcd6-446b-9d56-a49f10a29d6f,Support acknowledged the failed uploads on the collaboration tools but several days later it's still broken.,Frustrated,0.8318911500914519,0.8125,1,0.8562,1,1,1
+fe00de3a-87e2-40c8-a8fc-6d28d37a2a87,"Our IT team is weighing at least two other vendors's pricing against ours, no conclusion yet.",Neutral,0.4303460242484154,0.2887,0,0.2553,0,0,1
+770b7ca0-12e9-44c6-9b73-810d34dc8141,Overall a great experience for a 40-person team working with your team over the last billing cycle.,Satisfied,0.4293592667186531,0.0325,0,0.1052,0,0,0
+b0505d65-899d-4958-b4ce-ea01f0f223ac,Overall a great experience for our whole department working with your team over recent weeks.,Satisfied,0.2783965824693438,0.1135,0,0.1136,0,0,0
+259ef382-e34b-4d4d-b1e6-eabf9a8f43ba,A growing team keeps getting passed between different support reps with no continuity.,Frustrated,0.8754297982250644,0.0177,0,0.1888,0,0,0
+afda7299-fad7-49ea-8a94-52465350bf14,The broken links problem on the notification system has cost us real time over the past quarter.,Frustrated,0.8115326546994321,0.9713,1,0.9177,1,1,1
+b52cd571-25b5-4330-8f34-5272f254c65f,Nobody has responded to our complaint about slow load times on the notification system in the past month.,Frustrated,0.6564574001300432,0.021,0,0.1407,0,0,0
+e55f6568-7103-45ef-bb43-32fb66b13104,The support experience for a small team has gotten noticeably worse over the past few sprints.,Satisfied,0.48910729056431146,0.0096,0,0.1056,0,0,1
+a02ede81-ca19-4be9-bd73-77a1ed9e556a,Our ops lead wanted to confirm the API's roadmap for the next the past few sprints.,Neutral,0.552572935927635,0.0414,0,0.1304,0,0,0
+f96a4aab-23d3-4c22-ae5c-ebcec9672bd7,"The onboarding experience for a small team left a lot to be desired, honestly.",Satisfied,0.2260201327589112,0.8558,1,0.7218,1,1,1
+16fd7f75-2e4a-4074-9b67-663e5ade5913,The audit log is serviceable for a 40-person team; sync failures shows up occasionally but rarely blocks us.,Frustrated,0.6455288508475387,0.0368,0,0.1466,0,0,0
+93786eb3-7f4f-496e-8df5-4648b5677b30,A 40-person team has had zero problems with the overall experience over the past year.,Satisfied,0.11551644373967639,0.0985,0,0.084,0,0,0
+4de344c1-05cf-4147-9c61-bd0cbdf1fe71,Our whole department has had zero downtime issues with the workflow builder in recent weeks.,Satisfied,0.32454438688144316,0.136,0,0.132,0,0,1
+9270380e-183d-4ddb-a2e0-03add77abe47,Support acknowledged the API timeouts on the search feature but this week later it's still broken.,Neutral,0.7231207410156608,0.9068,1,0.8803,1,1,1
+cdc484b0-fe2d-4e12-9d95-7358142fba56,The performance of customer support has been excellent for a distributed team throughout the past quarter.,Neutral,0.5744601139666892,0.3596,0,0.3695,0,0,1
+3a0870e1-82ee-46cd-8c89-c7f84977e726,Our ops lead raised a concern the last few days ago and it fell through the cracks entirely.,Frustrated,0.8659812020903378,0.0184,0,0.1868,0,0,0
+e0dcca02-9d28-45b3-ab54-9d5864d52023,"Just a routine check-in from our account manager here, nothing specific to report over the past month.",Neutral,0.5535697158567436,0.013,0,0.1177,0,0,0
+0a33db9b-2451-4ff9-bb6c-f7275d58bef8,Multiple business units has been blocked by failed uploads on the reporting dashboard for this week.,Frustrated,0.5936022120935631,0.3616,0,0.379,0,0,0
+9602b8e7-7a5e-4176-b9e4-509dcc599ddb,The workflow builder continues to exceed our department head's technical expectations after the last two weeks.,Satisfied,0.04586188427689626,0.0222,0,0.0561,0,0,0
+76c0b1dc-8e3e-4ba9-9e5a-a9376fa2304b,The account team has been proactive and easy for our account manager here to work with.,Satisfied,0.26215478856893304,0.076,0,0.0964,0,0,0
+17e44e32-d680-43df-a315-56a62f5a5427,We've had repeated report generation errors on the analytics module for the past few sprints now with no real fix.,Frustrated,0.8715419371765176,0.2201,0,0.3497,0,0,0
+e73824e4-30e1-4a88-8ef6-dfdebace125a,The analytics module continues to exceed our department head's technical expectations after recent weeks.,Satisfied,0.038223730805996864,0.0389,0,0.0592,0,0,0
+d7486de2-2922-4e51-9299-c821c5763633,The account team has been proactive and easy for our procurement team to work with.,Satisfied,0.14984511108579587,0.0113,0,0.0632,0,0,0
+d6af5e47-852b-40e5-bdd3-39c913168b58,Our finance team is exploring whether the workflow builder could support a new workflow for a distributed team.,Satisfied,0.38294351450708064,0.8809,1,0.7892,1,1,1
+4bacdda1-3269-4e4e-8a95-91d82000691b,"The permissions system's pricing held steady over the past month, which kept our ops lead neutral on it.",Neutral,0.639933971280894,0.8833,1,0.853,1,1,1
+00d886a4-e236-4644-acd2-3f57a92f5ebe,Our procurement team called the pricing on the reporting dashboard a pleasant surprise after recent weeks of use.,Neutral,0.34311190878166387,0.488,0,0.4049,0,0,1
+91b4e6de-c11b-4e82-b90c-5aff33ed09d2,Our IT team is mid-review on whether the subscription cost matches usage from a growing team.,Neutral,0.520669057806995,0.2726,0,0.2715,0,0,0
+eb32b15d-a10f-4212-888c-2eac9144c248,Support acknowledged the login errors on the billing system but the last few days later it's still broken.,Frustrated,0.8868706019981097,0.0272,0,0.198,0,0,0
+f84b5418-83b2-4461-81ee-f91aa39d99ac,"We've escalated API timeouts on the permissions system sixth time now, still no resolution.",Frustrated,0.7219126752221439,0.0428,0,0.1667,0,0,0
+55ab8c4c-0789-4b61-b011-20e1683a5ad5,"Our procurement team logged one instance of session timeouts on the integration during the past few sprints, resolved quickly.",Neutral,0.4412478738847647,0.0844,0,0.1296,0,0,0
+7ffc078e-9b5e-496d-b909-9531e04afe95,Our engineering lead pointed out that the audit log's cost dropped relative to value over this quarter.,Frustrated,0.6716252738188672,0.0177,0,0.1421,0,0,0
+cfaccb50-70dd-42d7-8a3a-b5a9a1a2e5ef,We're being asked to pay more for the export tool while it hasn't meaningfully improved in the last few days.,Satisfied,0.287510623059309,0.9646,1,0.819,1,1,1
+ed8116a9-eaea-4f44-a7c9-bc378a3f8d84,We are locked out of the mobile app again during this week - this keeps happening.,Frustrated,0.9165887640560905,0.0891,0,0.2513,0,0,0
+f17b1f53-1ca5-42cb-989a-e193df4d43f2,The billing system's pricing has stayed fair even as our whole department scaled up usage over the last few days.,Neutral,0.32720368541012895,0.1377,0,0.1333,0,0,0
+f1d790b5-0c7a-4dc3-a1a7-22d26fe952ea,Our engineering lead specifically called out how reasonable the renewal cost on the integration was.,Satisfied,0.187932185311135,0.0229,0,0.0702,0,0,0
+ec8a276a-009a-4231-b5f5-12f8290e910d,A small team has had zero technical issues with the search feature over the last billing cycle. It just works.,Satisfied,0.25906680142876,0.2967,0,0.2103,0,0,0
+701cfaa4-e77c-40c7-be99-6eb27f73957e,Support acknowledged the integration failures on the notification system but the past quarter later it's still broken.,Neutral,0.6942728577904729,0.9477,1,0.8926,1,1,1
+cc661187-1b55-4d4b-88e5-d34ebf7d8257,"The notification system works fine overall, though we've noticed a few API timeouts over several days.",Neutral,0.4843326525204364,0.4396,0,0.4131,0,0,0
+420d0a80-b48c-4193-885b-3f0deb0605b4,A distributed team hasn't had much to report on the onboarding flow over the last billing cycle.,Neutral,0.6184956191152349,0.0064,0,0.1264,0,0,0
+dd414b92-77a9-4ba7-a5b8-6b805733b6d4,A distributed team has had zero technical issues with the collaboration tools over the past quarter. It just works.,Satisfied,0.13311112879626133,0.9555,1,0.771,1,1,0
+244ac984-22e6-4094-be76-7276ee4e9b03,"A minor permission errors on customer support appeared during several days, low impact overall.",Frustrated,0.6493322414900407,0.3605,0,0.3999,0,0,0
+15fae940-fb44-450b-9bd0-c44028402a6e,Your team resolved our IT team's concern faster than expected. Great experience.,Satisfied,0.25915986856063117,0.1178,0,0.1121,0,0,0
+fe6deaa1-7e2f-4067-a082-a04e967ebb5b,"Our engineering lead hasn't flagged cost as an issue for customer support, but hasn't praised it either.",Neutral,0.5152251507254468,0.0528,0,0.1287,0,0,0
+c124d01b-a30c-40f5-b58c-eb9efc9c5056,"We've escalated report generation errors on the notification system fifth time now, still no resolution.",Frustrated,0.821545439072298,0.9882,1,0.9241,1,1,1
+7f32dff9-a7ed-43f4-9c6d-1af86b6bdf17,Our department head has lost confidence after the last six months of unanswered account requests.,Satisfied,0.03312753322258538,0.0836,0,0.0699,0,0,0
+9e838da0-72ce-497f-aa71-f78d63843963,Our account manager here is happy to keep paying for the reporting dashboard - it pays for itself many times over.,Frustrated,0.6447190976032752,0.9562,1,0.888,1,1,1
+f308ecab-213c-4849-8da0-43c3cd3f67a1,The renewal quote for the audit log landed roughly where our procurement team expected.,Frustrated,0.6420690615902839,0.3077,0,0.3457,0,0,0
+dda255c2-2f55-4ce9-aab1-2ffdb1f5027c,Our IT team budgeted more for the reporting dashboard this cycle and considers it money well spent.,Frustrated,0.5053395387325874,0.0133,0,0.1097,0,0,0
+e8a17062-4a38-4fb9-bd0d-6d41c3849c5a,"The audit log does what it needs to for a small team, aside from the occasional session timeouts.",Neutral,0.669122814700664,0.0176,0,0.1415,0,0,0
+03684e15-2a21-40e1-a94d-d041fcfc468b,Our account manager here compared invoices from the past month and the cost trend is concerning.,Frustrated,0.8575549928060051,0.3413,0,0.4655,0,0,0
+5d3c13af-0faa-4901-83ab-e7b30566291c,Our department head is still deciding if the current plan tier fits a distributed team's budget.,Neutral,0.42434533149474873,0.3039,0,0.2656,0,0,0
+c7ea3a8c-92a7-48ce-9084-191367467a7e,We're being asked to pay more for the workflow builder while it hasn't meaningfully improved in the past year.,Satisfied,0.22845920668860403,0.9522,1,0.7956,1,1,1
+491aece7-b984-4f4c-90c7-c51f3de4fbc2,Our procurement team flagged that a couple of competitor tools offers similar the collaboration tools functionality for less.,Satisfied,0.29781548928233254,0.1913,0,0.1548,0,0,0
+2847abc6-51c8-4c0b-8a80-1a1d1cde7b84,"Onboarding a growing team took far longer than promised, dragging on for the last onboarding round.",Neutral,0.5272437682073369,0.0317,0,0.1213,0,0,0
+2c37d015-4eba-475a-84e7-383cf7e953ef,Support has been fantastic whenever our IT team has reached out over the last billing cycle.,Frustrated,0.7127526148271212,0.8976,1,0.8744,1,1,1
+5bcbf1b0-877a-424e-b6e0-9ef3c7244216,"Our procurement team had a small question about the mobile app, support got back within the past year.",Satisfied,0.28354618292962586,0.5796,1,0.4744,0,0,0
+a330f5e7-5003-4d9c-b8e7-3703f7868c27,The billing system continues to exceed our engineering lead's technical expectations after the past month.,Satisfied,0.36908261113599433,0.1556,0,0.1509,0,0,0
+6161c7bd-0d69-49fa-ac51-e54375ff766a,Support acknowledged the login errors on the search feature but several days later it's still broken.,Frustrated,0.887746701237759,0.9747,1,0.9278,1,1,1
+7df540e4-2067-4288-abe3-2a700417851e,Customer support has been broken for the past year and it's affecting multiple business units.,Frustrated,0.5047926711582573,0.2237,0,0.2284,0,0,0
+e1f43f2d-12e7-4be3-b756-4040e5820aa8,The notification system handles a distributed team's workload without a hitch. No complaints on the technical side.,Satisfied,0.24501942618200445,0.014,0,0.0741,0,0,0
+2edb50dc-129e-4ca0-b1c8-02b36c3632b3,Nobody has responded to our complaint about integration failures on the onboarding flow in this quarter.,Satisfied,0.36233082670562766,0.8626,1,0.7702,1,1,1
+2472fe23-db1a-4783-a022-83ed94565136,Our account manager here looked at a cheaper alternative recently and honestly this is the better deal.,Satisfied,0.2924357018196644,0.2596,0,0.1943,0,0,1
+95373475-f6a4-4fa5-9506-b1700fb7a777,"Even under heavy load, the notification system held up well for a growing team over the last onboarding round.",Satisfied,0.13462121637410482,0.0991,0,0.0867,0,0,0
+9d0eb01c-9951-4b86-abfe-0dd68bd58a4a,The permissions system going down during the past quarter caused real disruption for a distributed team.,Neutral,0.5707121431752051,0.9974,1,0.8927,1,1,1
+aab3e4da-3940-47b1-b388-f2e2bf4f4c8e,Our ops lead specifically praised how responsive support has been over this quarter.,Neutral,0.3980771782375996,0.0156,0,0.0942,0,0,0
+f1d17bf4-cd89-4e5b-87a3-b4aab15b7e70,Our department head is happy to keep paying for the analytics module - it pays for itself many times over.,Satisfied,0.14486382970133496,0.046,0,0.0718,0,0,0
+ff7453c4-bd7f-4941-925a-d83ec6b08e47,Our ops lead is seriously evaluating a lower-cost competitor given the current cost over the past few sprints.,Neutral,0.6614650608434962,0.1077,0,0.1916,0,0,0
+4be6950a-ea59-45a0-a6ab-d239c8e45a23,The recent improvements to the export tool have made a real difference for a 40-person team.,Satisfied,0.06967818901845908,0.9817,1,0.7716,1,1,1
+dc74edb9-7190-40e9-b8e6-1900d32ee68c,"A small team gets more than its money's worth from the billing system, according to our IT team.",Satisfied,0.17262198826229222,0.0215,0,0.0682,0,0,0
+70a676e6-6dfb-4801-9579-76165a6080cd,Our finance team is happy to keep paying for the mobile app - it pays for itself many times over.,Frustrated,0.6445805590299847,0.2757,0,0.3171,0,0,1
+c22584fb-fc91-4d32-8b79-b8a7ff92f19d,No strong opinion on cost yet from our IT team - we'll reassess at the next renewal.,Neutral,0.5031896896130572,0.9477,1,0.858,1,1,1
+2bb8b355-fbdb-4143-9fba-2750106813c2,"For the price, our whole department is getting far more value than our ops lead expected.",Neutral,0.46862348373563834,0.0458,0,0.1172,0,0,0
+614b6f0d-0522-4f53-a03b-b2c1ba702e7a,Dashboard glitches on the API has been a recurring headache for the last few days.,Neutral,0.6821670005731477,0.1071,0,0.1966,0,0,0
+4f3acfd8-34c3-408c-b149-5c3eea7f80ad,Our engineering lead hasn't seen a single integration failures on the analytics module in the past year - great reliability.,Satisfied,0.33700272097275974,0.9821,1,0.8409,1,1,1
+d47bc462-314c-4046-96a3-5dfdbcbafc98,"A growing team has had a smooth, low-friction experience across recent weeks.",Satisfied,0.20147316090473188,0.0108,0,0.0684,0,0,0
+aabef5a1-dc12-427d-9ea6-e37c47851987,"General feedback: the permissions system is fine, notification delays handling could be faster over the last few days.",Neutral,0.5029622019729826,0.0095,0,0.1078,0,0,0
+03635ea2-fe23-4aae-a591-5222209996b9,We're being asked to pay more for the audit log while it hasn't meaningfully improved in the last onboarding round.,Satisfied,0.37733416661356634,0.9629,1,0.8392,1,1,1
+cf5e94ab-b231-423c-a5e7-3ae6f82c3ba7,A 40-person team switched from at least two other vendors and the cost savings alone justified it.,Satisfied,0.051521389492735915,0.6896,1,0.4922,0,0,0
+4cce4101-459b-49a3-818c-1d0a45316d34,We reported API timeouts on the billing system the last billing cycle ago and it's still unresolved.,Frustrated,0.8881802415306181,0.9373,1,0.9167,1,1,1
+dbacd3f7-43bb-4a8a-96a0-c85dfb53f97f,It shouldn't take recent weeks to get a simple response from your account team.,Frustrated,0.8343239567380658,0.9578,1,0.9163,1,1,1
+2a65e2ca-2214-42dc-a078-276a3c5e4a12,Our account manager here compared against a rival platform and the pricing is roughly in line.,Neutral,0.5189628719962972,0.0424,0,0.1246,0,0,0
+dcd36510-ec0e-461f-9eae-ca9095b48580,Pricing hasn't been a deciding factor for a distributed team over this week.,Neutral,0.5491363129255523,0.2765,0,0.2843,0,0,0
+7e3b6fe1-8df7-4512-a8aa-7a708b27ea39,This is the second time this week we've had trouble with the workflow builder.,Satisfied,0.4813112534989374,0.1133,0,0.1523,0,0,0
+a7559e21-2aea-4c89-9e06-ed95d334f8e4,"Our engineering lead hasn't flagged cost as an issue for the integration, but hasn't praised it either.",Neutral,0.5193874529616223,0.0361,0,0.1218,0,0,0
+2de2eaf9-6730-444f-99af-f9c7b34062db,"The search feature performs adequately for a 40-person team, though there's room for polish.",Frustrated,0.5365070299559334,0.877,1,0.8264,1,1,0
+f1f4c3a5-a3d6-4d5c-9920-3ebe6ead43dc,Overall a great experience for multiple business units working with your team over the past few sprints.,Neutral,0.3457396168317812,0.0141,0,0.0865,0,0,0
+5133b7ba-0c8e-48c9-bd93-d1aafbeb0fff,Our account manager here pointed out that the reporting dashboard's cost dropped relative to value over this quarter.,Frustrated,0.5517472862344937,0.0116,0,0.1168,0,0,0
+633366ac-e2ca-437e-94b5-093c08fb967b,"The onboarding flow performs adequately for a distributed team, though there's room for polish.",Satisfied,0.24455711231777416,0.114,0,0.1082,0,0,0
+3c1c6c16-9dc9-4096-904c-244cbad6e9f6,This is the fifth time the past month we've had trouble with the onboarding flow.,Frustrated,0.7256894181540525,0.9672,1,0.9048,1,1,1
+f5cbe741-a777-449f-a529-b68ba498e6ca,Our account manager here wanted to confirm the API's roadmap for the next the last two weeks.,Satisfied,0.49668045529097465,0.0292,0,0.1149,0,0,0
+2da6eb34-a8a4-4557-a012-5a6aa9aa8de7,We've had repeated failed uploads on customer support for the last two weeks now with no real fix.,Frustrated,0.9075714882503403,0.0107,0,0.1926,0,0,0
+bf77edbc-fca6-4280-abe1-0404ef62454b,We noticed failed uploads on the admin console once or twice during the past quarter but it resolved itself.,Frustrated,0.7919324316677672,0.2809,0,0.3777,0,0,0
+14ba4085-3c92-45a8-8a4a-1e92ad2c16f9,This is the second time the past year we've had trouble with the reporting dashboard.,Satisfied,0.4234565291236454,0.9945,1,0.8654,1,1,1
+b34a8a5a-417e-424d-9ca6-29e43d29cc91,Our engineering lead has lost confidence after this week of unanswered account requests.,Satisfied,0.35226285467151874,0.846,1,0.7546,1,1,1
+0ee4e973-6f67-4f37-a28c-4e4715d2f136,Everything from onboarding to support has gone well for a 40-person team over this week.,Frustrated,0.5901584963772738,0.0219,0,0.1283,0,0,0
+ad2f5fa1-630e-4db0-921b-f32f68f97ea1,"For what we pay, our ops lead expected a lot more from the onboarding flow.",Satisfied,0.3110234727362385,0.0138,0,0.082,0,0,0
+6ac0b1ac-484f-4505-bae3-2f603cd62c77,"General feedback: the workflow builder is fine, data export bugs handling could be faster over recent weeks.",Neutral,0.5382492185480663,0.2529,0,0.2612,0,0,0
+0403730c-2205-45b1-adb6-a0a883ba76f2,The export tool scaled smoothly as a 40-person team grew over the past quarter.,Satisfied,0.04986807840971661,0.0395,0,0.0604,0,0,0
+86386e27-fdc8-4bc3-9496-53788e40636e,"Pricing on the export tool seems reasonable, though our IT team is still evaluating value for our whole department.",Neutral,0.3106517511238773,0.0868,0,0.1079,0,0,0
+15005131-5425-4cd0-8b1a-f62d2553758d,"For the price, multiple business units is getting far more value than our procurement team expected.",Neutral,0.29501387628386305,0.0196,0,0.0818,0,0,0
+21e42212-fff1-4a06-946d-3273aaf0f621,The API has been broken for this week and it's affecting a small team.,Frustrated,0.7297769549807908,0.6848,1,0.7467,1,1,1
+22818bbe-064d-4d8b-8f1d-da33007891a7,The second outage of the notification system in several days is starting to erode our trust.,Frustrated,0.6853512458875121,0.9315,1,0.8845,1,1,1
+a38ccbf0-2852-4a41-a086-5bdf0a43a127,Our account manager here asked how to set up conditional logic in the mobile app.,Satisfied,0.4596037288093496,0.0314,0,0.1096,0,0,0
+ca1935c7-293b-4f6e-ac4b-1e14bf6e6129,"We've escalated sync failures on customer support fifth time now, still no resolution.",Frustrated,0.8891157769467386,0.4577,0,0.5987,1,1,1
+bfd367b6-5303-4ea9-8f50-9110ae25e386,"The API crashed again this cycle, on top of report generation errors from the last billing cycle.",Frustrated,0.9224913529932026,0.1199,0,0.2783,0,0,0
+517c2970-75c7-4a99-ab48-471c260e579d,Our procurement team called the pricing on the reporting dashboard a pleasant surprise after the last few days of use.,Neutral,0.37301762463731797,0.8589,1,0.7706,1,1,0
+8fbcb210-dc0a-403e-abca-15fcc9ed389d,The value a 40-person team gets from the reporting dashboard hasn't kept pace with what we're now paying.,Frustrated,0.5973217337160763,0.7579,1,0.7622,1,1,1
+6b0f1a5f-0b23-460a-a6e2-18278bbfd89d,Our department head hasn't seen a single notification delays on the audit log in the past year - great reliability.,Satisfied,0.23099261829705572,0.0217,0,0.0747,0,0,0
+d9564973-4312-4248-9e83-2bfe4eb5a96a,Our whole department has had zero technical issues with the reporting dashboard over the past few sprints. It just works.,Satisfied,0.07295114790678717,0.4295,0,0.2535,0,0,0
+608ab699-e100-4ebe-b924-4abd74b38c70,The reliability of the admin console over several days has genuinely earned our engineering lead's trust.,Satisfied,0.1194267580736903,0.031,0,0.0651,0,0,0
+a5c29256-ed1c-41a6-b1c3-a0058238c594,This is the fourth time the last two weeks we've had trouble with the billing system.,Frustrated,0.8149337686987563,0.9868,1,0.9229,1,1,1
+649ae657-95c5-4724-9edc-d05abe2b542b,The overall experience over the past month has just felt neglected for a distributed team.,Satisfied,0.37443251868579464,0.0134,0,0.0902,0,0,0
+87b6bda2-91eb-4487-a853-2ee23a120652,"The collaboration tools does what it needs to for a growing team, aside from the occasional sync failures.",Frustrated,0.7927371776701295,0.9142,1,0.895,1,1,1
+e79ae224-a99a-4bbb-9e85-4188ee2ea91a,Broken links on customer support has been a recurring headache for the past quarter.,Frustrated,0.8882488401776467,0.9965,1,0.9337,1,1,1
+c0a3f599-0dce-45c9-ac04-8a39f7064177,Our department head called the pricing on the audit log a pleasant surprise after the last two weeks of use.,Satisfied,0.23339539803956094,0.0079,0,0.0711,0,0,0
+b3c52ef4-61fe-404c-bf35-5afa9be10a90,The workflow builder's pricing has stayed fair even as a growing team scaled up usage over the last few days.,Neutral,0.3896150252004277,0.0481,0,0.1051,0,0,0
+2aa35f67-cdf8-49e5-9426-32e09b8c1557,"Just a routine check-in from our IT team, nothing specific to report over the last six months.",Neutral,0.49637141455780803,0.1859,0,0.1996,0,0,0
+ce0151dc-09d7-47c6-a6e4-f8b7552fb7d4,The onboarding flow continues to exceed our department head's technical expectations after this quarter.,Satisfied,0.016805034130631245,0.046,0,0.0588,0,0,0
+81d211dc-5c62-4f1e-ab48-5d76deefb226,"The billing system crashed again this cycle, on top of data export bugs from the past year.",Frustrated,0.76541651235324,0.9933,1,0.9189,1,1,1
+281e1594-5b53-427e-b48e-9881a2d88970,"Even under heavy load, the billing system held up well for a small team over the last onboarding round.",Satisfied,0.0736654130876421,0.0678,0,0.07,0,0,0
+65962fd6-4832-4a3a-948c-c9986e94735b,Our ops lead was quoted a much higher renewal rate this quarter ago with no explanation.,Frustrated,0.894250641202293,0.8394,1,0.8808,1,1,1
+814b0e66-82f1-4241-a502-53c63b57b886,Multiple business units has had zero downtime issues with the export tool in recent weeks.,Satisfied,0.11421559512880067,0.8047,1,0.635,1,1,0
+991dd335-e0dd-491a-a145-2d57b07279e9,"The mobile app crashed again this cycle, on top of data export bugs from several days.",Frustrated,0.8136295145602365,0.9798,1,0.9207,1,1,1
+180845c0-b186-4145-9eaa-8f89e4472b95,The past month of intermittent session timeouts on the mobile app has really hurt our workflow.,Neutral,0.6836207878163201,0.6328,1,0.6872,1,1,0
+e82e9a34-bc75-4ca9-b3f9-4d909d877658,A distributed team has had zero technical issues with the onboarding flow over the last six months. It just works.,Satisfied,0.04127500935697507,0.0598,0,0.0645,0,0,0
+ee211b6c-a406-4389-ad7a-cb193edc02eb,The permissions system has been broken for the past few sprints and it's affecting our whole department.,Frustrated,0.6893397600378586,0.9866,1,0.9065,1,1,1
+0b27d8e2-ee30-40f0-8752-251df023674e,"Given what multiple business units gets, the pricing on the onboarding flow feels very fair.",Satisfied,0.36848770282183785,0.9482,1,0.8287,1,1,1
+d9b7ce28-80c3-44aa-a359-975b74f9dd21,"Our engineering lead logged one instance of API timeouts on the collaboration tools during the last six months, resolved quickly.",Satisfied,0.3044760225965599,0.0176,0,0.0823,0,0,0
+118e5e5a-ce31-4940-9d33-b8f1ef2edd91,The permissions system has been rock solid over the past month. our engineering lead is genuinely impressed.,Satisfied,0.2574192111842136,0.0915,0,0.1014,0,0,0
+607ec712-0223-41a3-a0da-59a5476ec530,Our procurement team specifically called out how dependable the audit log has been over the past quarter.,Satisfied,0.27450345036414087,0.0389,0,0.0853,0,0,0
+f9961985-6563-49ac-8fc5-ba6092d7f149,The admin console has been broken for the last onboarding round and it's affecting multiple business units.,Frustrated,0.5301604619842064,0.9906,1,0.8832,1,1,1
+d78aece6-c367-4200-9a31-cae8bab50055,The recent improvements to the integration have made a real difference for a growing team.,Satisfied,0.20789431080447343,0.0468,0,0.0794,0,0,0
+17d10c92-8ca7-45d3-9645-6164b087b857,Our whole department hasn't had much to report on the mobile app over recent weeks.,Satisfied,0.41994687445908285,0.4882,0,0.4364,0,0,1
+825d9d57-0e86-4a2a-b183-a441346900c1,The reliability of the API over the last two weeks has genuinely earned our IT team's trust.,Satisfied,0.050523929791741015,0.0813,0,0.0711,0,0,0
+d057f76c-61bb-4934-ba67-e019f0f92939,A growing team has come to rely on the workflow builder precisely because it never breaks.,Neutral,0.502331825437793,0.0068,0,0.1066,0,0,0
+83fab0d4-4031-4fda-af14-01eaf8dec748,A distributed team has been blocked by duplicate records on the search feature for this quarter.,Frustrated,0.9434606774578624,0.9856,1,0.9365,1,1,1
+90a9eda9-4f9f-4f0f-b20d-67214ab78620,A 40-person team has been blocked by API timeouts on the notification system for the past few sprints.,Neutral,0.46860567330076747,0.1279,0,0.1575,0,0,0
+7faff7e7-0914-499a-94a1-f0a50810cfde,A small team has had zero downtime issues with the reporting dashboard in the last billing cycle.,Satisfied,0.38289688069230315,0.3259,0,0.27,0,0,0
+2a261759-6c74-41b7-bdb6-df607a7e57fe,Every time a 40-person team relies on the mobile app it fails us. the past few sprints has been rough.,Frustrated,0.7067012183853014,0.5062,0,0.5739,1,1,1
+4a7bddfa-4245-406d-b82c-b2b031ed0f33,Our engineering lead specifically praised how responsive support has been over the past year.,Satisfied,0.16809352828763327,0.0211,0,0.0676,0,0,0
+490e7def-89ba-45b3-a073-8761d7c29dea,"For the price, a 40-person team is getting far more value than our department head expected.",Satisfied,0.12725538737315406,0.0801,0,0.0797,0,0,0
+33ab11ed-9f50-4197-92d3-25bb7313153e,Nobody has responded to our complaint about slow load times on the mobile app in the last billing cycle.,Frustrated,0.5316453170023486,0.9184,1,0.8487,1,1,1
+644e7f85-9187-4360-9a26-2bfc7e7bd49b,The mobile app handles a growing team's workload without a hitch. No complaints on the technical side.,Satisfied,0.08596684779706606,0.0104,0,0.057,0,0,0
+3600dbb1-c09a-4657-a476-42d66349065b,The failed uploads problem on the workflow builder has cost us real time over the last onboarding round.,Frustrated,0.6309249033062895,0.4411,0,0.4749,0,0,1
+5eb26cee-f2fa-484a-aec9-39c01ce84dff,We've had repeated broken links on the integration for the past month now with no real fix.,Frustrated,0.9499347751903134,0.0126,0,0.2051,0,0,0
+681b18d0-07e5-41a3-8200-ce7427cc874a,The permissions system continues to exceed our procurement team's technical expectations after the last few days.,Satisfied,0.20939936244375762,0.0594,0,0.0835,0,0,0
+040f2446-26ce-41dd-9535-05e26b87f4c5,A distributed team has been blocked by notification delays on the permissions system for the past few sprints.,Neutral,0.5764126532273757,0.9759,1,0.8848,1,1,1
+0afd0450-1943-40b1-9c28-220598ec2745,The mobile app is serviceable for multiple business units; API timeouts shows up occasionally but rarely blocks us.,Neutral,0.4596980161397005,0.3846,0,0.3494,0,0,0
+fa0833c0-cb3c-4d4a-b708-bfbe9ccc51b4,The report generation errors problem on the onboarding flow has cost us real time over this week.,Frustrated,0.7608369869557651,0.4186,0,0.5057,1,0,1
+3f19e953-7e72-466a-b26a-9d8ddcae785c,No strong opinion on cost yet from our ops lead - we'll reassess at the next renewal.,Neutral,0.5265669023344235,0.8566,1,0.8113,1,1,1
+530aa083-bf29-42be-be46-f245f3ef182a,Our ops lead pointed out that the workflow builder's cost dropped relative to value over the last six months.,Neutral,0.6411192028044447,0.9639,1,0.8906,1,1,1
+20f39d07-5249-44a8-982c-39836e093170,Our procurement team specifically called out how reasonable the renewal cost on the workflow builder was.,Satisfied,0.1916605702539075,0.0115,0,0.0676,0,0,0
+e2a62d7e-669d-4ab5-842a-1d658043e59e,We reported data export bugs on the billing system several days ago and it's still unresolved.,Frustrated,0.9242448408942313,0.3469,0,0.4991,0,0,1
+6469324d-e210-4093-a457-030afe16135a,"Our ops lead had a small question about the collaboration tools, support got back within the past month.",Neutral,0.6483359627480615,0.3774,0,0.4165,0,0,1
+acc8966a-b921-43aa-b1e8-16d9fdec6e52,The pricing model for a growing team stopped making sense to our account manager here around the past month ago.,Frustrated,0.919557262464834,0.4236,0,0.5766,1,1,0
+53547069-1f7d-4f62-af34-8438b2ece131,We are locked out of the billing system again during the past quarter - this keeps happening.,Frustrated,0.9376924742807801,0.5818,1,0.7308,1,1,0
+fd79de33-4b50-4f55-901f-2d17e54d5aef,The API is serviceable for a small team; dashboard glitches shows up occasionally but rarely blocks us.,Neutral,0.4612647530347396,0.0806,0,0.1316,0,0,1
+06697aee-0867-44cc-9ede-52eb35fe3ee2,We reported broken links on the workflow builder the last onboarding round ago and it's still unresolved.,Frustrated,0.8483295514851875,0.1068,0,0.2439,0,0,0
+fef751a0-bfe2-4989-a7ba-0f89814fd86c,No issues to report from a 40-person team over the past quarter - everything just works.,Neutral,0.37391125517329515,0.0053,0,0.0873,0,0,0
+7a6e495e-df2a-4fd3-badc-8e9efbfdd8ec,Our procurement team is really happy with how stable the audit log has been over the past year.,Satisfied,0.4148653947266432,0.0121,0,0.0954,0,0,0
+5ea6a4e5-ba7c-448d-824b-9747fa5ca158,The audit log has been broken for the past few sprints and it's affecting a distributed team.,Frustrated,0.8998274598354818,0.9411,1,0.9194,1,1,1
+af15cd0d-ea79-4271-9081-036e922ea5f0,Our procurement team is seriously evaluating at least two other vendors given the current cost over several days.,Neutral,0.43138462498862173,0.956,1,0.8473,1,1,1
+de54077e-007b-45af-b9cf-291b8f095af0,"Our account manager here requested a walkthrough of the search feature for a new hire, nothing else to note.",Satisfied,0.3330640165665213,0.0069,0,0.0826,0,0,0
+0059c9f2-b324-4f62-b93d-85095c2ac091,Nobody has responded to our complaint about broken links on the notification system in the last onboarding round.,Frustrated,0.6453365604013608,0.9935,1,0.9027,1,1,1
+0e944e71-fc8b-4511-a287-b9c6c8fd032d,The third outage of the billing system in the last billing cycle is starting to erode our trust.,Frustrated,0.7391237966787636,0.7338,1,0.786,1,1,1
+2e82e37f-41d0-42b9-9e40-16b24ba8274e,We reported login errors on the collaboration tools this week ago and it's still unresolved.,Frustrated,0.9525238906696046,0.0637,0,0.2428,0,0,0
+98b64fcb-ab11-4bbb-8e4c-edfb9e02beb1,Support acknowledged the failed uploads on the collaboration tools but recent weeks later it's still broken.,Frustrated,0.8729365650987612,0.6165,1,0.7379,1,1,1
+2ab4ab7d-f5a9-427a-ad44-5b7e62c0286b,The billing system going down during the last two weeks caused real disruption for multiple business units.,Neutral,0.4459937879882063,0.9453,1,0.8447,1,1,1
+013b83f4-0c40-4a53-85f2-e2c165cac055,The onboarding flow handles our whole department's workload without a hitch. No complaints on the technical side.,Satisfied,0.06650420616771051,0.7865,1,0.5982,1,1,0
+7eede3cc-f27e-4252-b12e-d9b6115b9eb8,The permissions system has been broken for the past few sprints and it's affecting a growing team.,Frustrated,0.8572709227379922,0.2022,0,0.3277,0,0,0
+616ef5bc-187d-4c55-a813-70f575c379ca,"General feedback: the mobile app is fine, failed uploads handling could be faster over the last billing cycle.",Frustrated,0.6688624636342309,0.5475,0,0.6003,1,1,0

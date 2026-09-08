@@ -1,0 +1,728 @@
+// Phase 1 of the RetainIO schema — the tables that stop the app from losing
+// data on refresh: users, accounts, subscriptions, usage telemetry, support
+// tickets, discount requests, and the audit trail.
+//
+// Field choices here trace back to the actual codebase, not guesses:
+// - PlanTier is Basic/Pro/Enterprise only — the full vocabulary in Churn.csv.
+// - LoginFrequency is Daily/Weekly/Rarely — the raw column itself, not a
+//   bucket derived from a number (there's no numeric "logins/mo" in any CSV).
+// - DiscountRequest keeps reason / managerNote / directorNote as three
+//   separate fields, matching retainio/src/types.ts:26-28 — collapsing them
+//   into one field is the exact bug fixed in AccountDirectorDashboard.tsx.
+//
+// Phase 2 adds the ML prediction tables — churn_predictions,
+// sentiment_predictions, fusion_scores, fusion_monthly_summaries,
+// shap_explanations, ai_explanations. Sentiment classification is Frustrated/Neutral/
+// Satisfied — the actual 3-class vocabulary in sentiment_tickets.csv, not
+// the 5-class Positive/Neutral/Negative/Frustrated/Angry the UI currently
+// shows (see types.ts's SentimentType — that's a known bug to fix later).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  account_manager
+  account_director
+  // Operates the org rather than the book: creates Account Manager logins,
+  // decides which Manager reports to which Director, assigns customer
+  // accounts to Managers, and is the only role that can delete a user.
+  admin
+  // Not a person. One row exists with this role so that automatic actions — a
+  // renewal resolved at its term boundary, with nobody involved — can be audited
+  // without either loosening `AuditLog.approverId` (which is what guarantees every
+  // discount approval names a real approver) or attributing a machine's work to a
+  // human who did not do it. "RetainIO System" is a true answer to "who did this".
+  //
+  // It cannot log in (no password hash, and the login route refuses the role
+  // outright) and is filtered out of every user list, so it can never be assigned
+  // accounts, given a Director, or picked as an approver by a person.
+  system
+}
+
+enum PlanTier {
+  Basic
+  Pro
+  Enterprise
+}
+
+enum SubscriptionStatus {
+  active
+  renewed
+  churned
+  cancelled
+}
+
+enum LoginFrequency {
+  Daily
+  Weekly
+  Rarely
+}
+
+enum DiscountStatus {
+  pending
+  approved
+  rejected
+}
+
+enum RiskBand {
+  High_Risk   @map("High Risk")
+  Medium_Risk @map("Medium Risk")
+  Low_Risk    @map("Low Risk")
+}
+
+// What an account did at its renewal. Three of the four are renewals: a downgrade is
+// still a customer who stayed, and excluding it would throw away a positive label.
+enum RenewalOutcome {
+  renewed
+  upgraded
+  downgraded
+  left
+}
+
+// What an account is expected to do at its NEXT renewal, recorded ahead of time.
+// Annual contracts auto-renew unless notice is given, so `renewing` is the default and
+// needs no intent — an intent exists to record a departure from it.
+enum IntentKind {
+  renewing
+  upgrading
+  downgrading
+  churning
+}
+
+// How an intent was recorded. `manual` is an Account Manager; `email` is reserved for
+// Part 4's ingestion of customer mail, which writes the same rows through the same path.
+enum IntentSource {
+  manual
+  email
+}
+
+enum SentimentClass {
+  Frustrated
+  Neutral
+  Satisfied
+}
+
+// What a support ticket is actually complaining about. Decides which lever the
+// uplift advisor recommends (a discount fixes a price objection; it does not
+// fix a broken integration), alongside the model's predicted CATE.
+enum ReviewCategory {
+  technical
+  price
+  general
+}
+
+enum ShapDirection {
+  risk_increase
+  risk_decrease
+}
+
+// Same @map pattern as RiskBand: the stored value is the human-readable
+// string the UI already displays, while the Prisma identifier stays valid.
+enum CaseOutcome {
+  Retained_Renewed @map("Retained (Renewed +2 Yrs)")
+  Retained_Upsold  @map("Retained (Upsold)")
+  Churned
+}
+
+model User {
+  id                          String    @id @default(uuid())
+  role                        UserRole
+  name                        String
+  email                       String    @unique
+  passwordHash                String?   @map("password_hash")
+  title                       String
+  department                  String
+  employeeId                  String    @unique @map("employee_id")
+  maxSelfApprovalLimit        Int       @map("max_self_approval_limit")
+  // Set when this user completes face enrolment at signup. The samples live in
+  // face_samples below, keyed to this user — so a verification only ever
+  // compares against THIS user's own faces, never against everyone's.
+  faceEnrolledAt              DateTime? @map("face_enrolled_at")
+  avatarInitials              String    @map("avatar_initials")
+  createdAt                   DateTime  @default(now()) @map("created_at")
+
+  // Deactivation instead of deletion. A user who has ever acted can't be
+  // deleted — their audit entries must keep naming them, or the trail stops
+  // being a trail — but their access still has to be revocable. Setting this
+  // false blocks login, invalidates live sessions, and removes them from
+  // assignment lists, while every historical row stays intact and correctly
+  // attributed.
+  isActive                    Boolean   @default(true) @map("is_active")
+  deactivatedAt               DateTime? @map("deactivated_at")
+
+  // Which Account Director this Account Manager reports to, set by an admin.
+  // A Director's visibility is derived from this: they see the accounts owned
+  // by the Managers pointing at them, and nothing until someone is assigned.
+  // Null for Directors and admins, who don't report to a Director themselves.
+  directorId                  String?   @map("director_id")
+
+  managedAccounts   Account[]         @relation("AccountManager")
+  discountRequested DiscountRequest[] @relation("RequestedBy")
+  discountApproved  DiscountRequest[] @relation("ApprovedBy")
+  auditLogs         AuditLog[]        @relation("Approver")
+  sessions          Session[]
+  faceSamples       FaceSample[]
+  conversations     Conversation[]
+  renewalIntents    RenewalIntent[]   @relation("IntentRecordedBy")
+  renewalRecords    RenewalRecord[]   @relation("RenewalRecordedBy")
+  sentimentCorrections CustomerReview[] @relation("SentimentCorrectedBy")
+
+  // Self-relation: a Manager has one Director; a Director has many Managers.
+  // SetNull on delete so removing a Director leaves their Managers intact
+  // (unassigned) rather than cascading the deletion into staff records.
+  director User?  @relation("DirectorManagers", fields: [directorId], references: [id], onDelete: SetNull)
+  managers User[] @relation("DirectorManagers")
+
+  @@index([directorId])
+  @@map("users")
+}
+
+// Why an index snapshot was taken. Both are pre-treatment; they differ only in what
+// prompted the measurement.
+enum IndexReason {
+  window_open     // nobody has acted; frozen automatically when the offer window opened
+  offer_approved  // a discount was approved; frozen at that moment, before it takes effect
+}
+
+// The account as it stood when the retention decision was made — the training row's
+// FEATURES, captured before any treatment.
+//
+// This exists because features measured at the renewal are useless for prediction. By then
+// a departing account's usage has already collapsed, so a model trained on it learns
+// "usage near zero means churn": true, and worthless, since nothing can be done at that
+// point. The measurement has to happen while the account is still actionable.
+//
+// Two moments produce one, and both are strictly pre-treatment:
+//
+//   window_open     — 180 days before renewal, when discounts first become allowed.
+//                     Every account gets this, so untreated accounts (the control group
+//                     the uplift model needs) are all measured at the same point.
+//   offer_approved  — the moment a discount is approved, replacing the above. A discount
+//                     does not take effect until the renewal, so this is still measured
+//                     before any treatment has reached the customer.
+//
+// `daysToRenewal` is stored because treated and untreated rows are measured at different
+// distances from the renewal, and that difference is itself confounding — the propensity
+// model needs to be able to see it rather than have it hidden.
+model RenewalIndexSnapshot {
+  id            String      @id @default(uuid())
+  accountId     String      @map("account_id")
+  renewalDate   DateTime    @map("renewal_date") @db.Date
+  frozenAt      DateTime    @map("frozen_at")
+  reason        IndexReason
+  daysToRenewal Int         @map("days_to_renewal")
+
+  featureSnapshot    Json    @map("feature_snapshot")
+  churnProba         Float?  @map("churn_proba")
+  sentimentScore     Float?  @map("sentiment_score")
+  fusedProba         Float?  @map("fused_proba")
+  dominantShapDriver String? @map("dominant_shap_driver")
+
+  account Account @relation(fields: [accountId], references: [id])
+
+  // One index per renewal cycle. An approval replaces the window_open row rather than
+  // adding a second: an account has one pre-treatment state per renewal, not a history of
+  // candidate ones.
+  @@unique([accountId, renewalDate])
+  @@map("renewal_index_snapshots")
+}
+
+// What an account is expected to do at an upcoming renewal, recorded before it happens.
+//
+// NOTHING AN INTENT SAYS TAKES EFFECT ON ARRIVAL. It is held until the renewal date and
+// resolved there by the daily job. That hold is the safety property the whole design
+// rests on: an intent is visible for as long as it is pending and can be cancelled, so
+// it never has to be confirmed by a second person to be safe to accept.
+model RenewalIntent {
+  id           String       @id @default(uuid())
+  accountId    String       @map("account_id")
+  kind         IntentKind
+  // Required for upgrading/downgrading; the tier to reprice to at the boundary.
+  targetTier   PlanTier?    @map("target_tier")
+  // The renewal this resolves at — the subscription's termEnd when it was recorded.
+  effectiveFor DateTime     @map("effective_for")
+  source       IntentSource @default(manual)
+  // Null when a machine wrote it (Part 4), so a row always says honestly whether a
+  // person stood behind it.
+  recordedById String?      @map("recorded_by")
+  recordedAt   DateTime     @default(now()) @map("recorded_at")
+  cancelledAt  DateTime?    @map("cancelled_at")
+  appliedAt    DateTime?    @map("applied_at")
+  notes        String?
+
+  account    Account @relation(fields: [accountId], references: [id])
+  recordedBy User?   @relation("IntentRecordedBy", fields: [recordedById], references: [id])
+
+  @@index([accountId, effectiveFor])
+  @@map("renewal_intents")
+}
+
+// What actually happened at a renewal — the labelled row the models train on.
+//
+// Written by the daily job at the term boundary, not by a person filling in a form. The
+// features are frozen HERE, at the renewal, which is what stops a correction filed weeks
+// later from pairing a renewal decision with usage that has drifted since.
+model RenewalRecord {
+  id          String         @id @default(uuid())
+  accountId   String         @map("account_id")
+  renewalDate DateTime       @map("renewal_date") @db.Date
+  outcome     RenewalOutcome
+  // Derived from outcome, stored so training reads one column instead of re-deriving
+  // a mapping that could drift from the one used here.
+  retained    Boolean
+  notes       String?
+
+  // True when the job defaulted to `renewed` with no intent and nobody confirming.
+  // Carried into the training export so the assumption stays visible instead of being
+  // laundered into a fact: if most real rows are auto-recorded positives, any result
+  // read off them has to say so.
+  autoRecorded Boolean       @default(false) @map("auto_recorded")
+  intentId     String?       @map("intent_id")
+
+  recordedById String?       @map("recorded_by")
+  recordedAt   DateTime      @default(now()) @map("recorded_at")
+
+  // The churn model's inputs exactly as they stood at the renewal, plus the offer that
+  // was actually in force for THIS renewal (matched on the discount's own window, never
+  // by taking the account's most recent discount).
+  // Copied from the account's RenewalIndexSnapshot — the pre-treatment measurement, not
+  // the state at the renewal. Measuring here instead would mean a departing account's
+  // usage had already collapsed, so the features would contain the answer.
+  featureSnapshot Json       @map("feature_snapshot")
+  // When those features were frozen, and how far from the renewal that was. Carried into
+  // the training export so a row measured too late can be identified and dropped rather
+  // than silently teaching the model that collapse predicts collapse.
+  featuresFrozenAt      DateTime? @map("features_frozen_at")
+  daysToRenewalAtIndex  Int?      @map("days_to_renewal_at_index")
+  // The fused score — what the app showed as this account's risk.
+  predictedRisk   Float?     @map("predicted_risk")
+
+  // The three inputs the fused score is BUILT FROM, stored separately because two of the
+  // four models cannot be trained without them:
+  //
+  //   - the uplift model takes all three among its eleven features
+  //   - the fusion model is a stacking meta-classifier over churnProba + sentimentScore,
+  //     so the blended result alone teaches it nothing
+  //
+  // They are computed daily anyway; the cost of not copying them here is that every
+  // renewal recorded without them is permanently unusable for those two models, and nine
+  // renewals a year is too slow a rate to make that back.
+  churnProba         Float?  @map("churn_proba")
+  sentimentScore     Float?  @map("sentiment_score")     // riskWeight: 0..1, higher = more frustrated
+  dominantShapDriver String? @map("dominant_shap_driver") // price_sensitive | technical_friction
+
+  discountPct     Int        @default(0) @map("discount_pct")
+  discountMonths  Int        @default(0) @map("discount_months")
+
+  planTierBefore PlanTier    @map("plan_tier_before")
+  planTierAfter  PlanTier    @map("plan_tier_after")
+
+  account    Account @relation(fields: [accountId], references: [id])
+  recordedBy User?   @relation("RenewalRecordedBy", fields: [recordedById], references: [id])
+
+  // One outcome per renewal. Also the idempotency guard: the daily job runs at startup
+  // AND on an interval, and a second pass must not roll the same term twice.
+  @@unique([accountId, renewalDate])
+  @@map("renewal_records")
+}
+
+// One enrolled face per row, stored as the 512-dimension FaceNet embedding
+// rather than the photo it came from. Two reasons: the raw image is never
+// needed again (matching only ever compares vectors), and keeping biometric
+// photographs around is a liability this app has no use for. ~2KB per sample
+// versus ~43KB for the PNG.
+//
+// This lives in Postgres, not on disk: the app is deployed to a host with an
+// ephemeral filesystem, so files written next to the code disappear on the
+// next redeploy — which would silently lock every Director out of approvals.
+model FaceSample {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  embedding Float[]
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("face_samples")
+}
+
+model Session {
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id")
+  tokenHash      String   @unique @map("token_hash")
+  issuedAt       DateTime @default(now()) @map("issued_at")
+  expiresAt      DateTime @map("expires_at")
+  rememberDevice Boolean  @default(false) @map("remember_device")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("sessions")
+}
+
+model Account {
+  id               String   @id @default(uuid())
+  name             String
+  logoInitials     String   @map("logo_initials")
+  industry         String
+  accountManagerId String   @map("account_manager_id")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  accountManager User               @relation("AccountManager", fields: [accountManagerId], references: [id])
+  subscriptions  Subscription[]
+  usageSnapshots UsageSnapshot[]
+  customerReviews CustomerReview[]
+  discountRequests DiscountRequest[]
+  auditLogs      AuditLog[]
+  renewalIntents RenewalIntent[]
+  renewalRecords RenewalRecord[]
+  renewalIndexSnapshots RenewalIndexSnapshot[]
+
+  churnPredictions      ChurnPrediction[]
+  fusionScores          FusionScore[]
+  fusionMonthlySummaries FusionMonthlySummary[]
+  aiExplanations        AiExplanation[]
+  conversations         Conversation[]
+
+  @@map("accounts")
+}
+
+model Subscription {
+  id              String             @id @default(uuid())
+  accountId       String             @map("account_id")
+  planTier        PlanTier           @map("plan_tier")
+  mrr             Decimal            @db.Decimal(12, 2)
+  termStart       DateTime           @map("term_start")
+  termEnd         DateTime           @map("term_end")
+  durationMonths  Int                @map("duration_months")
+  status          SubscriptionStatus
+
+  account Account @relation(fields: [accountId], references: [id])
+
+  @@map("subscriptions")
+}
+
+model UsageSnapshot {
+  id                     String         @id @default(uuid())
+  accountId              String         @map("account_id")
+  capturedAt             DateTime       @default(now()) @map("captured_at")
+  accountAgeDays         Int            @map("account_age_days")
+  dailyUsageMins         Int            @map("daily_usage_mins")
+  loginFrequencyBucket   LoginFrequency @map("login_frequency_bucket")
+  supportTickets90Days   Int            @map("support_tickets_90days")
+  apiUtilizationRate     Float          @map("api_utilization_rate")
+
+  account Account @relation(fields: [accountId], references: [id])
+
+  @@map("usage_snapshots")
+}
+
+// What the customer actually wrote about the product — the text the sentiment model
+// classifies and the Gemini review classifier categorises.
+//
+// This was called SupportTicket, which was the wrong name for it: a support ticket is
+// a request for help, and these include praise ("has automated our tracking workflows
+// tremendously") and neutral observations. The training data agrees — the sentiment
+// corpus column is `review_text` and Churn.csv's is `Review`.
+//
+// Distinct from UsageSnapshot.supportTickets90Days, which is a COUNT of support
+// contacts and genuinely is tickets. That name stays: it is one of the six churn
+// model features and is baked into the trained artifact.
+model CustomerReview {
+  id        String   @id @default(uuid())
+  accountId String   @map("account_id")
+  reviewText String  @map("review_text")
+  submittedAt DateTime @default(now()) @map("submitted_at")
+  // Gemini's read of what this review is about. Null until first classified;
+  // cached here because the text never changes, so re-asking on every page
+  // load would be a paid API call for a guaranteed-identical answer.
+  reviewCategory ReviewCategory? @map("review_category")
+
+  // The true sentiment, as judged by a person who disagreed with the model.
+  //
+  // This is the ONLY way the sentiment model can ever be retrained. A renewal outcome
+  // cannot supply this label: a furious customer can renew and a quiet one can leave, and
+  // the fusion model depends on sentiment being an INDEPENDENT signal from churn risk.
+  // Train sentiment on renewal outcomes and it stops being a second opinion — it becomes
+  // a churn predictor reading text, and fusion ends up blending a number with a copy of
+  // itself.
+  //
+  // Deliberately does NOT overwrite the prediction or recompute the fusion score. What is
+  // displayed as model output stays model output; this records the disagreement beside it
+  // and feeds the next training run.
+  correctedSentiment SentimentClass? @map("corrected_sentiment")
+  correctedById      String?         @map("corrected_by")
+  correctedAt        DateTime?       @map("corrected_at")
+
+  account Account @relation(fields: [accountId], references: [id])
+  correctedBy User? @relation("SentimentCorrectedBy", fields: [correctedById], references: [id])
+  sentimentPredictions SentimentPrediction[]
+
+  @@map("customer_reviews")
+}
+
+model DiscountRequest {
+  id                         String         @id @default(uuid())
+  accountId                  String         @map("account_id")
+  requestedById              String         @map("requested_by")
+  requestedPct               Int            @map("requested_pct")
+  // How many months of the upcoming 12-month term the discount covers. Without a
+  // duration a discount cannot be costed, which is why approval used to gate on the
+  // headline percentage alone and waved through a year-long 10% while stopping a
+  // two-month 15% that cost far less.
+  durationMonths             Int            @default(12) @map("duration_months")
+  // The renewal this offer was BUILT for, pinned when the Manager submits rather
+  // than read back when the Director approves. A request can sit pending across a
+  // renewal, and once renewals advance termEnd automatically the approval would
+  // otherwise stamp the offer with the FOLLOWING year's date — filing it against a
+  // renewal it was never meant for, and leaving the one it was granted at looking
+  // as though no discount had been given.
+  appliesToRenewal           DateTime?      @map("applies_to_renewal")
+  // The Account Manager's own justification, and the only one the Director
+  // sees. Required: a row only exists here for a >10% escalation (a <=10%
+  // discount is self-approved and never creates a request), so every request
+  // by definition needs a stated reason for the Director to act on. The old
+  // separate `reason` column held a server-generated template that nothing
+  // displayed except as a fallback — dropped.
+  managerNote                String         @map("manager_note")
+  directorNote               String?        @map("director_note")
+  status                     DiscountStatus @default(pending)
+  // Whether the Account Manager paired a product walkthrough with the
+  // discount — the Uplift Advisor recommends both when the ticket reads as a
+  // technical problem. Previously sent by the client and used only to label
+  // the submission's audit row, then discarded, so the Director reviewing the
+  // request couldn't see it and the decision's own audit row couldn't mention it.
+  includesWalkthrough        Boolean        @default(false) @map("includes_walkthrough")
+  riskScore                  Int            @map("risk_score")
+  facialVerificationRequired Boolean        @map("facial_verification_required")
+  approvedById               String?        @map("approved_by")
+  approvedAt                 DateTime?      @map("approved_at")
+  requestedAt                DateTime       @default(now()) @map("requested_at")
+
+  account     Account @relation(fields: [accountId], references: [id])
+  requestedBy User    @relation("RequestedBy", fields: [requestedById], references: [id])
+  approvedBy  User?   @relation("ApprovedBy", fields: [approvedById], references: [id])
+
+  @@map("discount_requests")
+}
+
+model AuditLog {
+  id                     String   @id @default(uuid())
+  accountId              String   @map("account_id")
+  action                 String
+  discountApplied        Int      @map("discount_applied")
+  // Duration of the discount this row records. currentDiscountApproved is derived
+  // from the most recent audit row carrying a discount, so the months have to live
+  // here beside the percentage or the account's current offer cannot be described.
+  discountMonths         Int      @default(0) @map("discount_months")
+  // The renewal this discount takes effect at — the subscription's termEnd as it
+  // stood when the offer was built. Without it a discount has no window: the app
+  // called it "Active" from the moment of approval even with the renewal months
+  // away, then never expired it. The end date is deliberately NOT stored; it is
+  // this plus discountMonths (see discountStatus in pricing.ts).
+  discountStartsAt       DateTime? @map("discount_starts_at")
+  // Whether this action included a product walkthrough. A real column, because the fact
+  // was previously recoverable only by regex-matching the `action` text for the word
+  // "Walkthrough" — which meant renaming the label would have silently broken the feature,
+  // and "which accounts had a walkthrough" was not a question the database could answer.
+  includesWalkthrough    Boolean  @default(false) @map("includes_walkthrough")
+  approverId             String   @map("approver_id")
+  verificationStatus     String   @map("verification_status")
+  details                String
+  createdAt              DateTime @default(now()) @map("created_at")
+
+  account  Account @relation(fields: [accountId], references: [id])
+  approver User    @relation("Approver", fields: [approverId], references: [id])
+
+  @@map("audit_logs")
+}
+
+// ---------------------------------------------------------------------
+// Phase 2 — ML predictions, real: server.ts's fusionSnapshot.ts chains the
+// actual trained models (churn_gradient_boosting.pkl -> sentiment_naive_
+// bayes.pkl -> fusion_meta_classifier.pkl, the "Stacking (LR meta)" recipe
+// in models/fusion_config.json) once a day per account. No model-version
+// registry — there's only ever one active model per family right now, and
+// nothing ever read the table, so it was removed rather than kept unused.
+// ---------------------------------------------------------------------
+
+model ChurnPrediction {
+  id              String    @id @default(uuid())
+  accountId       String    @map("account_id")
+  predictedAt     DateTime  @default(now()) @map("predicted_at")
+  churnProba      Float     @map("churn_proba")
+  riskBand        RiskBand  @map("risk_band")
+
+  account      Account       @relation(fields: [accountId], references: [id])
+  fusionScores FusionScore[]
+  shapExplanations ShapExplanation[]
+
+  @@map("churn_predictions")
+}
+
+model SentimentPrediction {
+  id              String         @id @default(uuid())
+  reviewId        String?        @map("review_id")
+  classification  SentimentClass
+  // 0..1 risk weight the fusion model actually consumes (Frustrated=1.0,
+  // Neutral=0.5, Satisfied=0.0, weighted by this prediction's class
+  // probabilities). Nullable because pre-existing rows were written before
+  // this column existed.
+  riskWeight      Float?         @map("risk_weight")
+  predictedAt     DateTime       @default(now()) @map("predicted_at")
+
+  review        CustomerReview? @relation(fields: [reviewId], references: [id])
+  fusionScores  FusionScore[]
+
+  @@map("sentiment_predictions")
+}
+
+// The real daily-snapshot table — one row per account per calendar day.
+// snapshotDate is the calendar day this row represents (date-only, used for
+// grouping/uniqueness); computedAt stays as the exact wall-clock audit
+// timestamp of when it was actually computed, which can differ (e.g. a
+// catch-up run after the server was off).
+model FusionScore {
+  id                     String    @id @default(uuid())
+  accountId              String    @map("account_id")
+  snapshotDate           DateTime  @map("snapshot_date") @db.Date
+  computedAt             DateTime  @default(now()) @map("computed_at")
+  churnPredictionId      String?   @map("churn_prediction_id")
+  sentimentPredictionId  String?   @map("sentiment_prediction_id")
+  fusionScore            Float     @map("fusion_score")
+  riskCategory           RiskBand  @map("risk_category")
+
+  account             Account              @relation(fields: [accountId], references: [id])
+  churnPrediction     ChurnPrediction?     @relation(fields: [churnPredictionId], references: [id])
+  sentimentPrediction SentimentPrediction? @relation(fields: [sentimentPredictionId], references: [id])
+
+  @@unique([accountId, snapshotDate])
+  @@map("fusion_scores")
+}
+
+// One row per account per calendar month — the average of that month's real
+// daily FusionScore rows. sampleCount is however many real days actually
+// contributed; gaps (server not running that day) are simply absent, never
+// filled with a guessed value.
+model FusionMonthlySummary {
+  id             String   @id @default(uuid())
+  accountId      String   @map("account_id")
+  monthStart     DateTime @map("month_start") @db.Date
+  avgFusionScore Float    @map("avg_fusion_score")
+  sampleCount    Int      @map("sample_count")
+  riskCategory   RiskBand @map("risk_category")
+  computedAt     DateTime @default(now()) @map("computed_at")
+
+  account Account @relation(fields: [accountId], references: [id])
+
+  @@unique([accountId, monthStart])
+  @@map("fusion_monthly_summaries")
+}
+
+model ShapExplanation {
+  id                String        @id @default(uuid())
+  churnPredictionId String        @map("churn_prediction_id")
+  featureName       String        @map("feature_name")
+  impact            Float
+  direction         ShapDirection
+  description       String
+
+  churnPrediction ChurnPrediction @relation(fields: [churnPredictionId], references: [id])
+
+  @@map("shap_explanations")
+}
+
+model AiExplanation {
+  id          String   @id @default(uuid())
+  accountId   String   @map("account_id")
+  summary     String
+  generatedAt DateTime @default(now()) @map("generated_at")
+
+  account Account @relation(fields: [accountId], references: [id])
+
+  @@map("ai_explanations")
+}
+
+
+// The corpus the AI Advisor retrieves from — past retention situations and how
+// they turned out. Both advisor tools read these: search_historical_cases
+// embeds them and ranks by cosine similarity, while search_knowledge_graph
+// matches on shared structure (same industry, same underlying risk factors).
+//
+// Previously hardcoded as HISTORICAL_RAG_CASES in mockData.ts, so the "case
+// library" could only grow by editing source. As a table it can be added to,
+// and the retrieval quality improves with the corpus rather than with a deploy.
+model HistoricalCase {
+  id           String      @id @default(uuid())
+  caseRef      String      @unique @map("case_ref")
+  companyName  String      @map("company_name")
+  industry     String
+  initialRisk  Int         @map("initial_risk")
+  primaryIssue String      @map("primary_issue")
+  actionTaken  String      @map("action_taken")
+  outcome      CaseOutcome
+  learnings    String
+  createdAt    DateTime    @default(now()) @map("created_at")
+  // Lets the advisor's case cache notice an edit, not just an insert.
+  updatedAt    DateTime    @default(now()) @updatedAt @map("updated_at")
+  // Risk-factor concepts Gemini read out of primaryIssue (api, pricing, seats,
+  // outage...). These are the graph edges knowledgeGraph.ts traverses; cached
+  // here because a case's text never changes, so re-extracting per question
+  // would be a paid call for an identical answer.
+  concepts     String[]    @default([])
+
+  @@map("historical_cases")
+}
+
+// One running advisor thread per user per account. The chat was React state
+// only, so a conversation was lost on a tab switch, on opening the Retention
+// Offer tab (which unmounts the chat), on reload, and on changing the account
+// in the dropdown. It also meant the agent's reasoning left no record, while
+// every other action in the app is audited.
+model Conversation {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  accountId     String   @map("account_id")
+  startedAt     DateTime @default(now()) @map("started_at")
+  lastMessageAt DateTime @default(now()) @updatedAt @map("last_message_at")
+
+  user     User                  @relation(fields: [userId], references: [id])
+  account  Account               @relation(fields: [accountId], references: [id])
+  messages ConversationMessage[]
+
+  @@unique([userId, accountId])
+  @@map("conversations")
+}
+
+enum MessageSender {
+  user
+  advisor
+  system
+}
+
+model ConversationMessage {
+  id             String        @id @default(uuid())
+  conversationId String        @map("conversation_id")
+  sender         MessageSender
+  text           String
+  // The real trace the agent produced for this answer - which tools it chose,
+  // their arguments and their output. Stored as returned so the drawer can be
+  // rebuilt exactly, and so a past answer stays auditable.
+  toolCalls      Json?         @map("tool_calls")
+  actionCard     Json?         @map("action_card")
+  // Figures the answer stated that no tool in that turn produced. Empty means
+  // every number traced back to a tool output. Stored so a past answer can be
+  // audited, not just flagged live.
+  ungroundedFigures String[]   @default([]) @map("ungrounded_figures")
+  createdAt      DateTime      @default(now()) @map("created_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@map("conversation_messages")
+}

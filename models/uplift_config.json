@@ -1,0 +1,106 @@
+{
+  "winner": "Pooled depth=4 X-learner",
+  "control_arm": "0_0",
+  "treatment_arms": [
+    "5_3",
+    "5_6",
+    "5_12",
+    "10_3",
+    "10_6",
+    "10_12",
+    "15_3",
+    "15_6",
+    "15_12",
+    "20_3",
+    "20_6",
+    "20_12"
+  ],
+  "treatment_pcts": [
+    5,
+    10,
+    15,
+    20
+  ],
+  "treatment_months": [
+    3,
+    6,
+    12
+  ],
+  "excluded_features": {
+    "MRR": "one-to-one with Plan_Tier under standardised tier pricing",
+    "Days_To_Renewal": "calendar position, not an account attribute; carried no signal"
+  },
+  "feature_columns": [
+    "Account_Age_Days",
+    "Daily_Usage_Mins",
+    "Support_Tickets_90Days",
+    "API_Utilization_Rate",
+    "churn_proba",
+    "sentiment_score",
+    "fused_proba",
+    "Login_Frequency",
+    "Plan_Tier",
+    "risk_band",
+    "Dominant_SHAP_Driver"
+  ],
+  "n_training_rows": 126000,
+  "validation_mean_qini_auc": {
+    "Pooled depth=4 X-learner": 0.0909,
+    "Pooled depth=4 T-learner": 0.0891,
+    "Pooled depth=6 X-learner": 0.0884,
+    "Pooled depth=6 T-learner": 0.0859,
+    "Pooled depth=8 X-learner": 0.0859,
+    "Pooled depth=8 T-learner": 0.0824
+  },
+  "test_qini_auc_by_arm": {
+    "5_3": 0.0783,
+    "5_6": 0.0801,
+    "5_12": 0.0991,
+    "10_3": 0.142,
+    "10_6": 0.1254,
+    "10_12": 0.0276,
+    "15_3": 0.1425,
+    "15_6": 0.0735,
+    "15_12": 0.0933,
+    "20_3": 0.1235,
+    "20_6": 0.0457,
+    "20_12": 0.1457
+  },
+  "policy_value_test": {
+    "Historical actual (observed)": {
+      "value": 0.6113,
+      "ci": [
+        0.6054,
+        0.6171
+      ]
+    },
+    "Model policy (Pooled depth=4 X-learner)": {
+      "value": 0.7496,
+      "ci": [
+        0.7299,
+        0.7693
+      ]
+    },
+    "Always no discount": {
+      "value": 0.5378,
+      "ci": [
+        0.5274,
+        0.5481
+      ]
+    },
+    "Always max discount (20% for 12 months)": {
+      "value": 0.4643,
+      "ci": [
+        0.4476,
+        0.4809
+      ]
+    },
+    "Random arm": {
+      "value": 0.6655,
+      "ci": [
+        0.6469,
+        0.6841
+      ]
+    }
+  }
+}

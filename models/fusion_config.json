@@ -1,0 +1,7 @@
+{
+  "best_churn_model": "models\\churn_gradient_boosting.pkl",
+  "best_sentiment_model": "models\\sentiment_naive_bayes.pkl",
+  "fusion_strategy": "Stacking (LR meta)",
+  "alpha": 0.75,
+  "threshold": 0.54
+}

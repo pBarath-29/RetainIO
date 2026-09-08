@@ -1,0 +1,13 @@
+Meeting minutes with MP supervisor
+
+Discussed the expansion of the project scope to include a machine learning model that predicts optimal discount percentages (e.g., 5%, 10%) and evaluates whether financial discounts actually address the client's core issues.
+
+Reviewed the completed frontend design featuring tiered role management, where Account Managers can approve discounts up to 10%, and higher amounts are automatically routed to Account Directors.
+
+Discussed the implementation of local facial recognition for Account Director logins. Ms. Goh advised ensuring the biometric model's accuracy is high enough to prevent user frustration.
+
+Ms. Goh advised implementing continuous learning by feeding the Account Managers' final discount decisions and feedback back into the model's training dataset to improve accuracy over time.
+
+Clarified that standard authentication flows like manual password resets are not critical for the project, as the primary focus remains on the core ML workflow and the newly added facial verification feature.
+
+Outlined upcoming plans to build an automation layer that will automatically extract client feedback from Outlook emails and sync it to the database.

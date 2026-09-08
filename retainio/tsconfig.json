@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false,
+    "module": "ESNext",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "allowJs": true,
+    "jsx": "react-jsx",
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    },
+    "allowImportingTsExtensions": true,
+    "noEmit": true
+  },
+  // prisma/archive holds one-shot scripts that have already run and never will
+  // again (see its README). They're kept as a record of past data migrations,
+  // so they're deliberately not type-checked against the current schema —
+  // which has moved on since, and which they must not be "fixed" to match.
+  "exclude": [
+    "prisma/archive"
+  ]
+}
