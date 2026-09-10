@@ -652,6 +652,45 @@ export async function rescoreAccountToday(accountId: string) {
     },
   });
 
+  // Clear up what this rescore just superseded.
+  //
+  // Every call writes a fresh churn and sentiment prediction and repoints today's fusion
+  // score at them, which leaves the previous pair referenced by nothing — plus their SHAP
+  // rows. Clicking through the three sentiment options left 23 churn predictions on one
+  // account in one day, 297 SHAP rows among them, none of it read by anything.
+  //
+  // A time-based throttle would have been the wrong fix: correcting Frustrated to Satisfied
+  // to Neutral genuinely has to recompute each time, or the displayed score stops matching
+  // the correction. The recomputes are legitimate; only the leftovers are not.
+  //
+  // Scoped hard: this account, today only, and only rows no fusion score points at. History
+  // is never touched, and the pair written above is referenced so it cannot be caught. The
+  // newest sentiment row also survives by the same token, which matters because mapAccount
+  // reads it directly for `modelSentiment` rather than through the fusion score.
+  try {
+    const orphanedChurn = await prisma.churnPrediction.findMany({
+      where: { accountId, predictedAt: { gte: snapshotDate }, fusionScores: { none: {} } },
+      select: { id: true },
+    });
+    if (orphanedChurn.length) {
+      const ids = orphanedChurn.map(o => o.id);
+      // SHAP references a churn prediction with no cascade, so it has to go first.
+      await prisma.shapExplanation.deleteMany({ where: { churnPredictionId: { in: ids } } });
+      await prisma.churnPrediction.deleteMany({ where: { id: { in: ids } } });
+    }
+    // Scoped to THIS review, not the account. mapAccount reads the newest sentiment row of
+    // the newest review directly for `modelSentiment`, so a wider sweep could delete a row
+    // that is unreferenced by any fusion score yet still on screen. The row written above
+    // is referenced, so this can only ever catch ones it superseded.
+    if (review) {
+      await prisma.sentimentPrediction.deleteMany({
+        where: { reviewId: review.id, predictedAt: { gte: snapshotDate }, fusionScores: { none: {} } },
+      });
+    }
+  } catch (err: any) {
+    console.warn('Could not clear superseded predictions:', err.message || err);
+  }
+
   await rollupMonthlyForAccount(accountId, monthStart);
 
   // The diagnosis quotes the score, so it has to move with it.
