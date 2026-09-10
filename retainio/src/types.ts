@@ -28,7 +28,8 @@ export interface UserProfile {
 }
 
 export type RenewalOutcome = 'renewed' | 'upgraded' | 'downgraded' | 'left';
-export type IntentKind = 'renewing' | 'upgrading' | 'downgrading' | 'churning';
+// No `renewing`: contracts auto-renew, so renewing as-is needs no intent at all.
+export type IntentKind = 'upgrading' | 'downgrading' | 'churning';
 
 // What an account is expected to do at its next renewal, recorded ahead of time.
 // Recording one changes NOTHING about the account: it is held until the renewal date and
@@ -43,7 +44,6 @@ export interface RenewalIntent {
   source: 'manual' | 'email';
   recordedBy: string | null;   // null when a machine recorded it
   recordedAt: string;
-  notes: string | null;
 }
 
 // What actually happened at a renewal — the labelled row the models train on.
@@ -68,7 +68,6 @@ export interface RenewalRecord {
   discountMonths: number;
   planTierBefore: PlanTierName;
   planTierAfter: PlanTierName;
-  notes: string | null;
 }
 
 export interface DiscountRequest {
@@ -124,7 +123,7 @@ export interface Account {
   // 'churned' once a renewal recorded the account as having left. Nothing set this before
   // renewals were captured, so every account was permanently 'active'.
   subscriptionStatus: 'active' | 'renewed' | 'churned' | 'cancelled';
-  subscriptionType: 'Enterprise' | 'Pro' | 'Basic' | 'Business' | 'Starter';
+  subscriptionType: PlanTierName;
   contractRenewalDate?: string;
   contractDurationMonths?: number;
   accountManager: string;

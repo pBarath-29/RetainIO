@@ -85,10 +85,9 @@ enum RenewalOutcome {
 }
 
 // What an account is expected to do at its NEXT renewal, recorded ahead of time.
-// Annual contracts auto-renew unless notice is given, so `renewing` is the default and
-// needs no intent — an intent exists to record a departure from it.
+// Annual contracts auto-renew unless notice is given, so renewing as-is is the default and
+// has no intent kind of its own — an intent exists only to record a departure from it.
 enum IntentKind {
-  renewing
   upgrading
   downgrading
   churning
@@ -253,7 +252,6 @@ model RenewalIntent {
   recordedAt   DateTime     @default(now()) @map("recorded_at")
   cancelledAt  DateTime?    @map("cancelled_at")
   appliedAt    DateTime?    @map("applied_at")
-  notes        String?
 
   account    Account @relation(fields: [accountId], references: [id])
   recordedBy User?   @relation("IntentRecordedBy", fields: [recordedById], references: [id])
@@ -275,7 +273,6 @@ model RenewalRecord {
   // Derived from outcome, stored so training reads one column instead of re-deriving
   // a mapping that could drift from the one used here.
   retained    Boolean
-  notes       String?
 
   // True when the job defaulted to `renewed` with no intent and nobody confirming.
   // Carried into the training export so the assumption stays visible instead of being

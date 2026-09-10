@@ -20,7 +20,7 @@ import {
   MONTHS_PER_TERM, describeDiscount, givebackValue, needsDirectorApproval,
   selfApprovalCap, discountedTermValue, formatMoney, annualContractValue,
   discountStatus, describeDiscountStatus, blocksNewOffer, TIER_MONTHLY_RATE, addMonths,
-  OFFER_WINDOW_DAYS, daysUntil, daysAgo, formatTermDate,
+  OFFER_WINDOW_DAYS, daysUntil, daysAgo, formatTermDate, tierMoves,
 } from './pricing';
 import {
   computeRealFusion, runDailySnapshotForToday, loadModelFeatures, fusionRiskCategory,
@@ -1472,7 +1472,6 @@ function mapRenewalRecord(r: any) {
     discountMonths: r.discountMonths,
     planTierBefore: r.planTierBefore,
     planTierAfter: r.planTierAfter,
-    notes: r.notes,
   };
 }
 
@@ -1487,7 +1486,6 @@ function mapRenewalIntent(i: any) {
     source: i.source,
     recordedBy: i.recordedBy?.name ?? null,
     recordedAt: i.recordedAt.toISOString(),
-    notes: i.notes,
   };
 }
 
@@ -2318,9 +2316,11 @@ app.post('/api/accounts/:id/renewal-intent', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const userId = (req as any).userId as string;
-    const { kind, targetTier, notes } = req.body;
+    const { kind, targetTier } = req.body;
 
-    const VALID_KINDS = ['renewing', 'upgrading', 'downgrading', 'churning'];
+    // No `renewing`: contracts auto-renew, so renewing as-is is simply what happens when
+    // nothing is recorded.
+    const VALID_KINDS = ['upgrading', 'downgrading', 'churning'];
     if (!VALID_KINDS.includes(kind)) {
       return res.status(400).json({ error: `kind must be one of ${VALID_KINDS.join(', ')}.` });
     }
@@ -2342,8 +2342,20 @@ app.post('/api/accounts/:id/renewal-intent', requireAuth, async (req, res) => {
     if (needsTier && !TIER_MONTHLY_RATE[targetTier as keyof typeof TIER_MONTHLY_RATE]) {
       return res.status(400).json({ error: 'A target plan tier is required for an upgrade or downgrade.' });
     }
-    if (needsTier && targetTier === sub.planTier) {
-      return res.status(400).json({ error: `${account.name} is already on ${targetTier}.` });
+    // And it has to go the way it says. Checking only that the tier differed let an
+    // Enterprise account record an "upgrade" to Basic, which would then have resolved as
+    // `upgraded` while repricing the account down.
+    if (needsTier) {
+      const direction = kind === 'upgrading' ? 'upgrade' : 'downgrade';
+      const { upgrades, downgrades } = tierMoves(sub.planTier);
+      const allowed = kind === 'upgrading' ? upgrades : downgrades;
+      if (!allowed.includes(targetTier)) {
+        return res.status(400).json({
+          error: allowed.length
+            ? `${account.name} is on ${sub.planTier} — it can ${direction} to ${allowed.join(' or ')}.`
+            : `${account.name} is on ${sub.planTier}, so there is no plan to ${direction} to.`,
+        });
+      }
     }
 
     // One live intent per renewal: a later one supersedes rather than stacking, so the
@@ -2361,7 +2373,6 @@ app.post('/api/accounts/:id/renewal-intent', requireAuth, async (req, res) => {
         effectiveFor: sub.termEnd,
         source: 'manual',
         recordedById: userId,
-        notes: typeof notes === 'string' && notes.trim() ? notes.trim() : null,
       },
     });
 
@@ -2407,7 +2418,7 @@ app.post('/api/renewal-intents/:id/cancel', requireAuth, async (req, res) => {
 app.post('/api/renewals/:id/correct', requireAuth, async (req, res) => {
   try {
     const userId = (req as any).userId as string;
-    const { outcome, notes } = req.body;
+    const { outcome } = req.body;
 
     const VALID = ['renewed', 'upgraded', 'downgraded', 'left'];
     if (!VALID.includes(outcome)) {
@@ -2456,7 +2467,6 @@ app.post('/api/renewals/:id/correct', requireAuth, async (req, res) => {
           // No longer an unreviewed default: a person has now looked at this row.
           autoRecorded: false,
           recordedById: userId,
-          notes: typeof notes === 'string' && notes.trim() ? notes.trim() : record.notes,
         },
       }),
       ...(Object.keys(data).length ? [prisma.subscription.update({ where: { id: sub.id }, data })] : []),

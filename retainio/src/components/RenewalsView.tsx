@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Account, RenewalRecord, RenewalIntent, IntentKind, PlanTierName } from '../types';
-import { formatTermDate, formatMoney, TIER_MONTHLY_RATE, annualContractValue } from '../../pricing';
+import { formatTermDate, formatMoney, TIER_MONTHLY_RATE, annualContractValue, tierMoves } from '../../pricing';
 import { useToast } from './Toast';
 import { useModalA11y } from '../hooks/useModalA11y';
 import {
@@ -49,7 +49,6 @@ function scorePrediction(band: string | null, retained: boolean) {
 }
 
 const INTENT_LABEL: Record<IntentKind, string> = {
-  renewing: 'Will renew',
   upgrading: 'Will upgrade',
   downgrading: 'Will downgrade',
   churning: 'Will not renew',
@@ -167,7 +166,6 @@ export const RenewalsView: React.FC<RenewalsViewProps> = ({
                   <p className="text-[11px] text-slate-500 mt-0.5">
                     Applies at renewal on <strong className="text-slate-700">{formatTermDate(intent.effectiveFor)}</strong>
                     {intent.recordedBy ? ` · recorded by ${intent.recordedBy}` : ' · recorded automatically'}
-                    {intent.notes ? ` · "${intent.notes}"` : ''}
                   </p>
                 </div>
                 <button
@@ -336,17 +334,45 @@ export const RenewalsView: React.FC<RenewalsViewProps> = ({
   );
 };
 
+// Every intent this account could actually carry out at its renewal, built from its current
+// plan: an Enterprise account is never offered an upgrade, nor a Basic one a downgrade. The
+// old generic options fed an all-tiers dropdown, which let Enterprise "upgrade" to Basic.
+interface IntentOption {
+  kind: IntentKind;
+  targetTier?: PlanTierName;
+  label: string;
+  description: string;
+}
+
+const optionKey = (o: IntentOption) => `${o.kind}:${o.targetTier ?? ''}`;
+
+function intentOptions(currentTier: PlanTierName): IntentOption[] {
+  const { upgrades, downgrades } = tierMoves(currentTier);
+  const toOption = (kind: IntentKind, verb: string, tier: PlanTierName): IntentOption => ({
+    kind,
+    targetTier: tier,
+    label: `${verb} to ${tier}`,
+    description: `${formatMoney(TIER_MONTHLY_RATE[tier])}/month (${formatMoney(annualContractValue(TIER_MONTHLY_RATE[tier]))}/year) from the renewal.`,
+  });
+  return [
+    { kind: 'churning', label: INTENT_LABEL.churning,
+      description: 'The customer has given notice. The account will churn at the renewal.' },
+    ...downgrades.map(t => toOption('downgrading', 'Downgrade', t)),
+    ...upgrades.map(t => toOption('upgrading', 'Upgrade', t)),
+  ];
+}
+
 const IntentModal: React.FC<{ account: Account; onClose: () => void; onSaved: () => void }> = ({
   account, onClose, onSaved,
 }) => {
   const { showToast } = useToast();
   const { dialogRef, backdropProps } = useModalA11y(true, onClose);
-  const [kind, setKind] = useState<IntentKind>('churning');
-  const [targetTier, setTargetTier] = useState<PlanTierName>('Pro');
-  const [notes, setNotes] = useState('');
+  const currentTier = account.subscriptionType;
+  const options = intentOptions(currentTier);
+  const [selectedKey, setSelectedKey] = useState(() => optionKey(options[0]));
   const [saving, setSaving] = useState(false);
 
-  const needsTier = kind === 'upgrading' || kind === 'downgrading';
+  const selected = options.find(o => optionKey(o) === selectedKey) ?? options[0];
 
   const save = async () => {
     setSaving(true);
@@ -354,7 +380,7 @@ const IntentModal: React.FC<{ account: Account; onClose: () => void; onSaved: ()
       const res = await fetch(`/api/accounts/${account.id}/renewal-intent`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ kind, targetTier: needsTier ? targetTier : undefined, notes }),
+        body: JSON.stringify({ kind: selected.kind, targetTier: selected.targetTier }),
       });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error || 'Failed to record the intent.');
@@ -376,6 +402,10 @@ const IntentModal: React.FC<{ account: Account; onClose: () => void; onSaved: ()
            className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 space-y-4">
         <div>
           <h3 className="font-bold text-slate-900">Renewal intent — {account.name}</h3>
+          <p className="text-[11px] text-slate-500 mt-1">
+            Currently on <strong className="text-slate-700">{currentTier}</strong>
+            {' '}— {formatMoney(TIER_MONTHLY_RATE[currentTier])}/month.
+          </p>
           <p className="text-[11px] text-slate-500 mt-1 flex items-start gap-1.5">
             <CalendarClock className="w-3.5 h-3.5 shrink-0 mt-px" />
             <span>
@@ -389,48 +419,21 @@ const IntentModal: React.FC<{ account: Account; onClose: () => void; onSaved: ()
         </div>
 
         <div className="space-y-2">
-          {(['churning', 'downgrading', 'upgrading', 'renewing'] as IntentKind[]).map(k => (
-            <label key={k} className={`flex items-start gap-2.5 p-3 rounded-lg border cursor-pointer transition ${
-              kind === k ? 'border-slate-900 bg-slate-50' : 'border-slate-200 hover:bg-slate-50'
-            }`}>
-              <input type="radio" name="kind" value={k} checked={kind === k}
-                     onChange={() => setKind(k)} className="mt-0.5 cursor-pointer" />
-              <span className="text-xs">
-                <strong className="text-slate-900 block">{INTENT_LABEL[k]}</strong>
-                <span className="text-slate-500">
-                  {k === 'churning' && 'The customer has given notice. The account will churn at the renewal.'}
-                  {k === 'downgrading' && 'Moving to a smaller plan. Repriced at the renewal.'}
-                  {k === 'upgrading' && 'Moving to a larger plan. Repriced at the renewal.'}
-                  {k === 'renewing' && 'Confirming an ordinary renewal — the same outcome as recording nothing, but marked as confirmed rather than assumed.'}
+          {options.map(o => {
+            const key = optionKey(o);
+            return (
+              <label key={key} className={`flex items-start gap-2.5 p-3 rounded-lg border cursor-pointer transition ${
+                selectedKey === key ? 'border-slate-900 bg-slate-50' : 'border-slate-200 hover:bg-slate-50'
+              }`}>
+                <input type="radio" name="intent" value={key} checked={selectedKey === key}
+                       onChange={() => setSelectedKey(key)} className="mt-0.5 cursor-pointer" />
+                <span className="text-xs">
+                  <strong className="text-slate-900 block">{o.label}</strong>
+                  <span className="text-slate-500">{o.description}</span>
                 </span>
-              </span>
-            </label>
-          ))}
-        </div>
-
-        {needsTier && (
-          <div>
-            <label htmlFor="target-tier" className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-              New plan tier
-            </label>
-            <select id="target-tier" value={targetTier} onChange={e => setTargetTier(e.target.value as PlanTierName)}
-                    className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 bg-white cursor-pointer">
-              {(Object.keys(TIER_MONTHLY_RATE) as PlanTierName[]).map(t => (
-                <option key={t} value={t}>
-                  {t} — {formatMoney(TIER_MONTHLY_RATE[t])}/month ({formatMoney(annualContractValue(TIER_MONTHLY_RATE[t]))}/year)
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        <div>
-          <label htmlFor="intent-notes" className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-            Notes (optional)
-          </label>
-          <textarea id="intent-notes" rows={2} value={notes} onChange={e => setNotes(e.target.value)}
-                    placeholder="What did the customer say?"
-                    className="w-full text-xs p-3 border border-slate-200 rounded-lg bg-slate-50 resize-none focus:outline-none focus:ring-2 focus:ring-slate-900" />
+              </label>
+            );
+          })}
         </div>
 
         <div className="flex justify-end gap-2 pt-1">

@@ -87,13 +87,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       
       const matchesRisk = selectedRiskFilter === 'All' || acc.riskCategory === selectedRiskFilter;
 
-      let matchesTier = true;
-      if (selectedTierFilter !== 'All') {
-        const tier = acc.subscriptionType;
-        if (selectedTierFilter === 'Enterprise') matchesTier = tier === 'Enterprise';
-        else if (selectedTierFilter === 'Pro') matchesTier = tier === 'Pro' || tier === 'Business';
-        else if (selectedTierFilter === 'Basic') matchesTier = tier === 'Basic' || tier === 'Starter';
-      }
+      const matchesTier = selectedTierFilter === 'All' || acc.subscriptionType === selectedTierFilter;
 
       return matchesSearch && matchesRisk && matchesTier;
     })

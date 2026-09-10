@@ -48,8 +48,9 @@ export async function systemActorId(): Promise<string> {
   return actor.id;
 }
 
+// No intent at all resolves to 'renewed' (see resolveOneRenewal), which is why there is no
+// intent kind for it: renewing as-is is what auto-renewal does when nobody records anything.
 const OUTCOME_FOR_INTENT: Record<IntentKind, RenewalOutcome> = {
-  renewing: 'renewed',
   upgrading: 'upgraded',
   downgrading: 'downgraded',
   churning: 'left',
@@ -208,7 +209,6 @@ async function resolveOneRenewal(
         autoRecorded,
         intentId: intent?.id,
         recordedById: intent?.recordedById ?? null,
-        notes: intent?.notes ?? null,
         featureSnapshot,
         featuresFrozenAt: index?.frozenAt ?? null,
         daysToRenewalAtIndex: index?.daysToRenewal ?? 0,

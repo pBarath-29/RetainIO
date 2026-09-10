@@ -19,6 +19,21 @@ export const TIER_MONTHLY_RATE = {
 
 export type PlanTierName = keyof typeof TIER_MONTHLY_RATE;
 
+/**
+ * The tiers an account on `current` could move to at its renewal, nearest first — so an
+ * Enterprise account's downgrades read Pro, then Basic. Derived from the rates rather than
+ * from a second list of tiers in order, which could disagree with them.
+ */
+export function tierMoves(current: PlanTierName): { upgrades: PlanTierName[]; downgrades: PlanTierName[] } {
+  const rate = TIER_MONTHLY_RATE[current];
+  const tiers = Object.keys(TIER_MONTHLY_RATE) as PlanTierName[];
+  const byRate = (a: PlanTierName, b: PlanTierName) => TIER_MONTHLY_RATE[a] - TIER_MONTHLY_RATE[b];
+  return {
+    upgrades: tiers.filter(t => TIER_MONTHLY_RATE[t] > rate).sort(byRate),
+    downgrades: tiers.filter(t => TIER_MONTHLY_RATE[t] < rate).sort(byRate).reverse(),
+  };
+}
+
 // An Account Manager may give away up to this share of a contract's annual value
 // before it needs Director sign-off. Expressed against ARR rather than against the
 // headline rate, so "10% for 12 months" and "20% for 6 months" — which cost exactly

@@ -111,7 +111,7 @@ async function create() {
   await prisma.renewalIntent.create({
     data: {
       accountId: leaving.id, kind: 'churning', effectiveFor: leavingSub.termEnd,
-      source: 'manual', recordedById: manager.id, notes: 'Told us in writing they are moving to a competitor.',
+      source: 'manual', recordedById: manager.id,
     },
   });
 
@@ -122,7 +122,7 @@ async function create() {
   await prisma.renewalIntent.create({
     data: {
       accountId: shrinking.id, kind: 'downgrading', targetTier: 'Basic', effectiveFor: shrinkingSub.termEnd,
-      source: 'manual', recordedById: manager.id, notes: 'Cutting seats for next year.',
+      source: 'manual', recordedById: manager.id,
     },
   });
 
