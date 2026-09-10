@@ -169,7 +169,7 @@ export async function loadUpliftComponents(accountId: string, asOf?: Date) {
 /**
  * Freezes the account as it stands NOW as the pre-treatment state for its next renewal.
  *
- * Called from two places, and both are strictly before any treatment reaches the customer:
+ * Called from three places, all before any treatment reaches the customer:
  *
  *   window_open     — the daily job, when the account first comes within OFFER_WINDOW_DAYS
  *                     of its renewal. No discount can exist yet, because the offer window
@@ -179,6 +179,10 @@ export async function loadUpliftComponents(accountId: string, asOf?: Date) {
  *                     moment of the decision is the truest answer to "what did we see when
  *                     we chose to act". Still pre-treatment: a discount does not take
  *                     effect until the renewal itself.
+ *   intent_recorded — an upgrade, downgrade or departure was announced. Before this existed,
+ *                     an account that gave notice at day 250 went unmeasured until the
+ *                     window opened at day 180 — by which point it had spent seventy days
+ *                     acting on the decision, and its features described that instead.
  *
  * Why not simply measure at the renewal, which would be far simpler: by then a departing
  * account's usage has already collapsed, so the features contain the answer. A model
@@ -187,7 +191,7 @@ export async function loadUpliftComponents(accountId: string, asOf?: Date) {
  */
 export async function captureIndexSnapshot(
   accountId: string,
-  reason: 'window_open' | 'offer_approved',
+  reason: 'window_open' | 'offer_approved' | 'intent_recorded',
   asOf: Date = new Date(),
 ) {
   const sub = await prisma.subscription.findFirst({
@@ -200,8 +204,15 @@ export async function captureIndexSnapshot(
     where: { accountId_renewalDate: { accountId, renewalDate } },
   });
 
-  // An approval supersedes the automatic window snapshot, but never the reverse — the
-  // daily job must not overwrite a decision-moment measurement with a later routine one.
+  // The first measurement stands, with one exception: an approval may replace a routine
+  // window snapshot, because it records what was seen when the decision to act was made.
+  //
+  // Nothing else ever replaces anything. In particular an approval does NOT replace an
+  // intent snapshot: once a customer has announced a change, anything measured afterwards
+  // is post-announcement, so a discount offered to talk them out of a downgrade is judged
+  // against the account as it stood when they announced — not after it began shrinking.
+  // Likewise a second intent (someone changing their mind) keeps the first, which is the
+  // earliest signal. And the daily job never overwrites a decision-moment measurement.
   if (existing && !(reason === 'offer_approved' && existing.reason === 'window_open')) return existing;
 
   // Measured AT asOf. Passing it here is what makes a reconstructed index honest: the

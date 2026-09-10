@@ -105,7 +105,7 @@ export const RenewalsView: React.FC<RenewalsViewProps> = ({
         <p className="text-xs text-slate-500 mt-1 max-w-3xl">
           Annual contracts renew automatically unless notice is given, so outcomes are recorded at the
           term boundary without anyone filling in a form. Record an intent only when an account is
-          doing something other than renewing as-is — it changes nothing until that renewal date.
+          doing something other than renewing as-is — it does not affect the contract until that renewal date.
         </p>
       </div>
 

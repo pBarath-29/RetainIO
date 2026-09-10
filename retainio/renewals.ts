@@ -212,6 +212,7 @@ async function resolveOneRenewal(
         featureSnapshot,
         featuresFrozenAt: index?.frozenAt ?? null,
         daysToRenewalAtIndex: index?.daysToRenewal ?? 0,
+        indexReason: index?.reason ?? null,
         predictedRisk: components.fusedProba,
         churnProba: components.churnProba,
         sentimentScore: components.sentimentScore,

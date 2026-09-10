@@ -181,11 +181,12 @@ model User {
   @@map("users")
 }
 
-// Why an index snapshot was taken. Both are pre-treatment; they differ only in what
-// prompted the measurement.
+// Why an index snapshot was taken. All three are taken before any treatment reaches the
+// customer; they differ in what prompted the measurement.
 enum IndexReason {
-  window_open     // nobody has acted; frozen automatically when the offer window opened
-  offer_approved  // a discount was approved; frozen at that moment, before it takes effect
+  window_open      // nobody has acted; frozen automatically when the offer window opened
+  offer_approved   // a discount was approved; frozen at that moment, before it takes effect
+  intent_recorded  // the customer announced a change; frozen then rather than at the window
 }
 
 // The account as it stood when the retention decision was made — the training row's
@@ -196,7 +197,7 @@ enum IndexReason {
 // "usage near zero means churn": true, and worthless, since nothing can be done at that
 // point. The measurement has to happen while the account is still actionable.
 //
-// Two moments produce one, and both are strictly pre-treatment:
+// Three moments produce one, and all are before any treatment reaches the customer:
 //
 //   window_open     — 180 days before renewal, when discounts first become allowed.
 //                     Every account gets this, so untreated accounts (the control group
@@ -204,6 +205,12 @@ enum IndexReason {
 //   offer_approved  — the moment a discount is approved, replacing the above. A discount
 //                     does not take effect until the renewal, so this is still measured
 //                     before any treatment has reached the customer.
+//   intent_recorded — the moment an upgrade, downgrade or departure is announced, when that
+//                     comes before the window. Waiting for the window would measure an
+//                     account that had already begun acting on its decision. This one means
+//                     "no later than the decision became known" rather than "before the
+//                     decision" — the customer decided at some point before saying so — which
+//                     is why the reason is carried onto the training row.
 //
 // `daysToRenewal` is stored because treated and untreated rows are measured at different
 // distances from the renewal, and that difference is itself confounding — the propensity
@@ -296,6 +303,10 @@ model RenewalRecord {
   // than silently teaching the model that collapse predicts collapse.
   featuresFrozenAt      DateTime? @map("features_frozen_at")
   daysToRenewalAtIndex  Int?      @map("days_to_renewal_at_index")
+  // Which moment froze them. Separates a row measured at a customer's announcement from
+  // one measured by the calendar, so training can tell the two apart rather than having
+  // the difference absorbed. Null only when no index existed and features were taken late.
+  indexReason           IndexReason? @map("index_reason")
   // The fused score — what the app showed as this account's risk.
   predictedRisk   Float?     @map("predicted_risk")
 

@@ -87,6 +87,10 @@ for (const r of renewals) {
     is_assumed: isAssumed,
     days_to_renewal_at_index: indexDays,
     features_frozen_at: r.featuresFrozenAt?.toISOString().slice(0, 10) ?? '',
+    // What froze the features: the calendar (window_open), a discount approval, or the
+    // customer announcing a change. Rows of the last kind are measured no later than the
+    // decision became known — not before it — so training can filter on this if it matters.
+    index_reason: r.indexReason ?? '',
   });
 
   churnRows.push({
@@ -101,6 +105,7 @@ for (const r of renewals) {
     Churn: r.retained ? 0 : 1,
     is_assumed: isAssumed,
     days_to_renewal_at_index: indexDays,
+    index_reason: r.indexReason ?? '',
   });
 }
 
@@ -128,13 +133,13 @@ const nUplift = writeCsv('uplift_real.csv', [
   'API_Utilization_Rate', 'churn_proba', 'sentiment_score', 'fused_proba',
   'Login_Frequency', 'Plan_Tier', 'Dominant_SHAP_Driver', 'risk_band',
   'discount_pct', 'discount_months', 'Retained', 'is_assumed',
-  'days_to_renewal_at_index', 'features_frozen_at',
+  'days_to_renewal_at_index', 'features_frozen_at', 'index_reason',
 ], upliftRows);
 
 const nChurn = writeCsv('churn_real.csv', [
   'Account_Age_Days', 'Daily_Usage_Mins', 'Support_Tickets_90Days',
   'API_Utilization_Rate', 'Login_Frequency', 'Plan_Tier', 'Churn', 'is_assumed',
-  'days_to_renewal_at_index',
+  'days_to_renewal_at_index', 'index_reason',
 ], churnRows);
 
 const nSent = writeCsv('sentiment_real.csv', ['review_text', 'sentiment', 'text_length', 'source'], sentimentRows);
@@ -142,6 +147,7 @@ const nSent = writeCsv('sentiment_real.csv', ['review_text', 'sentiment', 'text_
 const assumed = upliftRows.filter(r => r.is_assumed === 1).length;
 const leaky = upliftRows.filter(r => r.days_to_renewal_at_index <= 0).length;
 const churned = upliftRows.filter(r => r.Retained === 0).length;
+const atAnnouncement = upliftRows.filter(r => r.index_reason === 'intent_recorded').length;
 
 console.log(`\nExported to Datasets/feedback/\n`);
 console.log(`  uplift_real.csv     ${nUplift} row(s)   -> uplift model`);
@@ -161,6 +167,11 @@ if (leaky) {
 } else if (nUplift) {
   const days = upliftRows.map(r => r.days_to_renewal_at_index);
   console.log(`  every row measured before its renewal: ${Math.min(...days)}-${Math.max(...days)} days out`);
+}
+if (atAnnouncement) {
+  console.log(`  ${atAnnouncement} row(s) frozen when the customer announced a change (index_reason=intent_recorded).`);
+  console.log(`  Measured no later than the decision became known, not before it: less leaky than`);
+  console.log(`  waiting for the window, but not leak-free. Filter on index_reason if that matters.`);
 }
 if (nUplift > 0 && churned === 0) {
   console.log(`\n  NOTE: every row is a retention. A classifier cannot learn a boundary from a`);

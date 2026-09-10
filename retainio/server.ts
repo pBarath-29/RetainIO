@@ -2376,6 +2376,21 @@ app.post('/api/accounts/:id/renewal-intent', requireAuth, async (req, res) => {
       },
     });
 
+    // Recording an intent is the moment the outcome became known. Freeze the account now
+    // rather than waiting for the offer window: an account that gave notice at day 250 would
+    // otherwise go unmeasured until day 180, seventy days into acting on its decision, and
+    // its training row would describe that rather than the account as it stood.
+    //
+    // Always attempted, for all three kinds; the precedence rule in captureIndexSnapshot
+    // decides whether it applies, so an account already frozen keeps its earlier snapshot.
+    // Non-fatal, like the two approval paths: the intent is already saved, and losing the
+    // training snapshot must not fail it.
+    try {
+      await captureIndexSnapshot(id, 'intent_recorded');
+    } catch (err: any) {
+      console.warn('Index snapshot failed after recording intent:', err.message || err);
+    }
+
     res.json({ ok: true, intentId: intent.id, effectiveFor: intent.effectiveFor.toISOString() });
   } catch (error: any) {
     console.error('Error in POST /api/accounts/:id/renewal-intent:', error);

@@ -97,6 +97,15 @@ When an offer is approved, the record is re-taken at that moment instead. That i
 the customer is affected — a discount does not take effect until the renewal — but it captures
 what the approver was actually looking at when they decided.
 
+If a customer says they are leaving, downgrading or upgrading BEFORE the window opens, the
+record is taken at that moment rather than waiting for the window. Otherwise an account that
+gave notice ten months out would not be measured until six months out — by which time it has
+spent months acting on its decision, and the record would describe an account already winding
+down, or ramping up, instead of the account as it stood when it decided. Once taken this way,
+the record is kept even if a discount is later offered to change their mind, so that offer is
+judged against the account as it was when they announced. Changing the intent, or cancelling
+it, keeps the original record.
+
 An account whose window has not opened yet is not an oversight. It is a deliberate hold, and
 the form will say when the window opens — while still letting a walkthrough be arranged in the
 meantime.
