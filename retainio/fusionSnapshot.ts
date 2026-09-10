@@ -678,6 +678,31 @@ export async function runDailySnapshotForToday() {
       });
       if (existing) {
         skipped++;
+
+        // The score for today already exists — but something else wrote it, and that
+        // something may not have refreshed the diagnosis underneath it.
+        //
+        // The Gemini summary quotes this account's own figures ("a Fusion Risk Score of
+        // 56/100", "77.7% churn probability"), so it is only true of the numbers it was
+        // generated from. It used to be produced solely at the end of this loop body,
+        // which the simulator bypasses by writing today's fusion score before this pass
+        // runs. The result was a diagnosis frozen on 4 September sitting directly beneath
+        // a displayed score of 89 — every figure in it wrong, and stated confidently.
+        //
+        // Regenerating whenever the diagnosis predates the score covers every writer of
+        // that row, not just the simulator, and is self-limiting: once rewritten it is
+        // newer than the score, so this does not fire again until the score changes.
+        try {
+          const diagnosis = await prisma.aiExplanation.findFirst({
+            where: { accountId: account.id },
+            orderBy: { generatedAt: 'desc' },
+          });
+          if (!diagnosis || diagnosis.generatedAt < existing.computedAt) {
+            await generateAiExplanation(account.id);
+          }
+        } catch (err: any) {
+          console.warn(`Diagnosis refresh failed for ${account.name}:`, err.message || err);
+        }
         continue;
       }
 
