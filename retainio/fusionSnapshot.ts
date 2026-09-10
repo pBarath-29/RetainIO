@@ -653,6 +653,23 @@ export async function rescoreAccountToday(accountId: string) {
   });
 
   await rollupMonthlyForAccount(accountId, monthStart);
+
+  // The diagnosis quotes the score, so it has to move with it.
+  //
+  // This function exists precisely to change an account's displayed risk — after a
+  // sentiment correction, or when someone presses Re-score — and without this the summary
+  // underneath kept stating the previous score and the previous sentiment. A person
+  // correcting "Frustrated" to "Satisfied" would watch the number change while the text
+  // below still explained the frustration.
+  //
+  // Non-fatal, matching the sentiment-correction path's own rule: losing Gemini must not
+  // lose the person's judgement, and the daily pass will refresh it regardless.
+  try {
+    await generateAiExplanation(accountId);
+  } catch (err: any) {
+    console.warn('Diagnosis refresh failed after rescore:', err.message || err);
+  }
+
   return {
     fusionScore: Math.round(fusionData.fusion_proba * 100),
     classification: sentData.classification,
