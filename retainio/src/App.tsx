@@ -383,6 +383,8 @@ export default function App() {
             onApproveDiscountRequest={handleApproveDiscountRequest}
             onRejectDiscountRequest={handleRejectDiscountRequest}
             onRescored={refreshData}
+            renewalIntents={renewalIntents}
+            onIntentCancelled={refreshData}
           />
         ) : (
           <>

@@ -4,7 +4,7 @@ import {
   needsDirectorApproval, describeDiscount, formatMoney, blocksNewOffer, formatTermDate, addMonths,
   OFFER_WINDOW_DAYS, daysUntil, daysAgo,
 } from '../../pricing';
-import { Account, UserProfile, DiscountRequest } from '../types';
+import { Account, UserProfile, DiscountRequest, RenewalIntent } from '../types';
 import { FaceVerificationModal } from './FaceVerificationModal';
 import { DiscountEmailModal } from './DiscountEmailModal';
 import { RiskSparkline } from './RiskSparkline';
@@ -134,6 +134,9 @@ interface AccountAnalysisPageProps {
   // Reload after an on-demand re-score, so the panel shows the numbers that were just
   // written rather than the ones it was rendered with.
   onRescored?: () => void;
+  // Live intents only — /api/bootstrap filters out cancelled and applied ones already.
+  renewalIntents?: RenewalIntent[];
+  onIntentCancelled?: () => void;
 }
 
 export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
@@ -147,7 +150,9 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
   onApplyDiscount,
   onApproveDiscountRequest,
   onRejectDiscountRequest,
-  onRescored
+  onRescored,
+  renewalIntents = [],
+  onIntentCancelled
 }) => {
   const [activeTab, setActiveTab] = useState<'fusion' | 'shap' | 'uplift' | 'discount'>(initialTab || 'fusion');
   // How many SHAP factors the user wants visible. The API returns every
@@ -225,6 +230,31 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
       showToast('Could not reach the server to re-score.', 'error');
     } finally {
       setIsRescoring(false);
+    }
+  };
+
+  // The intent for THIS renewal, not merely for this account: one filed against a later
+  // renewal cycle must not surface against the term being discounted. Bootstrap sends live
+  // intents only, so there is no cancelled/applied state to filter here.
+  const liveIntent = renewalIntents.find(
+    i => i.accountId === account.id && i.effectiveFor.substring(0, 10) === account.contractRenewalDate,
+  ) ?? null;
+  const [isCancellingIntent, setIsCancellingIntent] = useState<boolean>(false);
+
+  // The same call RenewalsView makes, so there is one way to cancel an intent rather than two.
+  const handleCancelIntent = async () => {
+    if (!liveIntent || isCancellingIntent) return;
+    setIsCancellingIntent(true);
+    try {
+      const res = await fetch(`/api/renewal-intents/${liveIntent.id}/cancel`, { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { showToast(data.error || 'Could not cancel the intent.', 'error'); return; }
+      showToast(`Intent cancelled. ${account.name} will renew as-is unless a new one is recorded.`, 'success');
+      onIntentCancelled?.();
+    } catch {
+      showToast('Could not reach the server to cancel the intent.', 'error');
+    } finally {
+      setIsCancellingIntent(false);
     }
   };
 
@@ -1416,6 +1446,40 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
                 </div>
               </div>
             ) : null}
+
+            {/* A recorded intent decides this account's outcome at the renewal, and giving a
+                discount does nothing to it. Save the customer, forget the intent, and the
+                renewal is still recorded as a churn: the account is closed, the discount never
+                takes effect, and the training row says the offer failed on the very row that
+                proves it worked. The offer form is where that mistake gets made, so the warning
+                belongs here rather than only on the Renewals page. */}
+            {liveIntent && (
+              <div className="p-4 rounded-xl border text-xs space-y-2.5 bg-amber-50/90 border-amber-300 text-amber-950">
+                <div className="flex items-center space-x-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0" />
+                  <span className="uppercase tracking-wider font-extrabold text-xs">
+                    {liveIntent.kind === 'churning'
+                      ? 'This account is set to churn at its renewal'
+                      : `This account is set to ${liveIntent.kind === 'upgrading' ? 'upgrade' : 'downgrade'}${liveIntent.targetTier ? ` to ${liveIntent.targetTier}` : ''} at its renewal`}
+                  </span>
+                </div>
+                <p className="leading-relaxed">
+                  Recorded {liveIntent.recordedBy ? `by ${liveIntent.recordedBy}` : 'automatically'} for{' '}
+                  <strong>{formatTermDate(liveIntent.effectiveFor)}</strong>. A discount does not change this on
+                  its own — {liveIntent.kind === 'churning'
+                    ? 'if the customer has agreed to stay, cancel it, or the account will be recorded as churned whatever offer you make.'
+                    : 'if the customer has agreed to stay on their current plan, cancel it, or they will be repriced at the renewal anyway.'}
+                </p>
+                <button
+                  type="button"
+                  onClick={handleCancelIntent}
+                  disabled={isCancellingIntent}
+                  className="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-amber-900 text-white hover:bg-amber-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isCancellingIntent ? 'Cancelling...' : 'Cancel it'}
+                </button>
+              </div>
+            )}
 
             {/* Pending / Reviewed Request Status Container */}
             {activeDirectorRequest && !(activeDirectorRequest.status !== 'pending' && isRequestBannerDismissed) && (

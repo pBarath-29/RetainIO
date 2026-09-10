@@ -106,6 +106,13 @@ the record is kept even if a discount is later offered to change their mind, so 
 judged against the account as it was when they announced. Changing the intent, or cancelling
 it, keeps the original record.
 
+A recorded intent decides the outcome by itself, and giving a discount does not change it. So if
+a customer says they are leaving, you offer a discount, and they then agree to stay, the intent
+has to be cancelled — otherwise the renewal is still recorded as a churn, the account is closed
+and the discount never takes effect. The Retention Offer tab warns whenever an intent is pending
+for that renewal and can cancel it there. A renewal whose intent was cancelled counts as
+confirmed rather than assumed: somebody looked at the account and concluded it renews as-is.
+
 An account whose window has not opened yet is not an oversight. It is a deliberate hold, and
 the form will say when the window opens — while still letting a walkthrough be arranged in the
 meantime.

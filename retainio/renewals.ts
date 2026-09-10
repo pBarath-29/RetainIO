@@ -147,9 +147,19 @@ async function resolveOneRenewal(
     orderBy: { recordedAt: 'desc' },
   });
 
+  // An intent recorded for this renewal and later CANCELLED — typically a churn that a
+  // discount turned around. The outcome is an ordinary renewal, but a person plainly dealt
+  // with this renewal, so it counts as confirmed rather than assumed. Without this the most
+  // valuable row the system can produce — a customer who was saved — exports as a guess,
+  // indistinguishable from an account nobody ever opened.
+  const cancelledIntent = intent ? null : await prisma.renewalIntent.findFirst({
+    where: { accountId, effectiveFor: termEnd, cancelledAt: { not: null } },
+    orderBy: { cancelledAt: 'desc' },
+  });
+
   const outcome: RenewalOutcome = intent ? OUTCOME_FOR_INTENT[intent.kind] : 'renewed';
   const retained = isRetained(outcome);
-  const autoRecorded = !intent;
+  const autoRecorded = !intent && !cancelledIntent;
 
   // The PRE-TREATMENT measurement, taken months ago — when the offer window opened, or
   // when a discount was approved. Not the account's state now.
@@ -208,7 +218,11 @@ async function resolveOneRenewal(
         retained,
         autoRecorded,
         intentId: intent?.id,
-        recordedById: intent?.recordedById ?? null,
+        // Names whoever engaged with this renewal, including someone who recorded an intent
+        // and then cancelled it. intentId deliberately stays the LIVE intent only: a cancelled
+        // one did not produce this outcome, and the appliedAt write below is guarded on the
+        // same variable, so it must never be stamped as applied.
+        recordedById: intent?.recordedById ?? cancelledIntent?.recordedById ?? null,
         featureSnapshot,
         featuresFrozenAt: index?.frozenAt ?? null,
         daysToRenewalAtIndex: index?.daysToRenewal ?? 0,
@@ -267,9 +281,12 @@ async function resolveOneRenewal(
   const discountNote = discount
     ? ` ${discount.discountApplied}% discount for ${discount.discountMonths} months is now in effect.`
     : '';
+  const CANCELLED_VERB: Record<string, string> = { churning: 'churn', upgrading: 'upgrade', downgrading: 'downgrade' };
   const sourceNote = intent
     ? ` Recorded from a ${intent.source === 'email' ? 'customer email' : 'manually recorded'} intent.`
-    : ' No intent was recorded, so the contract renewed on its standard terms.';
+    : cancelledIntent
+      ? ` An intent to ${CANCELLED_VERB[cancelledIntent.kind] ?? cancelledIntent.kind} was recorded and later cancelled, so the contract renewed on its standard terms.`
+      : ' No intent was recorded, so the contract renewed on its standard terms.';
 
   writes.push(
     prisma.auditLog.create({
