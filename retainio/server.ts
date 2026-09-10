@@ -29,6 +29,7 @@ import {
   type SentimentClassValue,
 } from './fusionSnapshot';
 import { runRenewalsForToday, isRetained } from './renewals';
+import { ingestInbox, mailIngestConfigured } from './mailIngest';
 
 dotenv.config();
 
@@ -2174,6 +2175,86 @@ app.post('/api/admin/run-renewals', requireAuth, async (_req, res) => {
 // This changes NOTHING about the account now. It is held until the renewal date and
 // resolved by the daily job there — which is what makes it safe to accept without a
 // second person confirming it: while pending it is visible and can be cancelled.
+// ── Email ingestion ─────────────────────────────────────────────────────────
+//
+// Shared by the route below and the poll in startServer, so a manual check and a scheduled
+// one cannot behave differently. The in-flight guard is module-level rather than per-request
+// because the cost being avoided is two simultaneous IMAP connections to the same mailbox,
+// which Gmail will refuse.
+let ingestInFlight = false;
+
+async function runIngestOnce(log = false) {
+  if (ingestInFlight) return { busy: true as const };
+  ingestInFlight = true;
+  try {
+    const summary = await ingestInbox(log);
+
+    // Once per ACCOUNT, not once per email. rescoreAccountToday creates a fresh churn and
+    // sentiment prediction row on every call, so three emails about one customer would
+    // otherwise leave three sets of rows behind to arrive at a single answer.
+    const rescored: string[] = [];
+    for (const accountId of summary.accountIds) {
+      try {
+        await rescoreAccountToday(accountId);
+        rescored.push(accountId);
+      } catch (err: any) {
+        // Non-fatal by design: the review is already committed, and the daily pass will
+        // score it. Losing the model service must not lose the customer's feedback.
+        console.warn('Re-score after ingest failed (review still saved):', err.message || err);
+      }
+    }
+    return { busy: false as const, summary, rescored };
+  } finally {
+    ingestInFlight = false;
+  }
+}
+
+// The "Check inbox now" button. Exists so a demo does not have to wait out the poll interval.
+app.post('/api/inbox/check', requireAuth, async (req, res) => {
+  try {
+    if (!mailIngestConfigured()) {
+      return res.status(503).json({
+        error: 'Email ingestion is not configured. Set INGEST_IMAP_HOST, INGEST_IMAP_USER and INGEST_IMAP_PASSWORD.',
+      });
+    }
+    const result = await runIngestOnce();
+    if (result.busy) return res.status(409).json({ error: 'A mailbox check is already running.' });
+    res.json({ ...result.summary, rescored: result.rescored.length });
+  } catch (error: any) {
+    console.error('Error in POST /api/inbox/check:', error);
+    res.status(502).json({ error: error.message || 'Could not reach the mailbox.' });
+  }
+});
+
+// What the ingester has seen. Without this an email that named an account that does not
+// exist would vanish: no review, nothing on screen, and no way to find out why.
+app.get('/api/inbox', requireAuth, async (req, res) => {
+  try {
+    const rows = await prisma.ingestedEmail.findMany({
+      orderBy: { processedAt: 'desc' },
+      take: 20,
+      include: { account: { select: { name: true } } },
+    });
+    res.json({
+      configured: mailIngestConfigured(),
+      mailbox: process.env.INGEST_IMAP_USER ?? null,
+      subjectPrefix: process.env.INGEST_SUBJECT_PREFIX || 'RetainIO Feedback:',
+      emails: rows.map(r => ({
+        id: r.id,
+        subject: r.subject,
+        from: r.fromAddress,
+        receivedAt: r.receivedAt.toISOString(),
+        status: r.status,
+        note: r.note,
+        accountName: r.account?.name ?? null,
+      })),
+    });
+  } catch (error: any) {
+    console.error('Error in GET /api/inbox:', error);
+    res.status(500).json({ error: 'Could not load the ingestion log.' });
+  }
+});
+
 // Re-run the models for one account, on demand.
 //
 // The nightly pass already does this for everyone; this exists for the cases where waiting
@@ -2657,6 +2738,31 @@ async function startServer() {
   };
   pruneSessionsSafely();
   setInterval(pruneSessionsSafely, 60 * 60 * 1000);
+
+  // Mail ingestion, off entirely unless a mailbox is configured. A feature that reaches into
+  // someone's inbox should run because they set it up, not because the server started.
+  //
+  // Its own timer rather than a phase of runSnapshotSafely: that runs every six hours, which
+  // for "did a customer just email us" is the wrong cadence by two orders of magnitude.
+  if (mailIngestConfigured()) {
+    const pollInbox = async () => {
+      try {
+        const result = await runIngestOnce();
+        if (result.busy) return;
+        const s = result.summary;
+        if (s.ingested || s.unmatched || s.failed) {
+          console.log(`Inbox: ${s.ingested} review(s) ingested, ${s.unmatched} unmatched, ` +
+                      `${s.failed} failed, ${result.rescored.length} account(s) re-scored.`);
+          for (const note of s.notes) console.log(`  ${note}`);
+        }
+      } catch (err: any) {
+        console.warn('Inbox check skipped:', err.message || err);
+      }
+    };
+    console.log(`Watching ${process.env.INGEST_IMAP_USER} for "${process.env.INGEST_SUBJECT_PREFIX || 'RetainIO Feedback:'}" every 2 minutes.`);
+    pollInbox();
+    setInterval(pollInbox, 2 * 60 * 1000);
+  }
 }
 
 startServer();

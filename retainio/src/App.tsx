@@ -422,6 +422,7 @@ export default function App() {
                   }}
                   onDiscussWithAdvisor={handleDiscussWithAdvisor}
                   onQuickApproveDiscount={handleQuickApproveDiscount}
+                  onInboxChecked={refreshData}
                 />
               )
             )}

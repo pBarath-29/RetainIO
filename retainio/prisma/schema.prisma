@@ -377,6 +377,7 @@ model Account {
   subscriptions  Subscription[]
   usageSnapshots UsageSnapshot[]
   customerReviews CustomerReview[]
+  ingestedEmails IngestedEmail[]
   discountRequests DiscountRequest[]
   auditLogs      AuditLog[]
   renewalIntents RenewalIntent[]
@@ -462,8 +463,54 @@ model CustomerReview {
   account Account @relation(fields: [accountId], references: [id])
   correctedBy User? @relation("SentimentCorrectedBy", fields: [correctedById], references: [id])
   sentimentPredictions SentimentPrediction[]
+  ingestedEmails IngestedEmail[]
 
+  // Every scoring path runs "where accountId, newest first, take 1"
+  // (fusionSnapshot.ts computeRealFusion / rescoreAccountToday, server.ts mapAccount).
+  // The table had no index at all, which was survivable at one review per account and
+  // stops being so now that email ingestion appends to it.
+  @@index([accountId, submittedAt])
   @@map("customer_reviews")
+}
+
+/// One row per email the ingester has looked at, whether or not it produced a review.
+///
+/// Primarily the idempotency guard: the poll runs on boot AND on an interval AND from a
+/// button, so the same message will be seen repeatedly. Message-ID is the natural key —
+/// unlike "mark it read", it survives someone re-marking the mailbox unread.
+///
+/// It is also the only record of what did NOT work. Without this row an email that named
+/// an account that does not exist would vanish silently: no review, nothing in the UI, and
+/// no way to find out why.
+model IngestedEmail {
+  id          String            @id @default(uuid())
+  messageId   String            @unique @map("message_id")
+  subject     String
+  fromAddress String            @map("from_address")
+  receivedAt  DateTime          @map("received_at")
+  processedAt DateTime          @default(now()) @map("processed_at")
+  status      EmailIngestStatus
+  accountId   String?           @map("account_id")
+  reviewId    String?           @map("review_id")
+  /// Why it was skipped or what failed. Null on success.
+  note        String?
+
+  account Account?        @relation(fields: [accountId], references: [id])
+  review  CustomerReview? @relation(fields: [reviewId], references: [id])
+
+  @@index([processedAt])
+  @@map("ingested_emails")
+}
+
+/// `unmatched` and `ambiguous` are deliberately separate: "no account is called that" and
+/// "two accounts could be that" have different fixes, and one label for both would hide
+/// which had happened.
+enum EmailIngestStatus {
+  ingested
+  unmatched
+  ambiguous
+  empty
+  failed
 }
 
 model DiscountRequest {
