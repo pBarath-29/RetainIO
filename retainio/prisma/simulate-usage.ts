@@ -340,7 +340,10 @@ async function modelServiceUp(): Promise<boolean> {
 }
 
 export interface GapFillResult {
+  /** Distinct calendar days filled. */
   days: number;
+  /** Rows written: days x accounts. */
+  accountDays: number;
   scored: number;
   /** Set when the pass declined to run at all, with the reason. */
   skipped?: string;
@@ -362,14 +365,18 @@ export async function fillUsageGaps(log = false): Promise<GapFillResult> {
   const say = (line: string) => { if (log) console.log(line); };
 
   if (!await modelServiceUp()) {
-    return { days: 0, scored: 0, skipped: `model service unreachable at ${MODEL_SERVICE_URL}` };
+    return { days: 0, accountDays: 0, scored: 0, skipped: `model service unreachable at ${MODEL_SERVICE_URL}` };
   }
 
   const accounts = await loadAccounts();
   const today = dateOnlyUTC();
   const manifest = readManifest() ?? emptyManifest();
 
+  // Account-days and calendar days are counted separately. Adding up the per-account gaps
+  // gives 18 for nine accounts that are each two days behind, and reporting that alone as
+  // "18 days filled" reads as being more than two weeks stale.
   let totalDays = 0, totalScored = 0;
+  const calendarDays = new Set<string>();
   say('');
 
   for (const account of accounts) {
@@ -394,6 +401,7 @@ export async function fillUsageGaps(log = false): Promise<GapFillResult> {
     let last = base;
     for (let d = 1; d <= missing; d++) {
       const date = new Date(from.getTime() + d * 86400000);
+      calendarDays.add(date.toISOString().slice(0, 10));
       // Negative daysAgo walks the trajectory FORWARD from the anchor rather than back.
       const reading = readingFor(base, trajectory, -d, 180, rand);
       last = reading;
@@ -460,7 +468,7 @@ export async function fillUsageGaps(log = false): Promise<GapFillResult> {
         `usage ${String(base.dailyUsageMins).padStart(3)} -> ${String(last.dailyUsageMins).padStart(3)} min   ${scored} scored`);
   }
 
-  if (totalDays === 0) return { days: 0, scored: 0 };
+  if (totalDays === 0) return { days: 0, accountDays: 0, scored: 0 };
 
   for (const account of accounts) {
     for (const m of [...new Set(manifest.monthsTouched)]) {
@@ -470,8 +478,8 @@ export async function fillUsageGaps(log = false): Promise<GapFillResult> {
   }
 
   writeManifest(manifest);
-  say(`\n${totalDays} day(s) filled, ${totalScored} scored. History is now continuous to today.`);
-  return { days: totalDays, scored: totalScored };
+  say(`\n${calendarDays.size} day(s) filled across ${accounts.length} accounts — ${totalDays} readings, ${totalScored} scored. History is now continuous to today.`);
+  return { days: calendarDays.size, accountDays: totalDays, scored: totalScored };
 }
 
 async function reset() {

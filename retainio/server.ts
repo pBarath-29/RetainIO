@@ -2564,7 +2564,9 @@ async function startServer() {
         // never goes back for them.
         const r = await fillUsageGaps();
         if (r.skipped) console.warn(`Simulated usage skipped — ${r.skipped}.`);
-        else if (r.days) console.log(`Simulated usage: ${r.days} day(s) filled, ${r.scored} scored (SIMULATE_USAGE=true).`);
+        // Calendar days first, readings second. Reporting only the row count made nine
+        // accounts that were two days behind read as "18 day(s) filled".
+        else if (r.days) console.log(`Simulated usage: ${r.days} day(s) filled, ${r.accountDays} readings, ${r.scored} scored (SIMULATE_USAGE=true).`);
       } catch (err: any) {
         console.warn('Usage simulation skipped:', err.message || err);
       }
