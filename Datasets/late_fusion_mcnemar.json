@@ -1,0 +1,61 @@
+{
+  "run_on": "2026-09-12",
+  "test_customers": 376,
+  "churned": 137,
+  "predictions_file": "Datasets/late_fusion_predictions.csv",
+  "predictions_match_production_models": {
+    "churn probabilities (to 4 dp)": true,
+    "fusion probabilities (to 4 dp)": true,
+    "churn predictions at 0.56": true,
+    "fusion predictions at 0.54": true,
+    "fusion predictions at 0.5": true
+  },
+  "bootstrap_resamples": 10000,
+  "seed": 42,
+  "comparisons": [
+    {
+      "model_a": "Churn model alone (threshold 0.56)",
+      "model_b": "Fusion, Stacking (threshold 0.54)",
+      "accuracy_a": 0.8723,
+      "accuracy_b": 0.8777,
+      "f1_a": 0.8195,
+      "f1_b": 0.8284,
+      "both_right": 326,
+      "both_wrong": 44,
+      "only_a_right": 2,
+      "only_b_right": 4,
+      "mcnemar_exact_p": 0.6875,
+      "mcnemar_chi2_cc": 0.1667,
+      "mcnemar_chi2_cc_p": 0.6831,
+      "f1_difference": 0.0088,
+      "f1_difference_95ci": [
+        -0.0075,
+        0.0272
+      ],
+      "share_of_bootstraps_where_b_has_higher_f1": 0.8325,
+      "significant_at_0.05": false
+    },
+    {
+      "model_a": "Churn model alone (threshold 0.56)",
+      "model_b": "Fusion, Stacking (threshold 0.5)",
+      "accuracy_a": 0.8723,
+      "accuracy_b": 0.8777,
+      "f1_a": 0.8195,
+      "f1_b": 0.8309,
+      "both_right": 324,
+      "both_wrong": 42,
+      "only_a_right": 4,
+      "only_b_right": 6,
+      "mcnemar_exact_p": 0.7539,
+      "mcnemar_chi2_cc": 0.1,
+      "mcnemar_chi2_cc_p": 0.7518,
+      "f1_difference": 0.0113,
+      "f1_difference_95ci": [
+        -0.0103,
+        0.0352
+      ],
+      "share_of_bootstraps_where_b_has_higher_f1": 0.8334,
+      "significant_at_0.05": false
+    }
+  ]
+}
