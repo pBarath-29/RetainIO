@@ -2,6 +2,7 @@ import { GoogleGenAI } from '@google/genai';
 import { ImapFlow } from 'imapflow';
 import { simpleParser } from 'mailparser';
 import { prisma } from './db';
+import { recordRenewalIntent, describeIntent } from './renewals';
 
 /**
  * Turns emails into customer reviews.
@@ -24,7 +25,12 @@ import { prisma } from './db';
  * satisfied" is a frustrated-sounding review, nothing more.
  */
 
-const SUBJECT_PREFIX = process.env.INGEST_SUBJECT_PREFIX || 'RetainIO Feedback:';
+export const SUBJECT_PREFIX = process.env.INGEST_SUBJECT_PREFIX || 'RetainIO Feedback:';
+
+// A second kind of email: a customer giving notice for their next renewal, in a fixed format read
+// by rules (parseNoticeBody). Its own subject, so feedback can never be mistaken for a notice, nor a
+// notice's labelled lines scored as a review.
+export const NOTICE_PREFIX = process.env.INGEST_NOTICE_SUBJECT_PREFIX || 'RetainIO Renewal Notice:';
 
 // Bounds for the rules-based extraction. Below the floor the trim has almost certainly eaten
 // the message; above the ceiling we are probably storing a quoted thread or a newsletter.
@@ -36,6 +42,8 @@ const GEMINI_INPUT_CAP = 8000;
 
 export interface IngestSummary {
   ingested: number;
+  /** Renewal notices recorded from "RetainIO Renewal Notice" emails. */
+  notices: number;
   unmatched: number;
   /** Already processed on an earlier run — the Message-ID guard doing its job. */
   skipped: number;
@@ -48,7 +56,7 @@ export interface IngestSummary {
 }
 
 const emptySummary = (): IngestSummary =>
-  ({ ingested: 0, unmatched: 0, skipped: 0, failed: 0, accountIds: [], notes: [] });
+  ({ ingested: 0, notices: 0, unmatched: 0, skipped: 0, failed: 0, accountIds: [], notes: [] });
 
 /** Configured means all four connection values are present. */
 export function mailIngestConfigured(): boolean {
@@ -117,18 +125,26 @@ export async function resolveAccount(companyName: string): Promise<Resolution> {
  * detail is exactly the feedback worth capturing, and every mail client rewrites the subject
  * when they do. Repeated, since a thread that has been round a few times reads "Re: Fwd: Re:".
  */
-export function companyFromSubject(subject: string): string | null {
+function withoutReplyPrefixes(subject: string): string {
   let trimmed = subject.trim();
   let previous: string;
   do {
     previous = trimmed;
     trimmed = trimmed.replace(/^\s*(re|fw|fwd)\s*:\s*/i, '');
   } while (trimmed !== previous);
+  return trimmed;
+}
 
-  if (!trimmed.toLowerCase().startsWith(SUBJECT_PREFIX.toLowerCase())) return null;
-  const rest = trimmed.slice(SUBJECT_PREFIX.length).trim();
+export function companyFromSubject(subject: string, prefix: string = SUBJECT_PREFIX): string | null {
+  const trimmed = withoutReplyPrefixes(subject);
+  if (!trimmed.toLowerCase().startsWith(prefix.toLowerCase())) return null;
+  const rest = trimmed.slice(prefix.length).trim();
   return rest.length ? rest : null;
 }
+
+/** Whether an email is a renewal notice rather than feedback - decided by its subject alone. */
+export const isNoticeSubject = (subject: string): boolean =>
+  withoutReplyPrefixes(subject).toLowerCase().startsWith(NOTICE_PREFIX.toLowerCase());
 
 // ── Extracting the review text ──────────────────────────────────────────────
 
@@ -202,6 +218,63 @@ async function extractWithGemini(body: string, rulesResult: string): Promise<str
   }
 }
 
+// ── Renewal notices ─────────────────────────────────────────────────────────
+
+/** What a notice email must contain - quoted back in the note when one does not. */
+export const NOTICE_FORMAT =
+  '"Request: Upgrade", "Request: Downgrade" or "Request: Not renewing", and for an upgrade or ' +
+  'downgrade a second line "Plan: Basic", "Plan: Pro" or "Plan: Enterprise"';
+
+const NOTICE_REQUESTS: Record<string, 'upgrading' | 'downgrading' | 'churning'> = {
+  'upgrade': 'upgrading',
+  'downgrade': 'downgrading',
+  'not renewing': 'churning',
+};
+const NOTICE_PLANS = ['Basic', 'Pro', 'Enterprise'];
+
+export type NoticeParse =
+  | { ok: true; kind: 'upgrading' | 'downgrading' | 'churning'; targetTier: string | null }
+  | { ok: false; error: string };
+
+/**
+ * Reads a renewal notice's labelled lines. Rules only, no model: a notice changes what happens to a
+ * contract, so it is recorded only when it says so in the fixed format, and anything else is refused
+ * with the reason rather than interpreted.
+ *
+ * Quoted replies and the signature are cut first (extractReviewText), so a "Request:" further down an
+ * old thread is never read. Lines without a label - a greeting, a sign-off - are ignored. Case,
+ * spacing and a trailing full stop are forgiven; nothing else is.
+ */
+export function parseNoticeBody(body: string): NoticeParse {
+  const lines = extractReviewText(body).split('\n');
+  const valuesOf = (label: string) => lines
+    .map(l => l.match(new RegExp(`^\\s*${label}\\s*:\\s*(.*?)\\s*$`, 'i'))?.[1])
+    .filter((v): v is string => v !== undefined);
+  const norm = (s: string) => s.toLowerCase().replace(/[\s_-]+/g, ' ').replace(/[.!]+$/, '').trim();
+
+  const requests = valuesOf('request');
+  const plans = valuesOf('plan');
+  if (requests.length === 0) return { ok: false, error: 'no "Request:" line' };
+  if (requests.length > 1) return { ok: false, error: 'more than one "Request:" line' };
+  if (plans.length > 1) return { ok: false, error: 'more than one "Plan:" line' };
+
+  const kind = NOTICE_REQUESTS[norm(requests[0])];
+  if (!kind) return { ok: false, error: `"${requests[0]}" is not a request this inbox understands` };
+
+  if (kind === 'churning') {
+    if (plans.length) return { ok: false, error: '"Plan:" does not go with "Not renewing"' };
+    return { ok: true, kind, targetTier: null };
+  }
+  if (!plans.length) return { ok: false, error: `"${requests[0]}" needs a "Plan:" line` };
+  const plan = NOTICE_PLANS.find(p => p.toLowerCase() === norm(plans[0]));
+  if (!plan) return { ok: false, error: `"${plans[0]}" is not a plan (Basic, Pro or Enterprise)` };
+  return { ok: true, kind, targetTier: plan };
+}
+
+/** An HTML-only email's text, keeping its line breaks - the labelled lines depend on them. */
+const htmlToText = (html: string) =>
+  html.replace(/<(br|\/p|\/div|\/li|\/tr)[^>]*>/gi, '\n').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ');
+
 // ── The pass ────────────────────────────────────────────────────────────────
 
 function allowedSender(from: string): boolean {
@@ -210,6 +283,121 @@ function allowedSender(from: string): boolean {
   if (list.length === 0) return true;                 // unset means any sender
   const addr = from.toLowerCase();
   return list.some(allowed => addr.includes(allowed));
+}
+
+/** A fetched, parsed email - everything processEmail needs, so it can run without a mailbox. */
+export interface ParsedEmail {
+  messageId: string;
+  subject: string;
+  from: string;
+  receivedAt: Date;
+  text: string;
+  html: string;
+}
+
+/**
+ * One email, start to finish, apart from fetching it and marking it read. Returns 'skipped' for a
+ * message processed on an earlier pass, which the caller leaves as it is; anything else is done and
+ * can be marked read. Throws only on an unexpected failure, which leaves the message unread for
+ * another attempt.
+ */
+export async function processEmail(
+  mail: ParsedEmail,
+  summary: IngestSummary,
+  say: (line: string) => void = () => {},
+): Promise<'skipped' | 'done'> {
+  const { messageId, subject, from, receivedAt } = mail;
+
+  // The guard that makes this safe to run on boot, on a timer and from a button.
+  // Keyed on Message-ID rather than the read flag, so re-marking the mailbox unread
+  // cannot produce a duplicate review.
+  const already = await prisma.ingestedEmail.findUnique({ where: { messageId } });
+  if (already) { summary.skipped++; return 'skipped'; }
+
+  const record = async (status: any, note?: string, accountId?: string, reviewId?: string) => {
+    await prisma.ingestedEmail.create({
+      data: { messageId, subject, fromAddress: from, receivedAt, status, note, accountId, reviewId },
+    });
+  };
+
+  if (!allowedSender(from)) {
+    await record('failed', `sender ${from} is not in INGEST_ALLOWED_SENDERS`);
+    summary.failed++;
+    return 'done';
+  }
+
+  const notice = isNoticeSubject(subject);
+  const company = companyFromSubject(subject, notice ? NOTICE_PREFIX : SUBJECT_PREFIX);
+  if (!company) {
+    await record('unmatched', 'subject did not carry a company name after the prefix');
+    summary.unmatched++;
+    summary.notes.push(`"${subject}" — no company name in the subject`);
+    return 'done';
+  }
+
+  const match = await resolveAccount(company);
+  if (match.kind !== 'ok') {
+    const note = match.kind === 'ambiguous'
+      ? `"${company}" matches more than one account: ${match.candidates.join(', ')}`
+      : `no account matches "${company}"`;
+    await record(match.kind, note);
+    summary.unmatched++;
+    summary.notes.push(note);
+    return 'done';
+  }
+
+  if (notice) {
+    // A notice is not feedback: it becomes no review and re-scores nothing. The account was matched
+    // by the same strict rules as feedback, so it is never guessed either.
+    const parsed = parseNoticeBody(mail.text || htmlToText(mail.html));
+    if ('error' in parsed) {
+      await record('failed', `Not a valid renewal notice (${parsed.error}). Expected ${NOTICE_FORMAT}.`, match.accountId);
+      summary.failed++;
+      summary.notes.push(`${match.accountName} — renewal notice not in the expected format (${parsed.error})`);
+      return 'done';
+    }
+    const label = describeIntent(parsed.kind, parsed.targetTier);
+    const result = await recordRenewalIntent({
+      accountId: match.accountId, kind: parsed.kind, targetTier: parsed.targetTier,
+      source: 'email', actor: { kind: 'system' }, email: { from, subject },
+    });
+    if ('error' in result) {
+      await record('failed', `Renewal notice "${label}" not recorded: ${result.error}`, match.accountId);
+      summary.failed++;
+      summary.notes.push(`${match.accountName} — renewal notice "${label}" not recorded: ${result.error}`);
+      return 'done';
+    }
+    await record('ingested', `Renewal notice recorded: ${label}`, match.accountId);
+    summary.notices++;
+    summary.notes.push(`${match.accountName} — renewal notice recorded: ${label}`);
+    say(`  ${match.accountName}: renewal notice "${label}"`);
+    return 'done';
+  }
+
+  const raw = mail.text || mail.html.replace(/<[^>]+>/g, ' ') || '';
+  let reviewText = extractReviewText(raw);
+  if (reviewText.length < MIN_REVIEW_CHARS || reviewText.length > MAX_REVIEW_CHARS) {
+    reviewText = await extractWithGemini(raw, reviewText);
+  }
+  reviewText = reviewText.slice(0, MAX_REVIEW_CHARS).trim();
+
+  if (reviewText.length < MIN_REVIEW_CHARS) {
+    await record('empty', 'no usable feedback text after trimming', match.accountId);
+    summary.failed++;
+    summary.notes.push(`${match.accountName} — email had no usable feedback`);
+    return 'done';
+  }
+
+  const review = await prisma.customerReview.create({
+    data: { accountId: match.accountId, reviewText, submittedAt: receivedAt },
+  });
+  await record('ingested', undefined, match.accountId, review.id);
+
+  summary.ingested++;
+  if (!summary.accountIds.includes(match.accountId)) summary.accountIds.push(match.accountId);
+  summary.notes.push(`${match.accountName} — new review ingested`);
+  say(`  ${match.accountName}: "${reviewText.slice(0, 60)}..."`);
+  return 'done';
 }
 
 export async function ingestInbox(log = false): Promise<IngestSummary> {
@@ -231,9 +419,13 @@ export async function ingestInbox(log = false): Promise<IngestSummary> {
   await client.connect();
   const lock = await client.getMailboxLock('INBOX');
   try {
-    // Unread messages carrying the prefix. Everything else in the mailbox is never read,
+    // Unread messages carrying either prefix. Everything else in the mailbox is never read,
     // never fetched and never recorded.
-    const uids = await client.search({ seen: false, header: { subject: SUBJECT_PREFIX } }) || [];
+    const found = new Set<number>();
+    for (const prefix of [SUBJECT_PREFIX, NOTICE_PREFIX]) {
+      for (const uid of (await client.search({ seen: false, header: { subject: prefix } })) || []) found.add(uid);
+    }
+    const uids = [...found].sort((a, b) => a - b);
     say(`  ${uids.length} candidate message(s) in the inbox.`);
 
     for (const uid of uids) {
@@ -244,78 +436,18 @@ export async function ingestInbox(log = false): Promise<IngestSummary> {
 
         const mail = await simpleParser(msg.source);
         messageId = mail.messageId || `uid-${uid}`;
-        const subject = mail.subject || '';
-        const from = mail.from?.value?.[0]?.address || 'unknown';
-        const receivedAt = mail.date || new Date();
+        const outcome = await processEmail({
+          messageId,
+          subject: mail.subject || '',
+          from: mail.from?.value?.[0]?.address || 'unknown',
+          receivedAt: mail.date || new Date(),
+          text: mail.text || '',
+          html: typeof mail.html === 'string' ? mail.html : '',
+        }, summary, say);
 
-        // The guard that makes this safe to run on boot, on a timer and from a button.
-        // Keyed on Message-ID rather than the read flag, so re-marking the mailbox unread
-        // cannot produce a duplicate review.
-        const already = await prisma.ingestedEmail.findUnique({ where: { messageId } });
-        if (already) { summary.skipped++; continue; }
-
-        const record = async (status: any, note?: string, accountId?: string, reviewId?: string) => {
-          await prisma.ingestedEmail.create({
-            data: { messageId, subject, fromAddress: from, receivedAt, status, note, accountId, reviewId },
-          });
-        };
-
-        if (!allowedSender(from)) {
-          await record('failed', `sender ${from} is not in INGEST_ALLOWED_SENDERS`);
-          summary.failed++;
-          await client.messageFlagsAdd(String(uid), ['\\Seen'], { uid: true });
-          continue;
-        }
-
-        const company = companyFromSubject(subject);
-        if (!company) {
-          await record('unmatched', 'subject did not carry a company name after the prefix');
-          summary.unmatched++;
-          summary.notes.push(`"${subject}" — no company name in the subject`);
-          await client.messageFlagsAdd(String(uid), ['\\Seen'], { uid: true });
-          continue;
-        }
-
-        const match = await resolveAccount(company);
-        if (match.kind !== 'ok') {
-          const note = match.kind === 'ambiguous'
-            ? `"${company}" matches more than one account: ${match.candidates.join(', ')}`
-            : `no account matches "${company}"`;
-          await record(match.kind, note);
-          summary.unmatched++;
-          summary.notes.push(note);
-          await client.messageFlagsAdd(String(uid), ['\\Seen'], { uid: true });
-          continue;
-        }
-
-        const raw = mail.text || mail.html?.replace(/<[^>]+>/g, ' ') || '';
-        let reviewText = extractReviewText(raw);
-        if (reviewText.length < MIN_REVIEW_CHARS || reviewText.length > MAX_REVIEW_CHARS) {
-          reviewText = await extractWithGemini(raw, reviewText);
-        }
-        reviewText = reviewText.slice(0, MAX_REVIEW_CHARS).trim();
-
-        if (reviewText.length < MIN_REVIEW_CHARS) {
-          await record('empty', 'no usable feedback text after trimming', match.accountId);
-          summary.failed++;
-          summary.notes.push(`${match.accountName} — email had no usable feedback`);
-          await client.messageFlagsAdd(String(uid), ['\\Seen'], { uid: true });
-          continue;
-        }
-
-        const review = await prisma.customerReview.create({
-          data: { accountId: match.accountId, reviewText, submittedAt: receivedAt },
-        });
-        await record('ingested', undefined, match.accountId, review.id);
-
-        summary.ingested++;
-        if (!summary.accountIds.includes(match.accountId)) summary.accountIds.push(match.accountId);
-        summary.notes.push(`${match.accountName} — new review ingested`);
-        say(`  ${match.accountName}: "${reviewText.slice(0, 60)}..."`);
-
-        // Flagged last, and only after the review is committed. If anything above threw, the
+        // Flagged last, and only after everything above is committed. If anything threw, the
         // message stays unread and gets another attempt next pass.
-        await client.messageFlagsAdd(String(uid), ['\\Seen'], { uid: true });
+        if (outcome === 'done') await client.messageFlagsAdd(String(uid), ['\\Seen'], { uid: true });
       } catch (err: any) {
         summary.failed++;
         console.warn(`Ingest failed for message ${messageId}:`, err.message || err);

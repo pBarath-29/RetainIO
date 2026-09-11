@@ -60,13 +60,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
       // read as "nothing had arrived" rather than "something arrived and was rejected".
       const parts: string[] = [];
       if (data.ingested) parts.push(`${data.ingested} review${data.ingested === 1 ? '' : 's'} ingested`);
+      if (data.notices) parts.push(`${data.notices} renewal notice${data.notices === 1 ? '' : 's'} recorded`);
       if (data.unmatched) parts.push(`${data.unmatched} could not be matched to an account`);
       if (data.failed) parts.push(`${data.failed} failed`);
       showToast(
-        parts.length ? parts.join(', ') + '.' : 'No new feedback emails.',
-        data.unmatched || data.failed ? 'info' : data.ingested ? 'success' : 'info',
+        parts.length ? parts.join(', ') + '.' : 'No new emails.',
+        data.unmatched || data.failed ? 'info' : data.ingested || data.notices ? 'success' : 'info',
       );
-      if (data.ingested) onInboxChecked?.();
+      if (data.ingested || data.notices) onInboxChecked?.();
     } catch {
       showToast('Could not reach the server to check the mailbox.', 'error');
     } finally {
@@ -175,7 +176,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <button
           onClick={handleCheckInbox}
           disabled={isCheckingInbox}
-          title="Pull in any customer feedback emails waiting in the inbox now"
+          title="Pull in any customer feedback and renewal notice emails waiting in the inbox now"
           className="flex items-center space-x-2 px-3.5 py-2 rounded-lg text-xs font-bold bg-slate-800 text-slate-200 border border-slate-700 hover:bg-slate-700 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
         >
           <Mail className={`w-3.5 h-3.5 ${isCheckingInbox ? 'animate-pulse' : ''}`} />

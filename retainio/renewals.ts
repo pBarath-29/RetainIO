@@ -1,7 +1,10 @@
 import { PlanTier, RenewalOutcome, IntentKind } from '@prisma/client';
 import { prisma } from './db';
-import { dateOnlyUTC, loadModelFeatures, loadUpliftComponents } from './fusionSnapshot';
-import { MONTHS_PER_TERM, TIER_MONTHLY_RATE, addMonths } from './pricing';
+import { dateOnlyUTC, loadModelFeatures, loadUpliftComponents, captureIndexSnapshot } from './fusionSnapshot';
+import {
+  MONTHS_PER_TERM, TIER_MONTHLY_RATE, addMonths, tierMoves, isWithinOfferWindow, formatTermDate,
+  OFFER_WINDOW_DAYS, type PlanTierName,
+} from './pricing';
 
 // Closing the loop: recording what an account ACTUALLY did at its renewal, so the models
 // can eventually be trained against outcomes instead of only predicting them.
@@ -129,6 +132,172 @@ export function liveIntentFor(accountId: string, termEnd: Date) {
     where: { accountId, effectiveFor: termEnd, cancelledAt: null, appliedAt: null },
     orderBy: { recordedAt: 'desc' },
   });
+}
+
+// How a renewal notice reads in the audit log and on the email record - the words the Renewals page uses.
+export const describeIntent = (kind: string, targetTier?: string | null): string =>
+  kind === 'churning' ? 'Will not renew' : `${kind === 'upgrading' ? 'Upgrade' : 'Downgrade'} to ${targetTier}`;
+
+export type IntentActor = { kind: 'person'; id: string; name: string } | { kind: 'system' };
+
+export type RecordIntentResult =
+  | { ok: true; intent: { id: string; effectiveFor: Date } }
+  | { ok: false; status: number; error: string };
+
+/**
+ * Records a renewal notice - the one path for a manager on the Renewals page and for a customer's
+ * "RetainIO Renewal Notice" email, so both get the same checks, the same training snapshot and the
+ * same audit row.
+ *
+ * NOTHING A NOTICE SAYS TAKES EFFECT HERE. It is held until the renewal and resolved there, and can
+ * be cancelled until then - which is what makes recording one from an email safe.
+ *
+ * A manager's notice replaces whatever is pending for that renewal. An emailed one replaces only an
+ * earlier emailed one: an email never overrides a person, so a pending manual notice turns the email
+ * into a conflict - written to the audit log for the manager to see, and not applied.
+ */
+export async function recordRenewalIntent(args: {
+  accountId: string;
+  kind: string;
+  targetTier?: string | null;
+  source: 'manual' | 'email';
+  actor: IntentActor;
+  /** For an emailed notice: who sent it and its subject, quoted in the audit row. */
+  email?: { from: string; subject: string };
+}): Promise<RecordIntentResult> {
+  const { accountId, kind, source, actor, email } = args;
+  const targetTier = args.targetTier ?? null;
+
+  // No `renewing`: contracts auto-renew, so renewing as-is is simply what happens when
+  // nothing is recorded.
+  const VALID_KINDS = ['upgrading', 'downgrading', 'churning'];
+  if (!VALID_KINDS.includes(kind)) {
+    return { ok: false, status: 400, error: `kind must be one of ${VALID_KINDS.join(', ')}.` };
+  }
+
+  const account = await prisma.account.findUnique({
+    where: { id: accountId },
+    include: { subscriptions: { orderBy: { termStart: 'desc' }, take: 1 } },
+  });
+  if (!account) return { ok: false, status: 404, error: 'Account not found' };
+
+  const sub = account.subscriptions[0];
+  if (!sub) return { ok: false, status: 422, error: `${account.name} has no subscription to renew.` };
+  if (sub.status === 'churned') return { ok: false, status: 409, error: `${account.name} has already churned.` };
+
+  // A tier change has to say which tier, or the boundary has nothing to reprice to.
+  const needsTier = kind === 'upgrading' || kind === 'downgrading';
+  if (needsTier && !TIER_MONTHLY_RATE[targetTier as PlanTierName]) {
+    return { ok: false, status: 400, error: 'A target plan tier is required for an upgrade or downgrade.' };
+  }
+  // And it has to go the way it says. Checking only that the tier differed let an
+  // Enterprise account record an "upgrade" to Basic, which would then have resolved as
+  // `upgraded` while repricing the account down.
+  if (needsTier) {
+    const direction = kind === 'upgrading' ? 'upgrade' : 'downgrade';
+    const { upgrades, downgrades } = tierMoves(sub.planTier as PlanTierName);
+    const allowed: string[] = kind === 'upgrading' ? upgrades : downgrades;
+    if (!allowed.includes(targetTier as string)) {
+      return {
+        ok: false, status: 400,
+        error: allowed.length
+          ? `${account.name} is on ${sub.planTier} — it can ${direction} to ${allowed.join(' or ')}.`
+          : `${account.name} is on ${sub.planTier}, so there is no plan to ${direction} to.`,
+      };
+    }
+  }
+
+  const label = describeIntent(kind, targetTier);
+  const renewsOn = formatTermDate(sub.termEnd);
+  const fromEmail = `A customer email${email ? ` from ${email.from} ("${email.subject}")` : ''}`;
+  const replaced = await liveIntentFor(accountId, sub.termEnd);
+  const ledgerActor = actor.kind === 'person' ? actor.id : await systemActorId();
+
+  // An email never overrides a person. Not applied - but written where the manager will see it.
+  if (source === 'email' && replaced?.source === 'manual') {
+    const by = replaced.recordedById
+      ? (await prisma.user.findUnique({ where: { id: replaced.recordedById } }))?.name ?? 'a manager'
+      : 'a manager';
+    const standing = describeIntent(replaced.kind, replaced.targetTier);
+    await prisma.auditLog.create({
+      data: {
+        accountId,
+        action: `Renewal Notice Not Recorded: ${label}`,
+        discountApplied: 0,
+        discountMonths: 0,
+        approverId: ledgerActor,
+        verificationStatus: 'Automatic (Customer Email)',
+        details:
+          `${fromEmail} asked to record "${label}" for ${account.name}'s renewal on ${renewsOn}, but ${by} ` +
+          `has recorded "${standing}", and an email never overrides a person. Nothing was changed - ` +
+          `review it on the Renewals page.`,
+      },
+    });
+    return {
+      ok: false, status: 409,
+      error: `${by} has already recorded "${standing}" for this renewal, and an email never overrides a manager's notice.`,
+    };
+  }
+
+  // One live intent per renewal: a later one supersedes rather than stacking, so the
+  // job never has to guess which of two contradictory intents to believe.
+  //
+  // Written together with its audit row. A notice decides the renewal outcome and, for a
+  // departure, opens discounts early - a retention action like any discount, so it goes in
+  // the ledger under whoever recorded it, saying what it replaced.
+  const willDo = kind === 'churning' ? 'not renew' : `${kind === 'upgrading' ? 'upgrade' : 'downgrade'} to ${targetTier}`;
+  const opensOffers = kind === 'churning' && !isWithinOfferWindow(sub.termEnd);
+  const [, intent] = await prisma.$transaction([
+    prisma.renewalIntent.updateMany({
+      where: { accountId, effectiveFor: sub.termEnd, cancelledAt: null, appliedAt: null },
+      data: { cancelledAt: new Date() },
+    }),
+    prisma.renewalIntent.create({
+      data: {
+        accountId,
+        kind: kind as IntentKind,
+        targetTier: needsTier ? (targetTier as PlanTier) : null,
+        effectiveFor: sub.termEnd,
+        source,
+        // Null when a machine wrote it, so a row always says honestly whether a person stood behind it.
+        recordedById: actor.kind === 'person' ? actor.id : null,
+      },
+    }),
+    prisma.auditLog.create({
+      data: {
+        accountId,
+        action: `Renewal Notice Recorded: ${label}`,
+        // 0, like every row that is not a discount: the account's current offer is read from
+        // the latest audit row with a percentage, and this one must never look like it.
+        discountApplied: 0,
+        discountMonths: 0,
+        approverId: ledgerActor,
+        verificationStatus: actor.kind === 'person' ? 'Manual Entry (Renewal Notice)' : 'Automatic (Customer Email)',
+        details:
+          `${actor.kind === 'person' ? `${actor.name} recorded that` : `${fromEmail} gave notice that`} ` +
+          `${account.name} will ${willDo} at its renewal on ${renewsOn}.` +
+          (replaced ? ` Replaces the earlier notice (${describeIntent(replaced.kind, replaced.targetTier)}).` : '') +
+          (opensOffers ? ` Retention discounts are open for this renewal from now, ahead of the ${OFFER_WINDOW_DAYS}-day window.` : ''),
+      },
+    }),
+  ]);
+
+  // Recording an intent is the moment the outcome became known. Freeze the account now
+  // rather than waiting for the offer window: an account that gave notice at day 250 would
+  // otherwise go unmeasured until day 180, seventy days into acting on its decision, and
+  // its training row would describe that rather than the account as it stood.
+  //
+  // Always attempted, for all three kinds; the precedence rule in captureIndexSnapshot
+  // decides whether it applies, so an account already frozen keeps its earlier snapshot.
+  // Non-fatal, like the two approval paths: the intent is already saved, and losing the
+  // training snapshot must not fail it.
+  try {
+    await captureIndexSnapshot(accountId, 'intent_recorded');
+  } catch (err: any) {
+    console.warn('Index snapshot failed after recording intent:', err.message || err);
+  }
+
+  return { ok: true, intent };
 }
 
 type RenewalRow = RenewalRunSummary['processed'][number];

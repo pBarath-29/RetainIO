@@ -114,6 +114,15 @@ would only give a competitor the time. A downgrade or upgrade notice does not op
 early; those still wait for the window. If a leaving notice is cancelled before a Director has
 decided on an early request, that request can no longer be approved until the window opens.
 
+A customer can also give notice by email to the RetainIO inbox, with the subject
+"RetainIO Renewal Notice: <company name>" and, in the body, a line saying "Request: Upgrade",
+"Request: Downgrade" or "Request: Not renewing" - plus, for an upgrade or downgrade, a line saying
+"Plan: Basic", "Plan: Pro" or "Plan: Enterprise". The system records it exactly as if a manager had:
+held until the renewal, cancellable, and marked as coming from email. An email in any other format is
+refused rather than interpreted. A newer emailed notice replaces an earlier emailed one, but an email
+never overrides a notice an Account Manager recorded - the conflict is noted in the Audit Log instead.
+To withdraw a notice entirely, the customer tells their Account Manager, who cancels it.
+
 A recorded intent decides the outcome by itself, and giving a discount does not change it. So if
 a customer says they are leaving, you offer a discount, and they then agree to stay, the intent
 has to be cancelled — otherwise the renewal is still recorded as a churn, the account is closed

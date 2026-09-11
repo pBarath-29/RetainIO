@@ -107,6 +107,12 @@ export const RenewalsView: React.FC<RenewalsViewProps> = ({
           term boundary without anyone filling in a form. Record an intent only when an account is
           doing something other than renewing as-is — it does not affect the contract until that renewal date.
         </p>
+        <p className="text-xs text-slate-500 mt-1.5 max-w-3xl">
+          Customers can also give notice by email, with the subject <strong>RetainIO Renewal Notice: &lt;company&gt;</strong> and
+          the line <code>Request: Upgrade</code>, <code>Request: Downgrade</code> or <code>Request: Not renewing</code> — plus{' '}
+          <code>Plan: &lt;tier&gt;</code> for a plan change. Those appear here marked "from email", and an email never
+          replaces a notice recorded here.
+        </p>
       </div>
 
       {/* Honesty tiles. The auto-recorded count is the one that matters: it says how much

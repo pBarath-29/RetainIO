@@ -30,8 +30,8 @@ import {
   SENTIMENT_RISK_WEIGHT, captureIndexSnapshot, captureDueIndexSnapshots, dateOnlyUTC,
   type SentimentClassValue,
 } from './fusionSnapshot';
-import { runRenewalsForToday, isRetained, liveIntentFor } from './renewals';
-import { ingestInbox, mailIngestConfigured } from './mailIngest';
+import { runRenewalsForToday, isRetained, liveIntentFor, describeIntent, recordRenewalIntent } from './renewals';
+import { ingestInbox, mailIngestConfigured, SUBJECT_PREFIX, NOTICE_PREFIX } from './mailIngest';
 
 dotenv.config();
 
@@ -2408,115 +2408,19 @@ app.post('/api/accounts/:id/rescore', requireAuth, async (req, res) => {
   }
 });
 
-// How a renewal notice reads in the audit log - the same words the Renewals page uses.
-const describeIntent = (kind: string, targetTier?: string | null): string =>
-  kind === 'churning' ? 'Will not renew' : `${kind === 'upgrading' ? 'Upgrade' : 'Downgrade'} to ${targetTier}`;
-
+// Records a renewal notice. The checks, the training snapshot and the audit row live in
+// recordRenewalIntent (renewals.ts) - the same path a customer's emailed notice takes.
 app.post('/api/accounts/:id/renewal-intent', requireAuth, async (req, res) => {
   try {
-    const { id } = req.params;
-    const userId = (req as any).userId as string;
-    const { kind, targetTier } = req.body;
-
-    // No `renewing`: contracts auto-renew, so renewing as-is is simply what happens when
-    // nothing is recorded.
-    const VALID_KINDS = ['upgrading', 'downgrading', 'churning'];
-    if (!VALID_KINDS.includes(kind)) {
-      return res.status(400).json({ error: `kind must be one of ${VALID_KINDS.join(', ')}.` });
-    }
-
-    const account = await prisma.account.findUnique({
-      where: { id },
-      include: { subscriptions: { orderBy: { termStart: 'desc' }, take: 1 } },
+    const result = await recordRenewalIntent({
+      accountId: req.params.id,
+      kind: req.body.kind,
+      targetTier: req.body.targetTier,
+      source: 'manual',
+      actor: { kind: 'person', id: (req as any).userId as string, name: (req as any).user.name },
     });
-    if (!account) return res.status(404).json({ error: 'Account not found' });
-
-    const sub = account.subscriptions[0];
-    if (!sub) return res.status(422).json({ error: `${account.name} has no subscription to renew.` });
-    if (sub.status === 'churned') {
-      return res.status(409).json({ error: `${account.name} has already churned.` });
-    }
-
-    // A tier change has to say which tier, or the boundary has nothing to reprice to.
-    const needsTier = kind === 'upgrading' || kind === 'downgrading';
-    if (needsTier && !TIER_MONTHLY_RATE[targetTier as keyof typeof TIER_MONTHLY_RATE]) {
-      return res.status(400).json({ error: 'A target plan tier is required for an upgrade or downgrade.' });
-    }
-    // And it has to go the way it says. Checking only that the tier differed let an
-    // Enterprise account record an "upgrade" to Basic, which would then have resolved as
-    // `upgraded` while repricing the account down.
-    if (needsTier) {
-      const direction = kind === 'upgrading' ? 'upgrade' : 'downgrade';
-      const { upgrades, downgrades } = tierMoves(sub.planTier);
-      const allowed = kind === 'upgrading' ? upgrades : downgrades;
-      if (!allowed.includes(targetTier)) {
-        return res.status(400).json({
-          error: allowed.length
-            ? `${account.name} is on ${sub.planTier} — it can ${direction} to ${allowed.join(' or ')}.`
-            : `${account.name} is on ${sub.planTier}, so there is no plan to ${direction} to.`,
-        });
-      }
-    }
-
-    // One live intent per renewal: a later one supersedes rather than stacking, so the
-    // job never has to guess which of two contradictory intents to believe.
-    //
-    // Written together with its audit row. A notice decides the renewal outcome and, for a
-    // departure, opens discounts early - a retention action like any discount, so it goes in
-    // the ledger under the person who recorded it, saying what it replaced.
-    const replaced = await liveIntentFor(id, sub.termEnd);
-    const willDo = kind === 'churning' ? 'not renew' : `${kind === 'upgrading' ? 'upgrade' : 'downgrade'} to ${targetTier}`;
-    const opensOffers = kind === 'churning' && !isWithinOfferWindow(sub.termEnd);
-    const [, intent] = await prisma.$transaction([
-      prisma.renewalIntent.updateMany({
-        where: { accountId: id, effectiveFor: sub.termEnd, cancelledAt: null, appliedAt: null },
-        data: { cancelledAt: new Date() },
-      }),
-      prisma.renewalIntent.create({
-        data: {
-          accountId: id,
-          kind,
-          targetTier: needsTier ? targetTier : null,
-          effectiveFor: sub.termEnd,
-          source: 'manual',
-          recordedById: userId,
-        },
-      }),
-      prisma.auditLog.create({
-        data: {
-          accountId: id,
-          action: `Renewal Notice Recorded: ${describeIntent(kind, targetTier)}`,
-          // 0, like every row that is not a discount: the account's current offer is read from
-          // the latest audit row with a percentage, and this one must never look like it.
-          discountApplied: 0,
-          discountMonths: 0,
-          approverId: userId,
-          verificationStatus: 'Manual Entry (Renewal Notice)',
-          details:
-            `${(req as any).user.name} recorded that ${account.name} will ${willDo} at its renewal on ` +
-            `${formatTermDate(sub.termEnd)}.` +
-            (replaced ? ` Replaces the earlier notice (${describeIntent(replaced.kind, replaced.targetTier)}).` : '') +
-            (opensOffers ? ` Retention discounts are open for this renewal from now, ahead of the ${OFFER_WINDOW_DAYS}-day window.` : ''),
-        },
-      }),
-    ]);
-
-    // Recording an intent is the moment the outcome became known. Freeze the account now
-    // rather than waiting for the offer window: an account that gave notice at day 250 would
-    // otherwise go unmeasured until day 180, seventy days into acting on its decision, and
-    // its training row would describe that rather than the account as it stood.
-    //
-    // Always attempted, for all three kinds; the precedence rule in captureIndexSnapshot
-    // decides whether it applies, so an account already frozen keeps its earlier snapshot.
-    // Non-fatal, like the two approval paths: the intent is already saved, and losing the
-    // training snapshot must not fail it.
-    try {
-      await captureIndexSnapshot(id, 'intent_recorded');
-    } catch (err: any) {
-      console.warn('Index snapshot failed after recording intent:', err.message || err);
-    }
-
-    res.json({ ok: true, intentId: intent.id, effectiveFor: intent.effectiveFor.toISOString() });
+    if ('error' in result) return res.status(result.status).json({ error: result.error });
+    res.json({ ok: true, intentId: result.intent.id, effectiveFor: result.intent.effectiveFor.toISOString() });
   } catch (error: any) {
     console.error('Error in POST /api/accounts/:id/renewal-intent:', error);
     res.status(500).json({ error: 'Failed to record the renewal intent.' });
@@ -2963,16 +2867,16 @@ async function startServer() {
         const result = await runIngestOnce();
         if (result.busy) return;
         const s = result.summary;
-        if (s.ingested || s.unmatched || s.failed) {
-          console.log(`Inbox: ${s.ingested} review(s) ingested, ${s.unmatched} unmatched, ` +
-                      `${s.failed} failed, ${result.rescored.length} account(s) re-scored.`);
+        if (s.ingested || s.notices || s.unmatched || s.failed) {
+          console.log(`Inbox: ${s.ingested} review(s) ingested, ${s.notices} renewal notice(s) recorded, ` +
+                      `${s.unmatched} unmatched, ${s.failed} failed, ${result.rescored.length} account(s) re-scored.`);
           for (const note of s.notes) console.log(`  ${note}`);
         }
       } catch (err: any) {
         console.warn('Inbox check skipped:', err.message || err);
       }
     };
-    console.log(`Watching ${process.env.INGEST_IMAP_USER} for "${process.env.INGEST_SUBJECT_PREFIX || 'RetainIO Feedback:'}" every 2 minutes.`);
+    console.log(`Watching ${process.env.INGEST_IMAP_USER} for "${SUBJECT_PREFIX}" and "${NOTICE_PREFIX}" every 2 minutes.`);
     pollInbox();
     setInterval(pollInbox, 2 * 60 * 1000);
   }

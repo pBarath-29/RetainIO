@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { prisma } from '../db';
-import { ingestInbox, mailIngestConfigured } from '../mailIngest';
+import { ingestInbox, mailIngestConfigured, SUBJECT_PREFIX, NOTICE_PREFIX } from '../mailIngest';
 import { rescoreAccountToday } from '../fusionSnapshot';
 
 /**
@@ -18,10 +18,10 @@ async function main() {
     return;
   }
 
-  console.log(`Checking ${process.env.INGEST_IMAP_USER} for "${process.env.INGEST_SUBJECT_PREFIX || 'RetainIO Feedback:'}"...\n`);
+  console.log(`Checking ${process.env.INGEST_IMAP_USER} for "${SUBJECT_PREFIX}" and "${NOTICE_PREFIX}"...\n`);
   const summary = await ingestInbox(true);
 
-  console.log(`\n${summary.ingested} ingested, ${summary.unmatched} unmatched, ` +
+  console.log(`\n${summary.ingested} ingested, ${summary.notices} renewal notice(s) recorded, ${summary.unmatched} unmatched, ` +
               `${summary.skipped} already seen, ${summary.failed} failed.`);
   for (const note of summary.notes) console.log(`  - ${note}`);
 
