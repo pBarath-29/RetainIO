@@ -708,6 +708,19 @@ app.post('/api/gemini/advisor-chat', requireAuth, advisorRateLimit, async (req, 
     const accountId: string | undefined = contextAccount?.id;
     if (!accountId) return res.status(400).json({ error: 'No account selected.' });
 
+    // The Discount Uplift Advisor tab does not run for Low Risk accounts (isUpliftApplicable in
+    // AccountAnalysisPage). On an account that is renewing anyway every offer's true effect is a
+    // point or two, so the model's "best" is noise - yet it still names one, often the most
+    // expensive. The chat follows the same rule, reading the band from where the dashboard's risk
+    // badge comes from - the latest daily fusion score - rather than from the browser's copy.
+    const latestFusion = await prisma.fusionScore.findFirst({ where: { accountId }, orderBy: { snapshotDate: 'desc' } });
+    const lowRiskScore = latestFusion?.riskCategory === 'Low_Risk' ? Math.round(latestFusion.fusionScore) : null;
+    const lowRiskLine = lowRiskScore !== null
+      ? ` This account is LOW RISK (fusion churn risk ${lowRiskScore}/100). Do not recommend a discount: ` +
+        `the Discount Uplift Advisor only runs for Medium and High Risk accounts (above 30), because a ` +
+        `discount is a tool for keeping accounts that might otherwise leave and this one shows no sign of churning.`
+      : '';
+
     const conversation = await prisma.conversation.upsert({
       where: { userId_accountId: { userId: (req as any).userId as string, accountId } },
       create: { userId: (req as any).userId as string, accountId },
@@ -835,9 +848,12 @@ app.post('/api/gemini/advisor-chat', requireAuth, advisorRateLimit, async (req, 
       const upliftTool = tool(
         async () => {
           if (!contextAccount?.id) return 'No account is selected, so the uplift model cannot be run.';
+          if (lowRiskScore !== null) {
+            return `${accountName} is Low Risk (fusion churn risk ${lowRiskScore}/100), so the uplift model is not run for it - the same rule as the Discount Uplift Advisor tab, which only runs above 30. Do not recommend a discount for this account.`;
+          }
           try {
             const u = await computeUpliftForAccount(contextAccount.id);
-            // Only the strongest few options — the full 12-cell grid in a tool result
+            // Only the strongest few options — the full grid, one cell per arm, in a tool result
             // is more noise than the agent can use, and it has to fit in the answer.
             const top = [...u.grid]
               .sort((a: any, b: any) => b.cate - a.cate)
@@ -865,6 +881,9 @@ app.post('/api/gemini/advisor-chat', requireAuth, advisorRateLimit, async (req, 
       const proposeOfferTool = tool(
         async ({ discountPct }: { discountPct: number }) => {
           const pct = Math.round(discountPct);
+          if (lowRiskScore !== null) {
+            return `No card shown: ${accountName} is Low Risk, and discounts are not recommended for low-risk accounts.`;
+          }
           // The card names this percentage to the Account Manager, and the Retention Offer tab only
           // accepts the fixed steps - so a card for 12% would recommend an offer that cannot be made.
           if (!(OFFER_PCTS as readonly number[]).includes(pct)) {
@@ -894,7 +913,7 @@ app.post('/api/gemini/advisor-chat', requireAuth, advisorRateLimit, async (req, 
 
       const systemPrompt = `You are RetainIO's AI Retention Advisor, an agent built with LangGraph that reasons over specialist retention-analytics tools. You decide which tools (if any) are actually relevant to the Account Manager's question — do not call a tool just because it exists; a plain greeting needs no tools at all.
 
-Current Account: ${accountName} (Sentiment: ${sentiment}).${existingOfferLine}${offerWindowLine} Assume the question is about this account unless stated otherwise.
+Current Account: ${accountName} (Sentiment: ${sentiment}).${existingOfferLine}${offerWindowLine}${lowRiskLine} Assume the question is about this account unless stated otherwise.
 
 SCOPE:
 You only help with customer retention: churn risk and what drives it, account health, discounts and walkthroughs, past retention cases, and RetainIO's retention policy. Greetings and short pleasantries are fine to answer normally.
