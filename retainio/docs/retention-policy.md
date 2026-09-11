@@ -4,7 +4,7 @@
 
 Every discount runs for a stated number of months of the customer's upcoming 12-month term,
 beginning at their next renewal. A discount is therefore always recorded as a percentage AND
-a duration — "10% for 5 months", never just "10%".
+a duration — "10% for 6 months", never just "10%".
 
 Approval is decided by what an offer gives away, not by its headline percentage. An Account
 Manager may directly approve any offer whose total give-away is up to 10% of the account's
@@ -35,9 +35,9 @@ term, after which the account returns to the standard rate for the remainder of 
 account approved for a discount today with a renewal eight months away pays the standard rate
 for those eight months first.
 
-Worked example, Enterprise at 5,000/month with a 10% discount for 5 months:
-5 months at 4,500 plus 7 months at 5,000 is 57,500 across the term, against a 60,000 list
-price — a give-away of 2,500.
+Worked example, Enterprise at 5,000/month with a 10% discount for 6 months:
+6 months at 4,500 plus 6 months at 5,000 is 57,000 across the term, against a 60,000 list
+price — a give-away of 3,000.
 
 Because a discount is priced across the whole term, a monthly figure alone never describes what
 an offer costs. Always state the term total and the give-away, not the reduced monthly rate.
@@ -112,6 +112,13 @@ has to be cancelled — otherwise the renewal is still recorded as a churn, the 
 and the discount never takes effect. The Retention Offer tab warns whenever an intent is pending
 for that renewal and can cancel it there. A renewal whose intent was cancelled counts as
 confirmed rather than assumed: somebody looked at the account and concluded it renews as-is.
+
+Offers come in fixed steps: 5, 10, 15, 20 or 25 percent, for 3, 6, 9 or 12 months. Those are
+exactly the combinations the uplift model was trained on. It keeps one model for each and judges
+an offer by comparing it against the no-discount case, so an offer outside that grid has nothing
+to be compared with: the advisor could not say whether it would help, and its outcome could not
+teach the model afterwards. "No discount" is a single option with no duration — a product
+walkthrough on its own — and is always available.
 
 An account whose window has not opened yet is not an oversight. It is a deliberate hold, and
 the form will say when the window opens — while still letting a walkthrough be arranged in the

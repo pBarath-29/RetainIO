@@ -4,26 +4,36 @@
   "treatment_arms": [
     "5_3",
     "5_6",
+    "5_9",
     "5_12",
     "10_3",
     "10_6",
+    "10_9",
     "10_12",
     "15_3",
     "15_6",
+    "15_9",
     "15_12",
     "20_3",
     "20_6",
-    "20_12"
+    "20_9",
+    "20_12",
+    "25_3",
+    "25_6",
+    "25_9",
+    "25_12"
   ],
   "treatment_pcts": [
     5,
     10,
     15,
-    20
+    20,
+    25
   ],
   "treatment_months": [
     3,
     6,
+    9,
     12
   ],
   "excluded_features": {
@@ -43,63 +53,71 @@
     "risk_band",
     "Dominant_SHAP_Driver"
   ],
-  "n_training_rows": 126000,
+  "n_training_rows": 238000,
   "validation_mean_qini_auc": {
-    "Pooled depth=4 X-learner": 0.0909,
-    "Pooled depth=4 T-learner": 0.0891,
-    "Pooled depth=6 X-learner": 0.0884,
-    "Pooled depth=6 T-learner": 0.0859,
-    "Pooled depth=8 X-learner": 0.0859,
-    "Pooled depth=8 T-learner": 0.0824
+    "Pooled depth=4 X-learner": 0.0896,
+    "Pooled depth=4 T-learner": 0.0886,
+    "Pooled depth=6 X-learner": 0.0883,
+    "Pooled depth=6 T-learner": 0.0873,
+    "Pooled depth=8 X-learner": 0.0869,
+    "Pooled depth=8 T-learner": 0.0859
   },
   "test_qini_auc_by_arm": {
-    "5_3": 0.0783,
-    "5_6": 0.0801,
-    "5_12": 0.0991,
-    "10_3": 0.142,
-    "10_6": 0.1254,
-    "10_12": 0.0276,
-    "15_3": 0.1425,
-    "15_6": 0.0735,
-    "15_12": 0.0933,
-    "20_3": 0.1235,
-    "20_6": 0.0457,
-    "20_12": 0.1457
+    "5_3": 0.0826,
+    "5_6": 0.0647,
+    "5_9": 0.0607,
+    "5_12": 0.0538,
+    "10_3": 0.1298,
+    "10_6": 0.1084,
+    "10_9": 0.0909,
+    "10_12": 0.0708,
+    "15_3": 0.1297,
+    "15_6": 0.0836,
+    "15_9": 0.0315,
+    "15_12": 0.0624,
+    "20_3": 0.1253,
+    "20_6": 0.0823,
+    "20_9": 0.0587,
+    "20_12": 0.1068,
+    "25_3": 0.1062,
+    "25_6": 0.0321,
+    "25_9": 0.115,
+    "25_12": 0.1479
   },
   "policy_value_test": {
     "Historical actual (observed)": {
-      "value": 0.6113,
+      "value": 0.6098,
       "ci": [
-        0.6054,
-        0.6171
+        0.6056,
+        0.6141
       ]
     },
     "Model policy (Pooled depth=4 X-learner)": {
-      "value": 0.7496,
+      "value": 0.7575,
       "ci": [
-        0.7299,
-        0.7693
+        0.7446,
+        0.7704
       ]
     },
     "Always no discount": {
-      "value": 0.5378,
+      "value": 0.5412,
       "ci": [
-        0.5274,
-        0.5481
+        0.5336,
+        0.5489
       ]
     },
-    "Always max discount (20% for 12 months)": {
-      "value": 0.4643,
+    "Always max discount (25% for 12 months)": {
+      "value": 0.4495,
       "ci": [
-        0.4476,
-        0.4809
+        0.4362,
+        0.4627
       ]
     },
     "Random arm": {
-      "value": 0.6655,
+      "value": 0.6571,
       "ci": [
-        0.6469,
-        0.6841
+        0.6442,
+        0.67
       ]
     }
   }

@@ -48,14 +48,27 @@ import pandas as pd
 
 RNG = np.random.default_rng(20260902)
 # A T-learner fits one model per arm, so the binding constraint is rows PER ARM,
-# not rows overall. At 40,000 rows the twelve treated arms held ~1,500 binary
-# outcomes each, which could not resolve CATE differences of a few percentage
-# points - recovery of the true best arm came out below random. Generation is
-# cheap, so the dataset is sized for the grid rather than the grid trimmed to fit.
-N_ROWS = 180_000
+# not rows overall. At 40,000 rows the treated arms held ~1,500 binary outcomes
+# each, which could not resolve CATE differences of a few percentage points -
+# recovery of the true best arm came out below random. Generation is cheap, so the
+# dataset is sized for the grid rather than the grid trimmed to fit: 340,000 rows
+# keeps the smallest arm (5% for 3 months) near 5,000, where it sat on the old grid.
+N_ROWS = 340_000
 
-DISCOUNT_PCTS = [0, 5, 10, 15, 20]
-DISCOUNT_MONTHS = [3, 6, 12]          # 0 for the control arm
+DISCOUNT_PCTS = [0, 5, 10, 15, 20, 25]
+DISCOUNT_MONTHS = [3, 6, 9, 12]
+# The control is ONE arm: 0% with no duration, "0_0". Only treated rows draw from the
+# grid, and 0 is excluded here, so a 0%-for-N-months arm cannot be produced - four
+# copies of the control would split the group every treated arm is measured against.
+TREATED_PCTS = [p for p in DISCOUNT_PCTS if p > 0]
+
+# How risk skews the size of a discount among treated accounts, one coefficient per
+# option: riskier accounts attract bigger, longer discounts. 25% continues the step of
+# the percentages below it; 9 months interpolates between 6 and 12.
+PCT_RISK_SKEW = [-0.55, -0.10, 0.45, 0.95, 1.45]
+MONTH_RISK_SKEW = [-0.35, 0.15, 0.35, 0.55]
+assert len(PCT_RISK_SKEW) == len(TREATED_PCTS), "one skew per treated percentage"
+assert len(MONTH_RISK_SKEW) == len(DISCOUNT_MONTHS), "one skew per duration"
 MONTHS_PER_TERM = 12
 
 # Tier mix, roughly matching the previous dataset's proportions.
@@ -137,10 +150,12 @@ def assign_treatment(df):
     pct = np.zeros(n, dtype=int)
     months = np.zeros(n, dtype=int)
     idx = np.flatnonzero(treated)
+    # Sized from the lists, so the weights can never be a different length from the grid.
+    skew_p, skew_m = np.array(PCT_RISK_SKEW), np.array(MONTH_RISK_SKEW)
     for i in idx:
-        w = np.array([1.0, 1.0, 1.0, 1.0]) + risk[i] * np.array([-0.55, -0.1, 0.45, 0.95])
-        pct[i] = RNG.choice(DISCOUNT_PCTS[1:], p=np.clip(w, 0.05, None) / np.clip(w, 0.05, None).sum())
-        wm = np.array([1.0, 1.0, 1.0]) + risk[i] * np.array([-0.35, 0.15, 0.55])
+        w = np.ones(len(TREATED_PCTS)) + risk[i] * skew_p
+        pct[i] = RNG.choice(TREATED_PCTS, p=np.clip(w, 0.05, None) / np.clip(w, 0.05, None).sum())
+        wm = np.ones(len(DISCOUNT_MONTHS)) + risk[i] * skew_m
         months[i] = RNG.choice(DISCOUNT_MONTHS, p=np.clip(wm, 0.05, None) / np.clip(wm, 0.05, None).sum())
 
     df["discount_pct"] = pct
@@ -177,13 +192,17 @@ ANCHOR_BY_DRIVER = {"price_sensitive": 1.30, "technical_friction": 0.22}
 TAU_RISK_SHRINK = 0.65
 ANCHOR_RISK_GROWTH = 1.5
 
-PCT_SATURATION = 0.30   # depth saturates too: 20% is not four times as persuasive as 5%
+PCT_SATURATION = 0.30   # depth saturates too: 25% is not five times as persuasive as 5%
 ANCHOR_POWER = 1.6      # super-linear in duration
 PCT_ANCHOR_POWER = 2.4  # a deep discount is missed sharply when it ends
 
 
 def treatment_effect(df):
-    pct = df["discount_pct"].to_numpy() / 20.0            # 0..1
+    # 25% is the maximum discount, so it maps to 1.0. Only this normaliser changed when the
+    # grid gained 25%: PCT_SATURATION, PCT_ANCHOR_POWER, ANCHOR_POWER and the per-driver
+    # constants are untouched, so diminishing returns and the deep-and-long penalty keep
+    # their shape - and 25% behaves exactly as 20% did on the old /20 scale.
+    pct = df["discount_pct"].to_numpy() / 25.0            # 0..1
     months_raw = df["discount_months"].to_numpy().astype(float)
     months = months_raw / MONTHS_PER_TERM
     risk = df["fused_proba"].to_numpy()
@@ -219,6 +238,14 @@ def main():
     df = assign_treatment(df)
     df = make_outcome(df)
     df.insert(0, "customer_id", [f"CUST-{i:06d}" for i in range(1, len(df) + 1)])
+
+    # One control arm, and nothing else off the grid. Checked from the lists rather than a
+    # literal count, so a future grid change is verified by the same lines.
+    control = (df["discount_pct"] == 0) & (df["discount_months"] == 0)
+    treated = df["discount_pct"].isin(TREATED_PCTS) & df["discount_months"].isin(DISCOUNT_MONTHS)
+    assert (control | treated).all(), "a row is neither the control (0, 0) nor a treatment on the grid"
+    n_arms = df.groupby(["discount_pct", "discount_months"]).ngroups
+    assert n_arms == 1 + len(TREATED_PCTS) * len(DISCOUNT_MONTHS), f"{n_arms} arms present"
 
     out = "Datasets/uplift_observational.csv"
     df.to_csv(out, index=False)

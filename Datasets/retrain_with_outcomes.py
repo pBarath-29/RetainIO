@@ -307,10 +307,24 @@ def main():
         pd.concat([synth, real], ignore_index=True).to_csv(merged, index=False)
         report_mix(len(real), len(synth), "training rows")
         print(f"\n  written: Datasets/{merged.name}")
-    print("\n  The uplift model is a pooled X-learner over 13 treatment arms with its own")
-    print("  propensity model, and uplift_model.ipynb IS that training code. Reimplementing")
-    print("  it here would create a second definition free to drift from the first, so this")
-    print("  script prepares the merged dataset and the notebook remains the one trainer.")
+
+        # The notebook trains one model per arm and drops any real row whose arm is not on its
+        # grid, so name those renewals here: usually an offer made before the form was limited
+        # to the grid, or a 0% offer stored with a duration - a second copy of the control arm,
+        # which is 0% with NO duration.
+        grid = json.loads((MODELS / "uplift_config.json").read_text())
+        pcts, months = real["discount_pct"], real["discount_months"]
+        on_grid = ((pcts == 0) & (months == 0)) | (
+            pcts.isin(grid["treatment_pcts"]) & months.isin(grid["treatment_months"]))
+        if (~on_grid).any():
+            arms = sorted(set(zip(pcts[~on_grid], months[~on_grid])))
+            print(f"\n  WARNING: {int((~on_grid).sum())} real row(s) are off the model's grid and the")
+            print("  notebook will drop them: " + ", ".join(f"{p}% for {m} months" for p, m in arms))
+    print("\n  The uplift model fits one model per treatment arm, with its own propensity model,")
+    print("  and uplift_model.ipynb IS that training code. Reimplementing it here would create a")
+    print("  second definition free to drift from the first, so this script prepares the merged")
+    print("  dataset and the notebook remains the one trainer - it reads the merged file")
+    print("  automatically whenever it exists.")
 
     banner("SUMMARY")
     for r in results:

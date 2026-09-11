@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import dotenv from 'dotenv';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
@@ -21,6 +22,7 @@ import {
   selfApprovalCap, discountedTermValue, formatMoney, annualContractValue,
   discountStatus, describeDiscountStatus, blocksNewOffer, TIER_MONTHLY_RATE, addMonths,
   OFFER_WINDOW_DAYS, daysUntil, daysAgo, formatTermDate, tierMoves,
+  OFFER_PCTS, OFFER_MONTHS, isAllowedOffer,
 } from './pricing';
 import {
   computeRealFusion, runDailySnapshotForToday, loadModelFeatures, fusionRiskCategory,
@@ -853,7 +855,7 @@ app.post('/api/gemini/advisor-chat', requireAuth, advisorRateLimit, async (req, 
         },
         {
           name: 'get_uplift_recommendation',
-          description: "Ask the trained uplift model which discount offer - both a percentage (5, 10, 15 or 20%) AND a duration (3, 6 or 12 months) - would most improve this account's chance of renewing, and by how much. Use this before naming any specific discount.",
+          description: `Ask the trained uplift model which discount offer - both a percentage (${OFFER_PCTS.join(', ')}%) AND a duration (${OFFER_MONTHS.join(', ')} months) - would most improve this account's chance of renewing, and by how much. Use this before naming any specific discount.`,
           schema: z.object({}),
         }
       );
@@ -863,6 +865,11 @@ app.post('/api/gemini/advisor-chat', requireAuth, advisorRateLimit, async (req, 
       const proposeOfferTool = tool(
         async ({ discountPct }: { discountPct: number }) => {
           const pct = Math.round(discountPct);
+          // The card names this percentage to the Account Manager, and the Retention Offer tab only
+          // accepts the fixed steps - so a card for 12% would recommend an offer that cannot be made.
+          if (!(OFFER_PCTS as readonly number[]).includes(pct)) {
+            return `No card shown: ${pct}% is not an offer that can be made. Discounts come in ${OFFER_PCTS.join(', ')}% - propose the percentage get_uplift_recommendation returned.`;
+          }
           actionCard = {
             type: 'recommendation',
             discountPct: pct,
@@ -875,7 +882,7 @@ app.post('/api/gemini/advisor-chat', requireAuth, advisorRateLimit, async (req, 
         {
           name: 'propose_retention_offer',
           description: 'Show the Account Manager a card linking to the Retention Offer tab for a specific discount percentage. Call this once you have recommended a concrete percentage. Prefer the tier get_uplift_recommendation returned.',
-          schema: z.object({ discountPct: z.number().describe('The discount percentage to propose, for example 10') }),
+          schema: z.object({ discountPct: z.number().describe(`The discount percentage to propose: one of ${OFFER_PCTS.join(', ')}`) }),
         }
       );
 
@@ -896,7 +903,8 @@ Anything else - general knowledge, current events, coding, cooking, personal adv
 DISCOUNT POLICY:
 You cannot apply, approve or action a discount yourself. The only thing you can do is recommend one and surface a card that links the Account Manager to the Retention Offer tab, where the real approval flow lives.
 - Before naming any specific percentage, call get_uplift_recommendation and use the tier it returns rather than guessing a number.
-- Every discount has a duration as well as a percentage - always state both, e.g. "10% for 5 months". A discount takes effect at the account's NEXT RENEWAL, not immediately, and runs for its months from there. Do not describe an approved discount as already reducing what the customer pays unless the account line above says it is active.
+- Offers come in fixed steps: ${OFFER_PCTS.join(', ')}% for ${OFFER_MONTHS.join(', ')} months. Never suggest any other percentage or duration - the uplift model cannot evaluate it and the Retention Offer tab will not accept it.
+- Every discount has a duration as well as a percentage - always state both, e.g. "10% for 6 months". A discount takes effect at the account's NEXT RENEWAL, not immediately, and runs for its months from there. Do not describe an approved discount as already reducing what the customer pays unless the account line above says it is active.
 - If the account already has a discount scheduled or active, a second one cannot be stacked on top. Say so instead of recommending another.
 - Retention offers only open in the final ${OFFER_WINDOW_DAYS} days before a renewal. If the account line above says the window is not open, do not name a percentage — say when it opens and offer what you can help with in the meantime.
 - Approval depends on what an offer gives away, not its percentage: an Account Manager may approve up to 10% of annual contract value (monthly rate x percentage x months). Larger offers need Account Director sign-off. You may still recommend one, but say plainly it has to go through the Director via the Retention Offer tab.
@@ -1704,7 +1712,7 @@ app.post('/api/discount-requests', requireAuth, async (req, res) => {
           accountId,
           requestedById,
           requestedPct: discountPct,
-          durationMonths: discountMonths,
+          durationMonths: check.months,
           // Pinned now, not read back at approval time — see the field's comment.
           appliesToRenewal: check.renewalDate,
           managerNote: finalNote,
@@ -1745,6 +1753,15 @@ app.post('/api/discount-requests/:id/approve', requireAuth, async (req, res) => 
     const request = await prisma.discountRequest.findUnique({ where: { id }, include: { account: true } });
     if (!request) return res.status(404).json({ error: 'Request not found' });
 
+    // Re-checked rather than trusted: a request can predate the fixed offer steps or have been
+    // written by something other than the form, and approving one off the grid would record a
+    // treatment the uplift model has no arm for.
+    if (!isAllowedOffer(request.requestedPct, request.durationMonths)) {
+      return res.status(400).json({
+        error: `${describeDiscount(request.requestedPct, request.durationMonths)} is not one of the offers that can be made (${OFFER_PCTS.join(', ')}% for ${OFFER_MONTHS.join(', ')} months). Reject it and ask for a new request.`,
+      });
+    }
+
     // Read off the stored request, not the client's body — the approval must
     // record what was actually asked for, not what the approving browser says.
     const label = buildActionLabel(request.requestedPct, request.includesWalkthrough, request.durationMonths);
@@ -1771,12 +1788,14 @@ app.post('/api/discount-requests/:id/approve', requireAuth, async (req, res) => 
           accountId: request.accountId,
           action: `${label} ${buildActionVerb(request.requestedPct, request.includesWalkthrough)}`,
           discountApplied: request.requestedPct,
-          discountMonths: request.durationMonths,
+          // A walkthrough with no discount has no duration and starts nothing (see validateOffer).
+          // Normalised here too, because a request stored before that rule still carries one.
+          discountMonths: request.requestedPct > 0 ? request.durationMonths : 0,
           includesWalkthrough: request.includesWalkthrough,
           // Carried from the request rather than re-read from the subscription: the
           // renewal this was built for is the one it must apply to, even if the term
           // has since rolled while the request sat pending.
-          discountStartsAt: request.appliesToRenewal,
+          discountStartsAt: request.requestedPct > 0 ? request.appliesToRenewal : null,
           approverId: approvedById,
           verificationStatus,
           details: `${label} granted to ${request.account.name} by ${approver.name}. Verification mode: ${verificationStatus}.${identityNote}`,
@@ -1846,12 +1865,20 @@ app.post('/api/discount-requests/:id/reject', requireAuth, async (req, res) => {
 // self-approval. A value-based rule enforced only on the client would have been no
 // better than the percentage rule it replaced.
 async function validateOffer(accountId: string, pct: number, months: number) {
-  if (!Number.isInteger(pct) || pct < 0 || pct > 100) {
-    return { error: 'Discount percentage must be a whole number between 0 and 100.' };
+  // Only the offers the uplift model has an arm for (OFFER_PCTS and OFFER_MONTHS in pricing.ts).
+  // This used to accept any whole percentage up to 100 and any duration from 1 to 12 months, so an
+  // offer could be made that the advisor had no model to judge and whose renewal could not train one.
+  if (!isAllowedOffer(pct, months)) {
+    return {
+      error: `Offers come in fixed steps: ${OFFER_PCTS.join(', ')}% for ${OFFER_MONTHS.join(', ')} months. ` +
+             'A walkthrough on its own is "No discount", with no duration.',
+    };
   }
-  if (!Number.isInteger(months) || months < 1 || months > MONTHS_PER_TERM) {
-    return { error: `Discount duration must be a whole number of months between 1 and ${MONTHS_PER_TERM}.` };
-  }
+  // "No discount" is one arm - 0% with NO duration - so a walkthrough's duration is dropped here,
+  // once, and every write path stores 0. It used to be stored as whatever the form sent, recording a
+  // walkthrough as "0% for 12 months": a second spelling of the control arm, harmless only for as
+  // long as every reader remembered to filter on the percentage.
+  months = pct === 0 ? 0 : months;
 
   const account = await prisma.account.findUnique({
     where: { id: accountId },
@@ -1922,6 +1949,8 @@ async function validateOffer(accountId: string, pct: number, months: number) {
   return {
     account,
     mrr,
+    // The duration to store: 0 for a walkthrough with no discount (see the top of this function).
+    months,
     // The renewal this offer takes effect at. Pinned by the caller at submission so a
     // request that sits pending across a renewal is not later stamped with the next
     // year's date (see DiscountRequest.appliesToRenewal).
@@ -1959,10 +1988,11 @@ app.post('/api/accounts/:id/apply-discount', requireAuth, async (req, res) => {
         accountId: id,
         action: `${label} ${buildActionVerb(discountPct, includesWalkthrough)}`,
         discountApplied: discountPct,
-        discountMonths,
+        discountMonths: check.months,
         includesWalkthrough: Boolean(includesWalkthrough),
-        // Self-approval is immediate, so the renewal read here is the one it applies to.
-        discountStartsAt: check.renewalDate,
+        // Self-approval is immediate, so the renewal read here is the one it applies to. A
+        // walkthrough with no discount starts nothing, so it gets no start date.
+        discountStartsAt: discountPct > 0 ? check.renewalDate : null,
         approverId,
         verificationStatus,
         details: `${label} granted to ${check.account.name} by ${approver.name}. Gives away ${formatMoney(check.giveback)} of ${formatMoney(check.cap / 0.10)} annual contract value; term value ${formatMoney(check.termValue)}. Verification mode: ${verificationStatus}.`,
@@ -2498,7 +2528,7 @@ app.post('/api/renewals/:id/correct', requireAuth, async (req, res) => {
 // computeSimulatedCate() formula. Assembles the uplift model's 12 real
 // features from this account's actual subscription/usage/churn/sentiment/
 // fusion rows and calls model_service's /predict/uplift (the real trained
-// X-learner over 13 arms, models/uplift_pooled_t_duration.pkl). Returns 422 rather than
+// X-learner in models/uplift_pooled_t_duration.pkl, one model per arm). Returns 422 rather than
 // fabricating a number if the account doesn't have real data for all 12
 // features yet (e.g. no sentiment_prediction on its latest review).
 // What the review is actually about, read by Gemini from the text.
@@ -2630,6 +2660,27 @@ app.get('/api/accounts/:id/uplift', requireAuth, async (req, res) => {
   }
 });
 
+// The offer form and the uplift model must agree on the grid of offers. pricing.ts cannot read the
+// model's config - the browser bundles it too - so the two lists are compared once at startup, and a
+// mismatch is reported here rather than discovered when an offer has no model arm to score it.
+function checkOfferGridMatchesModel() {
+  const configPath = path.join(process.cwd(), '..', 'models', 'uplift_config.json');
+  const sameSet = (a: readonly number[], b: unknown) =>
+    Array.isArray(b) && a.length === b.length && a.every(v => b.includes(v));
+  try {
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    if (!sameSet(OFFER_PCTS, config.treatment_pcts) || !sameSet(OFFER_MONTHS, config.treatment_months)) {
+      console.warn(
+        `WARNING: the offer grid in pricing.ts (${OFFER_PCTS.join('/')}% x ${OFFER_MONTHS.join('/')} months) does not match ` +
+        `the uplift model (${config.treatment_pcts?.join('/')}% x ${config.treatment_months?.join('/')} months, ${configPath}). ` +
+        'Change pricing.ts or retrain the model so they list the same percentages and durations.',
+      );
+    }
+  } catch (err: any) {
+    console.warn(`Could not compare the offer grid with the uplift model's config at ${configPath}: ${err.message}`);
+  }
+}
+
 // Start Express Server with Vite Middleware
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
@@ -2649,6 +2700,7 @@ async function startServer() {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`RetainIO Server running on http://0.0.0.0:${PORT}`);
   });
+  checkOfferGridMatchesModel();
 
   // Real daily fusion snapshot — idempotent (a no-op if today's row already
   // exists), so this is safe to run on every boot. Once this is hosted

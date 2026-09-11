@@ -50,6 +50,29 @@ export const SELF_APPROVAL_GIVEBACK_RATIO = 0.10;
 // reference the uplift model's control group needs.
 export const OFFER_WINDOW_DAYS = 180;
 
+// The offers anyone may make — exactly the uplift model's treatment arms, as recorded in
+// models/uplift_config.json (treatment_pcts, treatment_months). server.ts warns at startup if the
+// two ever disagree.
+//
+// The model is not one model but one per arm: it answers "would 10% for 6 months change this
+// outcome?" by comparing the 10%-for-6-months model against the no-discount one. An offer off this
+// grid has no model to ask, so the Discount Uplift Advisor cannot evaluate it beforehand and its
+// renewal cannot train the model afterwards. The form used to accept any whole percentage and any
+// duration from 1 to 12 months, which let through offers the model was never built to judge.
+//
+// "No discount" is ONE arm: 0% with no duration. It is not 0% for 3, 6, 9 or 12 months — that
+// would be four identical control arms, splitting the group every treated arm is measured against.
+export const OFFER_PCTS = [5, 10, 15, 20, 25] as const;
+export const OFFER_MONTHS = [3, 6, 9, 12] as const;
+
+/**
+ * Whether an offer may be made. 0% is a walkthrough with no discount and is always allowed; its
+ * duration means nothing and is discarded when stored. Any discount must be on the grid.
+ */
+export const isAllowedOffer = (pct: number, months: number): boolean =>
+  pct === 0 ||
+  ((OFFER_PCTS as readonly number[]).includes(pct) && (OFFER_MONTHS as readonly number[]).includes(months));
+
 export const daysUntil = (date: Date | string, asOf: Date = new Date()): number =>
   Math.round((new Date(date).getTime() - asOf.getTime()) / 86400000);
 
@@ -89,7 +112,7 @@ export const selfApprovalCap = (mrr: number): number =>
 export const needsDirectorApproval = (mrr: number, pct: number, months: number): boolean =>
   givebackValue(mrr, pct, months) > selfApprovalCap(mrr);
 
-/** "10% for 5 months", or "no discount" — used in offers, audit rows and prompts. */
+/** "10% for 6 months", or "no discount" — used in offers, audit rows and prompts. */
 export function describeDiscount(pct: number, months: number): string {
   if (!pct || !months) return 'no discount';
   return `${pct}% for ${months} ${months === 1 ? 'month' : 'months'}`;

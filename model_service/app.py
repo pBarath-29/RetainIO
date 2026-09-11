@@ -154,14 +154,15 @@ sentiment_classes = sentiment_pipe.named_steps["clf"].classes_
 print(f"Ready. Sentiment classes: {list(sentiment_classes)}")
 
 # Real uplift (causal CATE) model — a T-learner: one RandomForestRegressor per
-# discount tier (0/5/10/15/20), each predicting retention probability under
+# discount arm (listed in models/uplift_config.json), each predicting retention under
 # that tier from the same 12 structured features. CATE for a tier is simply
 # that tier's predicted retention minus the tier-0 (no discount) baseline —
 # no text classification involved; this is what server.ts's account-level
 # uplift endpoint calls instead of the frontend's old hand-typed formula.
 print("Loading uplift model bundle...")
 uplift_bundle = joblib.load(UPLIFT_MODEL_PATH)
-# The grid is 13 arms keyed "<pct>_<months>" ("0_0" is the control), since the model
+# The grid is one control arm plus every (percentage, duration) pair, keyed
+# "<pct>_<months>" ("0_0" is the control), read from the bundle below, since the model
 # was retrained to rank a discount's DURATION as well as its depth.
 #
 # The notebook picks between a T-learner and an X-learner on validation Qini, so the

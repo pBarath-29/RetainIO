@@ -30,3 +30,6 @@ playwright-report/
 # NOTE: models/ and Datasets/ are deliberately NOT ignored. The FastAPI service loads the
 # pickles from models/ and reads Datasets/Churn.csv at import time to rebuild its SHAP
 # background sample, so both have to be in the repo for a deploy to boot.
+
+# Local rollback copies of model artefacts. The originals are in git history anyway.
+backups/

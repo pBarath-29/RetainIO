@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   MONTHS_PER_TERM, givebackValue, selfApprovalCap, discountedTermValue,
   needsDirectorApproval, describeDiscount, formatMoney, blocksNewOffer, formatTermDate, addMonths,
-  OFFER_WINDOW_DAYS, daysUntil, daysAgo,
+  OFFER_WINDOW_DAYS, daysUntil, daysAgo, OFFER_PCTS, OFFER_MONTHS,
 } from '../../pricing';
 import { Account, UserProfile, DiscountRequest, RenewalIntent } from '../types';
 import { FaceVerificationModal } from './FaceVerificationModal';
@@ -1263,37 +1263,38 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
 
               <div className="flex flex-wrap items-center gap-3">
                 <div className="relative w-48">
-                  <input
+                  {/* Fixed steps, not a free number: exactly the uplift model's treatment arms
+                      (OFFER_PCTS in pricing.ts). An offer off the grid is one the Discount Uplift
+                      Advisor cannot evaluate beforehand and whose renewal cannot train the model
+                      afterwards. "No discount" is a walkthrough-only offer. */}
+                  <select
                     id="discount-pct-input"
-                    type="number"
-                    min={0}
-                    max={100}
-                    step={1}
-                    value={selectedDiscount || ''}
-                    onChange={(e) => {
-                      const val = Math.min(100, Math.max(0, Number(e.target.value) || 0));
-                      setSelectedDiscount(val);
-                    }}
+                    value={selectedDiscount}
+                    onChange={(e) => setSelectedDiscount(Number(e.target.value))}
                     disabled={isDiscountLocked}
-                    placeholder="Enter percentage"
-                    className="w-full text-base font-bold font-mono px-4 py-2.5 pr-8 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 bg-slate-50 text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 font-bold font-mono text-sm">
-                    %
-                  </span>
+                    className="w-full text-base font-bold font-mono px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 bg-slate-50 text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <option value={0}>No discount</option>
+                    {OFFER_PCTS.map(p => (
+                      <option key={p} value={p}>{p}%</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="relative w-44">
                   <label htmlFor="discount-months-input" className="sr-only">Discount duration in months</label>
                   <select
                     id="discount-months-input"
-                    value={selectedMonths}
+                    // No discount has no duration. It is one control arm, not 0% for N months,
+                    // so the select stands empty and locked rather than implying a length.
+                    value={selectedDiscount === 0 ? '' : selectedMonths}
                     onChange={(e) => setSelectedMonths(Number(e.target.value))}
-                    disabled={isDiscountLocked}
+                    disabled={isDiscountLocked || selectedDiscount === 0}
                     className="w-full text-base font-bold font-mono px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 bg-slate-50 text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {Array.from({ length: MONTHS_PER_TERM }, (_, i) => i + 1).map(m => (
-                      <option key={m} value={m}>{m} {m === 1 ? 'month' : 'months'}</option>
+                    {selectedDiscount === 0 && <option value="">No duration</option>}
+                    {OFFER_MONTHS.map(m => (
+                      <option key={m} value={m}>{m} months</option>
                     ))}
                   </select>
                 </div>
@@ -1333,7 +1334,7 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
               )}
 
               {/* Walkthrough — an independent lever, not just a discount add-on. Can be sent
-                  on its own (set discount to 0%) or combined with a discount above. */}
+                  on its own (choose "No discount") or combined with a discount above. */}
               <div className="pt-1">
                 <label className={`flex items-center space-x-2.5 ${isWalkthroughLocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
                   <input
@@ -1349,7 +1350,7 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
                   </span>
                 </label>
                 <p className="text-[11px] text-slate-500 pl-6.5 mt-1">
-                  Works on its own — set the discount to 0% above for a walkthrough-only offer — or combined with a discount.
+                  Works on its own — choose "No discount" above for a walkthrough-only offer — or combined with a discount.
                 </p>
                 {/* Shown where the decision is actually made. There is no limit on how often
                     a walkthrough can be offered, so this is context rather than a warning —
