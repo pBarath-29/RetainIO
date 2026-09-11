@@ -22,7 +22,7 @@ import {
   selfApprovalCap, discountedTermValue, formatMoney, annualContractValue,
   discountStatus, describeDiscountStatus, blocksNewOffer, TIER_MONTHLY_RATE, addMonths,
   OFFER_WINDOW_DAYS, daysUntil, daysAgo, formatTermDate, tierMoves,
-  OFFER_PCTS, OFFER_MONTHS, isAllowedOffer,
+  OFFER_PCTS, OFFER_MONTHS, isAllowedOffer, discountsOpen, isWithinOfferWindow,
 } from './pricing';
 import {
   computeRealFusion, runDailySnapshotForToday, loadModelFeatures, fusionRiskCategory,
@@ -30,7 +30,7 @@ import {
   SENTIMENT_RISK_WEIGHT, captureIndexSnapshot, captureDueIndexSnapshots, dateOnlyUTC,
   type SentimentClassValue,
 } from './fusionSnapshot';
-import { runRenewalsForToday, isRetained } from './renewals';
+import { runRenewalsForToday, isRetained, liveIntentFor } from './renewals';
 import { ingestInbox, mailIngestConfigured } from './mailIngest';
 
 dotenv.config();
@@ -697,12 +697,25 @@ app.post('/api/gemini/advisor-chat', requireAuth, advisorRateLimit, async (req, 
     // happily recommend a percentage for an account the server would refuse, which reads
     // to the Manager as the assistant and the app disagreeing.
     const daysToRenewal = existingOffer?.renewalDate ? daysUntil(existingOffer.renewalDate) : null;
-    const offerWindowLine = daysToRenewal !== null && daysToRenewal > OFFER_WINDOW_DAYS
-      ? ` RETENTION OFFERS ARE NOT OPEN for this account: it renews in ${daysToRenewal} days, and ` +
-        `DISCOUNTS open ${OFFER_WINDOW_DAYS} days before renewal. Do not recommend a discount ` +
-        `percentage. A PRODUCT WALKTHROUGH is still available and costs nothing — recommend ` +
-        `that instead where it fits, and say when the discount window opens.`
-      : '';
+    // A customer who has said they are leaving opens discounts ahead of the window (discountsOpen in
+    // pricing.ts, the rule validateOffer applies), so the notice is read here as well.
+    const liveIntent = contextAccount?.id && existingOffer?.renewalDate
+      ? await liveIntentFor(contextAccount.id, existingOffer.renewalDate)
+      : null;
+    const hasLeavingNotice = liveIntent?.kind === 'churning';
+    const windowShut = existingOffer?.renewalDate ? !isWithinOfferWindow(existingOffer.renewalDate) : false;
+    const offersOpen = existingOffer?.renewalDate ? discountsOpen(existingOffer.renewalDate, liveIntent?.kind) : true;
+    const offerWindowLine = !windowShut
+      ? ''
+      : offersOpen
+        ? ` The customer has GIVEN NOTICE that they are leaving at this renewal, ${daysToRenewal} days away, so ` +
+          `retention discounts are open now rather than ${OFFER_WINDOW_DAYS} days before renewal. A discount does ` +
+          `not cancel the notice: if the customer agrees to stay, the notice must be cancelled on the Retention ` +
+          `Offer tab, or the renewal is still recorded as a churn.`
+        : ` RETENTION OFFERS ARE NOT OPEN for this account: it renews in ${daysToRenewal} days, and ` +
+          `DISCOUNTS open ${OFFER_WINDOW_DAYS} days before renewal. Do not recommend a discount ` +
+          `percentage. A PRODUCT WALKTHROUGH is still available and costs nothing — recommend ` +
+          `that instead where it fits, and say when the discount window opens.`;
 
     // One thread per (user, account). Created on first question.
     const accountId: string | undefined = contextAccount?.id;
@@ -715,11 +728,19 @@ app.post('/api/gemini/advisor-chat', requireAuth, advisorRateLimit, async (req, 
     // badge comes from - the latest daily fusion score - rather than from the browser's copy.
     const latestFusion = await prisma.fusionScore.findFirst({ where: { accountId }, orderBy: { snapshotDate: 'desc' } });
     const lowRiskScore = latestFusion?.riskCategory === 'Low_Risk' ? Math.round(latestFusion.fusionScore) : null;
-    const lowRiskLine = lowRiskScore !== null
-      ? ` This account is LOW RISK (fusion churn risk ${lowRiskScore}/100). Do not recommend a discount: ` +
-        `the Discount Uplift Advisor only runs for Medium and High Risk accounts (above 30), because a ` +
-        `discount is a tool for keeping accounts that might otherwise leave and this one shows no sign of churning.`
-      : '';
+    const lowRiskLine = lowRiskScore === null
+      ? ''
+      : hasLeavingNotice
+        // The notice outranks the score: the models cannot see it, so "no sign of churning" would be
+        // false - but their estimate of what a discount would do is no better for the notice existing.
+        ? ` The risk models score this account LOW RISK (fusion churn risk ${lowRiskScore}/100), but the ` +
+          `customer has given notice that they are leaving, which the models cannot see. The uplift model ` +
+          `is not run for low-risk accounts, so there is no model recommendation: do not name a discount ` +
+          `percentage yourself - say that any offer is the Account Manager's judgement, made on the ` +
+          `Retention Offer tab.`
+        : ` This account is LOW RISK (fusion churn risk ${lowRiskScore}/100). Do not recommend a discount: ` +
+          `the Discount Uplift Advisor only runs for Medium and High Risk accounts (above 30), because a ` +
+          `discount is a tool for keeping accounts that might otherwise leave and this one shows no sign of churning.`;
 
     const conversation = await prisma.conversation.upsert({
       where: { userId_accountId: { userId: (req as any).userId as string, accountId } },
@@ -849,7 +870,10 @@ app.post('/api/gemini/advisor-chat', requireAuth, advisorRateLimit, async (req, 
         async () => {
           if (!contextAccount?.id) return 'No account is selected, so the uplift model cannot be run.';
           if (lowRiskScore !== null) {
-            return `${accountName} is Low Risk (fusion churn risk ${lowRiskScore}/100), so the uplift model is not run for it - the same rule as the Discount Uplift Advisor tab, which only runs above 30. Do not recommend a discount for this account.`;
+            return `${accountName} is Low Risk (fusion churn risk ${lowRiskScore}/100), so the uplift model is not run for it - the same rule as the Discount Uplift Advisor tab, which only runs above 30. ` +
+              (hasLeavingNotice
+                ? 'The customer has given notice that they are leaving, which the model cannot see, so it has no reliable recommendation here: any offer is the Account Manager\'s judgement.'
+                : 'Do not recommend a discount for this account.');
           }
           try {
             const u = await computeUpliftForAccount(contextAccount.id);
@@ -882,7 +906,9 @@ app.post('/api/gemini/advisor-chat', requireAuth, advisorRateLimit, async (req, 
         async ({ discountPct }: { discountPct: number }) => {
           const pct = Math.round(discountPct);
           if (lowRiskScore !== null) {
-            return `No card shown: ${accountName} is Low Risk, and discounts are not recommended for low-risk accounts.`;
+            return hasLeavingNotice
+              ? `No card shown: ${accountName} scores Low Risk, so there is no model recommendation to put on a card. The customer has given notice, so the Retention Offer tab is open for the Account Manager to make an offer themselves.`
+              : `No card shown: ${accountName} is Low Risk, and discounts are not recommended for low-risk accounts.`;
           }
           // The card names this percentage to the Account Manager, and the Retention Offer tab only
           // accepts the fixed steps - so a card for 12% would recommend an offer that cannot be made.
@@ -925,7 +951,7 @@ You cannot apply, approve or action a discount yourself. The only thing you can 
 - Offers come in fixed steps: ${OFFER_PCTS.join(', ')}% for ${OFFER_MONTHS.join(', ')} months. Never suggest any other percentage or duration - the uplift model cannot evaluate it and the Retention Offer tab will not accept it.
 - Every discount has a duration as well as a percentage - always state both, e.g. "10% for 6 months". A discount takes effect at the account's NEXT RENEWAL, not immediately, and runs for its months from there. Do not describe an approved discount as already reducing what the customer pays unless the account line above says it is active.
 - If the account already has a discount scheduled or active, a second one cannot be stacked on top. Say so instead of recommending another.
-- Retention offers only open in the final ${OFFER_WINDOW_DAYS} days before a renewal. If the account line above says the window is not open, do not name a percentage — say when it opens and offer what you can help with in the meantime.
+- Retention offers only open in the final ${OFFER_WINDOW_DAYS} days before a renewal. If the account line above says the window is not open, do not name a percentage — say when it opens and offer what you can help with in the meantime. The exception is a customer who has given notice that they are leaving: offers open for them straight away, and the account line above says so.
 - Approval depends on what an offer gives away, not its percentage: an Account Manager may approve up to 10% of annual contract value (monthly rate x percentage x months). Larger offers need Account Director sign-off. You may still recommend one, but say plainly it has to go through the Director via the Retention Offer tab.
 - Once you have recommended a concrete percentage, call propose_retention_offer with it so the card appears.
 
@@ -1781,6 +1807,18 @@ app.post('/api/discount-requests/:id/approve', requireAuth, async (req, res) => 
       });
     }
 
+    // The window re-checked as well, because it can close again: a request sent early under a
+    // leaving notice has lost its reason if that notice was cancelled before the Director decides.
+    if (request.requestedPct > 0) {
+      const renewal = request.appliesToRenewal
+        ?? (await prisma.subscription.findFirst({ where: { accountId: request.accountId }, orderBy: { termStart: 'desc' } }))?.termEnd;
+      if (renewal && !discountsOpen(renewal, (await liveIntentFor(request.accountId, renewal))?.kind)) {
+        return res.status(409).json({
+          error: `Discounts are not open for ${request.account.name}: its renewal is ${daysUntil(renewal)} days away and no notice that the customer is leaving is on record - it may have been cancelled after this request was sent. Reject it, or send a new request once the ${OFFER_WINDOW_DAYS}-day window opens.`,
+        });
+      }
+    }
+
     // Read off the stored request, not the client's body — the approval must
     // record what was actually asked for, not what the approving browser says.
     const label = buildActionLabel(request.requestedPct, request.includesWalkthrough, request.durationMonths);
@@ -1931,12 +1969,18 @@ async function validateOffer(accountId: string, pct: number, months: number) {
   // paying early for a wobble that may pass, and keeping the pre-treatment measurement
   // aligned. A walkthrough is not one of the uplift model's treatment arms (they are all
   // percentage/duration pairs), so it neither spends money nor disturbs the measurement.
+  //
+  // One notice opens discounts early: a customer who has said they are LEAVING (discountsOpen in
+  // pricing.ts). Neither reason for the window survives it - it is no longer a wobble, and recording
+  // the notice froze the account's training snapshot there and then, which an approval never
+  // replaces - so waiting would only give a competitor the time.
   const daysOut = daysUntil(sub.termEnd);
-  if (pct > 0 && daysOut > OFFER_WINDOW_DAYS) {
+  if (pct > 0 && !discountsOpen(sub.termEnd, (await liveIntentFor(accountId, sub.termEnd))?.kind)) {
     return {
       error: `${account.name} renews on ${formatTermDate(sub.termEnd)}, ${daysOut} days away. ` +
              `Discounts open ${OFFER_WINDOW_DAYS} days before renewal — ` +
-             `${formatTermDate(new Date(sub.termEnd.getTime() - OFFER_WINDOW_DAYS * 86400000))}. ` +
+             `${formatTermDate(new Date(sub.termEnd.getTime() - OFFER_WINDOW_DAYS * 86400000))} — ` +
+             `or as soon as the customer gives notice that they are leaving (record it on the Renewals page). ` +
              `A product walkthrough can be offered now.`,
       status: 409,
     };

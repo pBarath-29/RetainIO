@@ -96,6 +96,17 @@ export const daysAgo = (date: Date | string, asOf: Date = new Date()): number =>
 export const isWithinOfferWindow = (renewalDate: Date | string, asOf: Date = new Date()): boolean =>
   daysUntil(renewalDate, asOf) <= OFFER_WINDOW_DAYS;
 
+// Whether a DISCOUNT may be offered for this renewal: inside the window, or once the customer has
+// given notice that they are leaving. Neither reason for the window survives that notice - it is no
+// longer a wobble that may pass, and recording it froze the account's training snapshot there and
+// then - so waiting would only give a competitor the time. A downgrade or upgrade notice does not
+// open discounts early. The server and the offer form both call this, so they cannot disagree.
+export const discountsOpen = (
+  renewalDate: Date | string,
+  liveIntentKind?: string | null,
+  asOf: Date = new Date(),
+): boolean => isWithinOfferWindow(renewalDate, asOf) || liveIntentKind === 'churning';
+
 export const annualContractValue = (mrr: number): number => mrr * MONTHS_PER_TERM;
 
 /** What the customer pays across the term when a discount covers its first N months. */

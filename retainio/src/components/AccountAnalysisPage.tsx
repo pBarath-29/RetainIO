@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   MONTHS_PER_TERM, givebackValue, selfApprovalCap, discountedTermValue,
   needsDirectorApproval, describeDiscount, formatMoney, blocksNewOffer, formatTermDate, addMonths,
-  OFFER_WINDOW_DAYS, daysUntil, daysAgo, OFFER_PCTS, OFFER_MONTHS,
+  OFFER_WINDOW_DAYS, daysUntil, daysAgo, OFFER_PCTS, OFFER_MONTHS, discountsOpen,
 } from '../../pricing';
 import { Account, UserProfile, DiscountRequest, RenewalIntent } from '../types';
 import { FaceVerificationModal } from './FaceVerificationModal';
@@ -288,6 +288,12 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
   const offerWindowOpens = account.contractRenewalDate
     ? new Date(new Date(account.contractRenewalDate).getTime() - OFFER_WINDOW_DAYS * 86400000)
     : null;
+  // ...except for a customer who has said they are leaving, which opens discounts straight away.
+  // The same rule as the server's (discountsOpen in pricing.ts), so the form can neither offer what
+  // the server refuses nor hide what it allows.
+  const areDiscountsOpen = !account.contractRenewalDate || discountsOpen(account.contractRenewalDate, liveIntent?.kind);
+  const isDiscountWindowShut = !areDiscountsOpen;
+  const offersOpenedEarly = isBeforeOfferWindow && areDiscountsOpen;
 
   // Two locks, because the two offers are not the same kind of thing.
   //
@@ -296,7 +302,7 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
   // uplift model's treatment arms, and is exactly what a manager should be able to reach
   // for when an account is struggling ten months from its renewal. Locking the whole form
   // on the window would have removed the only lever available at that point.
-  const isDiscountLocked = isAwaitingDirectorDecision || hasActiveDiscount || isBeforeOfferWindow;
+  const isDiscountLocked = isAwaitingDirectorDecision || hasActiveDiscount || isDiscountWindowShut;
   const isWalkthroughLocked = isAwaitingDirectorDecision || hasActiveDiscount;
   // Kept for the parts of the form that apply to any offer (the note, the submit button).
   const isOfferFormLocked = isDiscountLocked && isWalkthroughLocked;
@@ -306,8 +312,8 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
   // would keep quoting a cost, and the submit button would keep offering to execute a
   // discount, for something the server will refuse.
   useEffect(() => {
-    if (isBeforeOfferWindow && selectedDiscount !== 0) setSelectedDiscount(0);
-  }, [isBeforeOfferWindow, selectedDiscount]);
+    if (isDiscountWindowShut && selectedDiscount !== 0) setSelectedDiscount(0);
+  }, [isDiscountWindowShut, selectedDiscount]);
 
   // What this offer costs, recomputed as either input changes. Shown to the Manager
   // so the approval rule is legible before they submit, rather than a refusal after.
@@ -1056,9 +1062,13 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
                 <p className="text-xs text-slate-700 leading-relaxed">
                   {account.name} is at <strong>{account.fusionRiskScore}/100</strong> fusion churn risk
                   (<strong>{account.riskCategory}</strong>). The Discount Uplift Advisor only runs for accounts
-                  in the <strong>Medium Risk</strong> (above 30) and <strong>High Risk</strong> (above 70) bands —
-                  a retention discount is a tool for keeping accounts that might otherwise leave, and this one
-                  shows no sign of churning.
+                  in the <strong>Medium Risk</strong> (above 30) and <strong>High Risk</strong> (above 70) bands.{' '}
+                  {liveIntent?.kind === 'churning'
+                    ? <>The customer has given notice that they are leaving, but the models cannot see that notice, so
+                      on this score the advisor's estimate would not reflect it. Any discount is your own judgement,
+                      made on the Retention Offer tab, which the notice has opened.</>
+                    : <>A retention discount is a tool for keeping accounts that might otherwise leave, and this one
+                      shows no sign of churning.</>}
                 </p>
                 <p className="text-[11px] text-slate-500 leading-relaxed">
                   If this account's risk rises above 30, the advisor will run automatically and recommend a
@@ -1214,7 +1224,7 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
             {/* Window closed. Shown before anything else in the tab, because it is the reason
                 every control below is disabled — and it says WHEN it opens rather than just
                 refusing, so the Manager knows what to do with the information. */}
-            {isBeforeOfferWindow && (
+            {isDiscountWindowShut && (
               <div className="p-4 rounded-xl border bg-slate-50 border-slate-300 text-slate-800 flex items-start space-x-2.5 text-xs">
                 <Clock className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
                 <div>
@@ -1230,12 +1240,34 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
                     like before anything was done to it, which is what the retention models are
                     later trained on.
                   </p>
+                  <p className="mt-1.5 text-slate-600">
+                    If the customer has said they are leaving, record it on the Renewals page and
+                    discounts open straight away.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Opened early by a leaving notice - said, so the Manager knows why the window rule does
+                not apply here and when it otherwise would have. */}
+            {offersOpenedEarly && (
+              <div className="p-4 rounded-xl border bg-sky-50 border-sky-200 text-sky-950 flex items-start space-x-2.5 text-xs">
+                <Clock className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold uppercase tracking-wider text-[11px]">Offers Opened Early</p>
+                  <p className="mt-0.5">
+                    {account.name} has given notice that they are leaving at their renewal on{' '}
+                    <strong>{formatTermDate(account.contractRenewalDate!)}</strong>, {daysToRenewal} days away.
+                    Discounts would normally open on{' '}
+                    {offerWindowOpens ? <strong>{formatTermDate(offerWindowOpens)}</strong> : 'the window date'}, but
+                    waiting would only give a competitor the time.
+                  </p>
                 </div>
               </div>
             )}
 
             {/* Active Discount Notice — blocks stacking a second discount on top of an existing one */}
-            {hasActiveDiscount && !isAwaitingDirectorDecision && !isBeforeOfferWindow && (
+            {hasActiveDiscount && !isAwaitingDirectorDecision && !isDiscountWindowShut && (
               <div className={`p-4 rounded-xl border flex items-start space-x-2.5 text-xs ${
                 account.discountState === 'active'
                   ? 'bg-emerald-50 border-emerald-300 text-emerald-950'

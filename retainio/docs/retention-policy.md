@@ -71,7 +71,8 @@ principles to explain it to the customer and to your Director.
 
 A DISCOUNT can only be offered in the final 180 days before a customer's renewal. Outside that
 window the percentage field is closed and the system will refuse a discount, whatever the
-account's risk score says.
+account's risk score says. The one exception is a customer who has said they are leaving,
+explained below.
 
 A product walkthrough is not restricted. It can be offered at any point in the contract, and
 outside the discount window it is the lever available. That difference is deliberate: the
@@ -88,9 +89,9 @@ the decision is made on a settled picture rather than a passing one.
 The measurement reason: the moment an account enters this window, the system freezes a record
 of what it looked like — usage, login frequency, support tickets, API utilisation, and the
 three model scores. That frozen record is what the models are later trained on, paired with
-whether the account actually renewed. Because no discount can exist before the window opens,
-that measurement is guaranteed to describe the account BEFORE anything was done to it, for
-every account alike. If offers could be made at any time, some accounts would be measured
+whether the account actually renewed. Because no discount can be offered before the account has
+been measured, that measurement is guaranteed to describe the account BEFORE anything was done
+to it, for every account alike. If offers could be made at any time, some accounts would be measured
 before their discount and others after, and the two groups would no longer be comparable.
 
 When an offer is approved, the record is re-taken at that moment instead. That is still before
@@ -105,6 +106,13 @@ down, or ramping up, instead of the account as it stood when it decided. Once ta
 the record is kept even if a discount is later offered to change their mind, so that offer is
 judged against the account as it was when they announced. Changing the intent, or cancelling
 it, keeps the original record.
+
+A customer who says they are LEAVING also opens retention discounts for that renewal at once,
+however far away it is. Neither reason for the window survives that notice: it is no longer a
+wobble that may pass, and the account was measured the moment the notice was recorded. Waiting
+would only give a competitor the time. A downgrade or upgrade notice does not open discounts
+early; those still wait for the window. If a leaving notice is cancelled before a Director has
+decided on an early request, that request can no longer be approved until the window opens.
 
 A recorded intent decides the outcome by itself, and giving a discount does not change it. So if
 a customer says they are leaving, you offer a discount, and they then agree to stay, the intent

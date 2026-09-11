@@ -119,6 +119,18 @@ export async function runRenewalsForToday(now: Date = new Date()): Promise<Renew
   return summary;
 }
 
+/**
+ * The intent recorded FOR a given renewal and still pending - not cancelled, not yet applied.
+ * Matched on its effective date, never by recency: an intent filed against next year's renewal
+ * must not resolve this one, nor open discounts for it.
+ */
+export function liveIntentFor(accountId: string, termEnd: Date) {
+  return prisma.renewalIntent.findFirst({
+    where: { accountId, effectiveFor: termEnd, cancelledAt: null, appliedAt: null },
+    orderBy: { recordedAt: 'desc' },
+  });
+}
+
 type RenewalRow = RenewalRunSummary['processed'][number];
 
 type ResolveResult =
@@ -140,12 +152,8 @@ async function resolveOneRenewal(
   });
   if (existing) return { kind: 'already-recorded' };
 
-  // The intent recorded FOR THIS RENEWAL — matched on its effective date, never by
-  // recency. An intent filed against next year's renewal must not resolve this one.
-  const intent = await prisma.renewalIntent.findFirst({
-    where: { accountId, effectiveFor: termEnd, cancelledAt: null, appliedAt: null },
-    orderBy: { recordedAt: 'desc' },
-  });
+  // The intent recorded FOR THIS RENEWAL (see liveIntentFor).
+  const intent = await liveIntentFor(accountId, termEnd);
 
   // An intent recorded for this renewal and later CANCELLED — typically a churn that a
   // discount turned around. The outcome is an ordinary renewal, but a person plainly dealt

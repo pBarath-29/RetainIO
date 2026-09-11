@@ -356,7 +356,7 @@ function intentOptions(currentTier: PlanTierName): IntentOption[] {
   });
   return [
     { kind: 'churning', label: INTENT_LABEL.churning,
-      description: 'The customer has given notice. The account will churn at the renewal.' },
+      description: 'The customer has given notice. The account will churn at the renewal, and retention discounts open for it straight away.' },
     ...downgrades.map(t => toOption('downgrading', 'Downgrade', t)),
     ...upgrades.map(t => toOption('upgrading', 'Upgrade', t)),
   ];
