@@ -1675,15 +1675,18 @@ app.get('/api/bootstrap', requireAuth, async (req, res) => {
     // The audit trail is scoped by WHO ACTED, not by who owns the account —
     // a manager's ledger is a record of their own actions. Seeing another
     // manager's approval just because the account later moved to them would
-    // misattribute it. A manager therefore sees their own entries plus any
-    // Director decision on one of their accounts (the approve/reject that
-    // closes out a request they raised); a Director sees their team's.
+    // misattribute it. A manager therefore sees their own entries, any Director
+    // decision on one of their accounts (the approve/reject that closes out a
+    // request they raised), and any renewal the system resolved on one of them -
+    // nobody else acted on that, so without it the Manager never saw it at all.
+    // A Director sees their team's.
     const auditScope = isAdmin ? {} : isDirector
       ? { OR: [{ approverId: user.id }, { account: { accountManagerId: { in: teamManagerIds } } }] }
       : {
           OR: [
             { approverId: user.id },
             { approver: { role: 'account_director' as const }, account: { accountManagerId: user.id } },
+            { approver: { role: 'system' as const }, account: { accountManagerId: user.id } },
           ],
         };
 
@@ -2405,6 +2408,10 @@ app.post('/api/accounts/:id/rescore', requireAuth, async (req, res) => {
   }
 });
 
+// How a renewal notice reads in the audit log - the same words the Renewals page uses.
+const describeIntent = (kind: string, targetTier?: string | null): string =>
+  kind === 'churning' ? 'Will not renew' : `${kind === 'upgrading' ? 'Upgrade' : 'Downgrade'} to ${targetTier}`;
+
 app.post('/api/accounts/:id/renewal-intent', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
@@ -2453,21 +2460,46 @@ app.post('/api/accounts/:id/renewal-intent', requireAuth, async (req, res) => {
 
     // One live intent per renewal: a later one supersedes rather than stacking, so the
     // job never has to guess which of two contradictory intents to believe.
-    await prisma.renewalIntent.updateMany({
-      where: { accountId: id, effectiveFor: sub.termEnd, cancelledAt: null, appliedAt: null },
-      data: { cancelledAt: new Date() },
-    });
-
-    const intent = await prisma.renewalIntent.create({
-      data: {
-        accountId: id,
-        kind,
-        targetTier: needsTier ? targetTier : null,
-        effectiveFor: sub.termEnd,
-        source: 'manual',
-        recordedById: userId,
-      },
-    });
+    //
+    // Written together with its audit row. A notice decides the renewal outcome and, for a
+    // departure, opens discounts early - a retention action like any discount, so it goes in
+    // the ledger under the person who recorded it, saying what it replaced.
+    const replaced = await liveIntentFor(id, sub.termEnd);
+    const willDo = kind === 'churning' ? 'not renew' : `${kind === 'upgrading' ? 'upgrade' : 'downgrade'} to ${targetTier}`;
+    const opensOffers = kind === 'churning' && !isWithinOfferWindow(sub.termEnd);
+    const [, intent] = await prisma.$transaction([
+      prisma.renewalIntent.updateMany({
+        where: { accountId: id, effectiveFor: sub.termEnd, cancelledAt: null, appliedAt: null },
+        data: { cancelledAt: new Date() },
+      }),
+      prisma.renewalIntent.create({
+        data: {
+          accountId: id,
+          kind,
+          targetTier: needsTier ? targetTier : null,
+          effectiveFor: sub.termEnd,
+          source: 'manual',
+          recordedById: userId,
+        },
+      }),
+      prisma.auditLog.create({
+        data: {
+          accountId: id,
+          action: `Renewal Notice Recorded: ${describeIntent(kind, targetTier)}`,
+          // 0, like every row that is not a discount: the account's current offer is read from
+          // the latest audit row with a percentage, and this one must never look like it.
+          discountApplied: 0,
+          discountMonths: 0,
+          approverId: userId,
+          verificationStatus: 'Manual Entry (Renewal Notice)',
+          details:
+            `${(req as any).user.name} recorded that ${account.name} will ${willDo} at its renewal on ` +
+            `${formatTermDate(sub.termEnd)}.` +
+            (replaced ? ` Replaces the earlier notice (${describeIntent(replaced.kind, replaced.targetTier)}).` : '') +
+            (opensOffers ? ` Retention discounts are open for this renewal from now, ahead of the ${OFFER_WINDOW_DAYS}-day window.` : ''),
+        },
+      }),
+    ]);
 
     // Recording an intent is the moment the outcome became known. Freeze the account now
     // rather than waiting for the offer window: an account that gave notice at day 250 would
@@ -2494,14 +2526,38 @@ app.post('/api/accounts/:id/renewal-intent', requireAuth, async (req, res) => {
 // Cancel a pending intent. The override the hold window exists to provide.
 app.post('/api/renewal-intents/:id/cancel', requireAuth, async (req, res) => {
   try {
-    const intent = await prisma.renewalIntent.findUnique({ where: { id: req.params.id } });
+    const intent = await prisma.renewalIntent.findUnique({ where: { id: req.params.id }, include: { account: true } });
     if (!intent) return res.status(404).json({ error: 'Intent not found' });
     if (intent.appliedAt) {
       return res.status(409).json({
         error: 'This intent has already been applied at a renewal. Correct the renewal outcome instead.',
       });
     }
-    await prisma.renewalIntent.update({ where: { id: intent.id }, data: { cancelledAt: new Date() } });
+    // Already cancelled - including one superseded by a later notice. Re-stamping it would move
+    // the cancellation time and write a second audit row for a single act.
+    if (intent.cancelledAt) return res.json({ ok: true, alreadyCancelled: true });
+
+    const label = describeIntent(intent.kind, intent.targetTier);
+    // A cancelled departure closes the early discounts it opened (discountsOpen in pricing.ts).
+    const closesOffers = intent.kind === 'churning' && !isWithinOfferWindow(intent.effectiveFor);
+    await prisma.$transaction([
+      prisma.renewalIntent.update({ where: { id: intent.id }, data: { cancelledAt: new Date() } }),
+      prisma.auditLog.create({
+        data: {
+          accountId: intent.accountId,
+          action: `Renewal Notice Cancelled: ${label}`,
+          discountApplied: 0,
+          discountMonths: 0,
+          approverId: (req as any).userId as string,
+          verificationStatus: 'Manual Entry (Renewal Notice)',
+          details:
+            `${(req as any).user.name} cancelled the notice (${label}) for ${intent.account.name}'s renewal on ` +
+            `${formatTermDate(intent.effectiveFor)}, so the contract renews on its standard terms unless a new ` +
+            `notice is recorded.` +
+            (closesOffers ? ` New discounts cannot be offered until the ${OFFER_WINDOW_DAYS}-day window opens; any already approved stands.` : ''),
+        },
+      }),
+    ]);
     res.json({ ok: true });
   } catch (error: any) {
     console.error('Error in POST /api/renewal-intents/:id/cancel:', error);
@@ -2578,6 +2634,23 @@ app.post('/api/renewals/:id/correct', requireAuth, async (req, res) => {
         },
       }),
       ...(Object.keys(data).length ? [prisma.subscription.update({ where: { id: sub.id }, data })] : []),
+      // The correction goes in the ledger too. recordedById says who last touched the record, but
+      // not what it said before - and a correction can reverse a whole term roll.
+      prisma.auditLog.create({
+        data: {
+          accountId: record.accountId,
+          action: `Renewal Outcome Corrected: ${record.outcome} -> ${outcome}`,
+          discountApplied: 0,
+          discountMonths: 0,
+          approverId: userId,
+          verificationStatus: 'Manual Entry (Renewal Correction)',
+          details:
+            `${(req as any).user.name} corrected ${record.account.name}'s renewal on ${formatTermDate(record.renewalDate)} ` +
+            `from ${record.outcome} to ${outcome}.` +
+            (wasRetained && !nowRetained ? ' The term roll was undone and the account is now recorded as churned.' : '') +
+            (!wasRetained && nowRetained ? ' The subscription was reinstated for a new term.' : ''),
+        },
+      }),
     ]);
 
     res.json({ ok: true });
