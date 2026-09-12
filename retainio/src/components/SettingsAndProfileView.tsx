@@ -1,20 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  User, 
-  Settings, 
-  ShieldCheck, 
-  Bell, 
-  CheckCircle2, 
-  Lock, 
-  Save, 
+  User,
+  Settings,
+  Bell,
+  CheckCircle2,
+  Lock,
+  Save,
   LogOut,
-  Key,
-  AlertCircle,
-  Eye,
-  EyeOff,
-  Check,
-  X,
-  Loader2,
   ShieldAlert
 } from 'lucide-react';
 import { UserProfile } from '../types';
@@ -36,43 +28,9 @@ export const SettingsAndProfileView: React.FC<SettingsAndProfileViewProps> = ({
   // Local Profile Form State synced with currentUser
   const [profileForm, setProfileForm] = useState<UserProfile>(currentUser);
 
-  // Password Visibility Toggles
-  const [showCurrentPw, setShowCurrentPw] = useState(false);
-  const [showNewPw, setShowNewPw] = useState(false);
-  const [showConfirmPw, setShowConfirmPw] = useState(false);
-
-  // Change Password State
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [logoutOtherSessions, setLogoutOtherSessions] = useState(true);
-  const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [lastPasswordUpdate, setLastPasswordUpdate] = useState<string | null>('30 days ago');
-
   useEffect(() => {
     setProfileForm(currentUser);
   }, [currentUser]);
-
-  // Password validation checks
-  const hasMinLength = newPassword.length >= 8;
-  const hasUpper = /[A-Z]/.test(newPassword);
-  const hasLower = /[a-z]/.test(newPassword);
-  const hasNumber = /[0-9]/.test(newPassword);
-  const hasSpecial = /[^A-Za-z0-9]/.test(newPassword);
-
-  const criteriaCount = [hasMinLength, hasUpper, hasLower, hasNumber, hasSpecial].filter(Boolean).length;
-  
-  const getStrengthLabel = () => {
-    if (!newPassword) return { label: 'None', color: 'bg-slate-200', text: 'text-slate-400', width: 'w-0' };
-    if (criteriaCount <= 2) return { label: 'Weak', color: 'bg-red-500', text: 'text-red-600', width: 'w-1/4' };
-    if (criteriaCount === 3) return { label: 'Fair', color: 'bg-amber-500', text: 'text-amber-600', width: 'w-2/4' };
-    if (criteriaCount === 4) return { label: 'Good', color: 'bg-indigo-500', text: 'text-indigo-600', width: 'w-3/4' };
-    return { label: 'Strong', color: 'bg-emerald-500', text: 'text-emerald-600', width: 'w-full' };
-  };
-
-  const strength = getStrengthLabel();
-  const passwordsMatch = newPassword.length > 0 && confirmPassword.length > 0 && newPassword === confirmPassword;
 
   // Settings State
   const [settings, setSettings] = useState({
@@ -84,43 +42,6 @@ export const SettingsAndProfileView: React.FC<SettingsAndProfileViewProps> = ({
   const handleSaveSettings = (e: React.FormEvent) => {
     e.preventDefault();
     showToast('Settings saved successfully.', 'success');
-  };
-
-  const handleChangePassword = (e: React.FormEvent) => {
-    e.preventDefault();
-    setPasswordError(null);
-
-    if (!currentPassword) {
-      setPasswordError('Please enter your current password.');
-      return;
-    }
-    if (criteriaCount < 4) {
-      setPasswordError('Please fulfill at least 4 password security requirements.');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setPasswordError('New password and confirmation do not match.');
-      return;
-    }
-    if (currentPassword === newPassword) {
-      setPasswordError('New password must be different from your current password.');
-      return;
-    }
-
-    setIsSubmittingPassword(true);
-
-    // Simulate API authorization & password update process
-    setTimeout(() => {
-      setIsSubmittingPassword(false);
-      showToast('Password successfully updated across all corporate systems.', 'success');
-      setLastPasswordUpdate('Just now');
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-      setShowCurrentPw(false);
-      setShowNewPw(false);
-      setShowConfirmPw(false);
-    }, 1200);
   };
 
   return (
@@ -271,200 +192,6 @@ export const SettingsAndProfileView: React.FC<SettingsAndProfileViewProps> = ({
                       />
                     </div>
                   </div>
-                </div>
-
-                {/* Industry-Standard Change Password Section */}
-                <div className="space-y-5 pt-6 border-t border-slate-100">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-sm font-bold text-slate-900 flex items-center space-x-2">
-                        <ShieldCheck className="w-4 h-4 text-slate-800" />
-                        <span>Security & Password Credentials</span>
-                      </h3>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        Update your account password following corporate security requirements.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Feedback Messages */}
-                  {passwordError && (
-                    <div className="flex items-start space-x-2.5 text-xs font-semibold px-4 py-3 rounded-xl border bg-red-50 text-red-900 border-red-200">
-                      <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-                      <div>
-                        <p className="font-bold">Security Check Failed</p>
-                        <p className="text-[11px] opacity-90 font-normal mt-0.5">{passwordError}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  <form onSubmit={handleChangePassword} className="space-y-4">
-                    {/* Current Password Field */}
-                    <div className="space-y-1.5 max-w-md">
-                      <div className="flex items-center justify-between">
-                        <label htmlFor="settings-current-pw" className="text-xs font-semibold text-slate-700">Current Password</label>
-                      </div>
-                      <div className="relative">
-                        <input
-                          id="settings-current-pw"
-                          type={showCurrentPw ? 'text' : 'password'}
-                          value={currentPassword}
-                          onChange={(e) => setCurrentPassword(e.target.value)}
-                          placeholder="Enter current password"
-                          className="w-full text-xs px-3.5 py-2.5 pr-10 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowCurrentPw(!showCurrentPw)}
-                          aria-label={showCurrentPw ? 'Hide password' : 'Show password'}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
-                        >
-                          {showCurrentPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* New Password & Confirm Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                      {/* New Password Field */}
-                      <div className="space-y-1.5">
-                        <label htmlFor="settings-new-pw" className="text-xs font-semibold text-slate-700">New Password</label>
-                        <div className="relative">
-                          <input
-                            id="settings-new-pw"
-                            type={showNewPw ? 'text' : 'password'}
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            placeholder="Enter new strong password"
-                            className="w-full text-xs px-3.5 py-2.5 pr-10 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowNewPw(!showNewPw)}
-                            aria-label={showNewPw ? 'Hide password' : 'Show password'}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
-                          >
-                            {showNewPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Confirm New Password Field */}
-                      <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <label htmlFor="settings-confirm-pw" className="text-xs font-semibold text-slate-700">Confirm New Password</label>
-                          {confirmPassword && (
-                            <span className={`text-[10px] font-bold flex items-center space-x-1 ${
-                              passwordsMatch ? 'text-emerald-600' : 'text-red-500'
-                            }`}>
-                              {passwordsMatch ? (
-                                <>
-                                  <Check className="w-3 h-3" />
-                                  <span>Passwords match</span>
-                                </>
-                              ) : (
-                                <>
-                                  <X className="w-3 h-3" />
-                                  <span>Does not match</span>
-                                </>
-                              )}
-                            </span>
-                          )}
-                        </div>
-                        <div className="relative">
-                          <input
-                            id="settings-confirm-pw"
-                            type={showConfirmPw ? 'text' : 'password'}
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            placeholder="Re-enter new password"
-                            className={`w-full text-xs px-3.5 py-2.5 pr-10 border rounded-lg focus:outline-none focus:ring-2 bg-white ${
-                              confirmPassword && !passwordsMatch
-                                ? 'border-red-300 focus:ring-red-500'
-                                : 'border-slate-200 focus:ring-slate-900'
-                            }`}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowConfirmPw(!showConfirmPw)}
-                            aria-label={showConfirmPw ? 'Hide password' : 'Show password'}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
-                          >
-                            {showConfirmPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                          </button>
-                        </div>
-                      </div>
-
-                    </div>
-
-                    {/* Live Password Strength Meter */}
-                    {newPassword && (
-                      <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2.5">
-                        <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
-                          <span>Password Strength</span>
-                          <span className={`font-bold ${strength.text}`}>{strength.label}</span>
-                        </div>
-                        
-                        {/* Progress Bar */}
-                        <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                          <div className={`h-full transition-all duration-300 ${strength.color} ${strength.width}`} />
-                        </div>
-
-                        {/* Security Requirement Checklist */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
-                          <div className={`flex items-center space-x-1.5 text-[11px] font-medium ${
-                            hasMinLength ? 'text-emerald-700' : 'text-slate-500'
-                          }`}>
-                            {hasMinLength ? <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> : <div className="w-1.5 h-1.5 rounded-full bg-slate-300 ml-1 mr-1" />}
-                            <span>At least 8 characters long</span>
-                          </div>
-
-                          <div className={`flex items-center space-x-1.5 text-[11px] font-medium ${
-                            hasUpper && hasLower ? 'text-emerald-700' : 'text-slate-500'
-                          }`}>
-                            {hasUpper && hasLower ? <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> : <div className="w-1.5 h-1.5 rounded-full bg-slate-300 ml-1 mr-1" />}
-                            <span>Uppercase & lowercase letters</span>
-                          </div>
-
-                          <div className={`flex items-center space-x-1.5 text-[11px] font-medium ${
-                            hasNumber ? 'text-emerald-700' : 'text-slate-500'
-                          }`}>
-                            {hasNumber ? <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> : <div className="w-1.5 h-1.5 rounded-full bg-slate-300 ml-1 mr-1" />}
-                            <span>At least one number (0-9)</span>
-                          </div>
-
-                          <div className={`flex items-center space-x-1.5 text-[11px] font-medium ${
-                            hasSpecial ? 'text-emerald-700' : 'text-slate-500'
-                          }`}>
-                            {hasSpecial ? <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> : <div className="w-1.5 h-1.5 rounded-full bg-slate-300 ml-1 mr-1" />}
-                            <span>At least one special symbol (!@#$)</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Update Password Action Button */}
-                    <div className="pt-2 flex items-center justify-start">
-                      <button
-                        type="submit"
-                        disabled={isSubmittingPassword}
-                        className="flex items-center space-x-2 px-5 py-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 disabled:opacity-60 text-white font-bold text-xs shadow-xs transition cursor-pointer"
-                      >
-                        {isSubmittingPassword ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin text-slate-300" />
-                            <span>Updating Credentials...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Key className="w-4 h-4" />
-                            <span>Update Password</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </form>
                 </div>
 
               </div>
