@@ -400,6 +400,16 @@ export async function processEmail(
   return 'done';
 }
 
+/** Whether a subject is one of ours at all - decided before anything is fetched. */
+export const isIngestSubject = (subject: string): boolean => {
+  const s = withoutReplyPrefixes(subject).toLowerCase();
+  return s.startsWith(SUBJECT_PREFIX.toLowerCase()) || s.startsWith(NOTICE_PREFIX.toLowerCase());
+};
+
+// How many unread messages one pass looks at, newest last. A dedicated mailbox holds a handful;
+// this only bounds the work if one is left unread for months.
+const UNREAD_SCAN_LIMIT = 200;
+
 export async function ingestInbox(log = false): Promise<IngestSummary> {
   const say = (line: string) => { if (log) console.log(line); };
 
@@ -419,14 +429,24 @@ export async function ingestInbox(log = false): Promise<IngestSummary> {
   await client.connect();
   const lock = await client.getMailboxLock('INBOX');
   try {
-    // Unread messages carrying either prefix. Everything else in the mailbox is never read,
-    // never fetched and never recorded.
-    const found = new Set<number>();
-    for (const prefix of [SUBJECT_PREFIX, NOTICE_PREFIX]) {
-      for (const uid of (await client.search({ seen: false, header: { subject: prefix } })) || []) found.add(uid);
+    // Which messages are ours is decided HERE, not by the mail server.
+    //
+    // Yahoo's IMAP has no text search: SUBJECT, HEADER, FROM and BODY all come back empty even
+    // for a message sitting in the folder being searched, while UNSEEN works. Asking the server
+    // to find our subjects therefore found nothing at all there, and silently - the pass simply
+    // reported no candidates. So the unread messages are listed, their envelopes read (cheap,
+    // and reading one does not mark a message read), and the subjects matched here. Everything
+    // without a prefix is never fetched and never recorded, exactly as before.
+    const unread = (await client.search({ seen: false })) || [];
+    const recent = (Array.isArray(unread) ? unread : []).slice(-UNREAD_SCAN_LIMIT);
+    const uids: number[] = [];
+    if (recent.length) {
+      for await (const msg of client.fetch(recent.join(','), { uid: true, envelope: true }, { uid: true })) {
+        if (isIngestSubject(msg.envelope?.subject || '')) uids.push(msg.uid);
+      }
     }
-    const uids = [...found].sort((a, b) => a - b);
-    say(`  ${uids.length} candidate message(s) in the inbox.`);
+    uids.sort((a, b) => a - b);
+    say(`  ${uids.length} candidate message(s) among ${recent.length} unread in the inbox.`);
 
     for (const uid of uids) {
       let messageId = `uid-${uid}`;
