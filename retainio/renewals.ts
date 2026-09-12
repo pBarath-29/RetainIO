@@ -455,9 +455,14 @@ async function resolveOneRenewal(
   // carries no discountStartsAt — look like the live offer, and the whole lifecycle would
   // collapse back to "approved, no dates". The discount is described in the text instead.
   const tierNote = nextTier !== planTier ? ` Plan tier ${planTier} -> ${nextTier}.` : '';
-  const discountNote = discount
-    ? ` ${discount.discountApplied}% discount for ${discount.discountMonths} months is now in effect.`
-    : '';
+  // Only while the account is still here. On a churn the offer was made and refused: nothing is
+  // billed at a discount for a customer who has gone, so "is now in effect" would state the
+  // opposite of what happened. The offer is still named, because it is what was tried.
+  const discountNote = !discount
+    ? ''
+    : retained
+      ? ` ${discount.discountApplied}% discount for ${discount.discountMonths} months is now in effect.`
+      : ` The ${discount.discountApplied}% discount for ${discount.discountMonths} months never took effect: the account left.`;
   const CANCELLED_VERB: Record<string, string> = { churning: 'churn', upgrading: 'upgrade', downgrading: 'downgrade' };
   const sourceNote = intent
     ? ` Recorded from a ${intent.source === 'email' ? 'customer email' : 'manually recorded'} intent.`
