@@ -199,6 +199,8 @@ export interface Account {
   discountStartsAt?: string;  // ISO; the renewal it takes effect at
   discountEndsAt?: string;    // ISO; startsAt + currentDiscountMonths, never stored
   discountLabel: string;
+  // An Account Director approved the current discount; withdrawing it then asks for a reason.
+  discountApprovedByDirector?: boolean;
   actionStatus: 'No Action' | 'Discount Recommended' | 'Pending Director Approval' | 'Discount Approved' | 'Retention Email Sent' | 'Escalated';
   // When a walkthrough was last offered to this account, and by whom.
   //
@@ -227,6 +229,8 @@ export interface AuditLog {
   // from a percentage rule to a share of annual contract value.
   verificationStatus: string;
   details: string;
+  // Why, where a reason was asked for: withdrawing an offer an Account Director approved.
+  reason?: string | null;
 }
 
 export interface ToolCallLog {

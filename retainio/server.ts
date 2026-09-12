@@ -1488,6 +1488,8 @@ function mapAccount(a: any) {
       // account left at the renewal the discount was waiting for.
       ? `${describeDiscount(currentDiscountApproved, currentDiscountMonths)} — never took effect, account churned`
       : describeDiscountStatus(currentDiscountApproved, currentDiscountMonths, discount),
+    // Withdrawing an offer an Account Director approved asks for a reason, so the form needs to know.
+    discountApprovedByDirector: lastAppliedLog?.approver?.role === 'account_director',
     // Exposed so the UI can mark a departed account rather than showing it as ordinary.
     subscriptionStatus: sub?.status ?? 'active',
     lastWalkthroughAt: lastWalkthrough?.createdAt.toISOString(),
@@ -1579,6 +1581,8 @@ function mapAuditLog(l: any) {
     approverRole: roleLabel(l.approver.role),
     verificationStatus: l.verificationStatus,
     details: l.details,
+    // Only where a reason is asked for - withdrawing an offer an Account Director approved.
+    reason: l.reason ?? null,
   };
 }
 
@@ -1937,12 +1941,12 @@ app.post('/api/discount-requests/:id/reject', requireAuth, async (req, res) => {
 // then be made through the normal form, with all the usual rules.
 //
 // The account's Manager or their Director may withdraw it - even one a Director approved, because
-// withdrawing never spends money. It does need a reason.
+// withdrawing never spends money. A confirmation on screen is enough, except for an offer a Director
+// approved: withdrawing that takes back their decision, so it needs a reason, shown in the Audit Log.
 app.post('/api/accounts/:id/withdraw-discount', requireAuth, async (req, res) => {
   try {
     const user = (req as any).user;
     const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : '';
-    if (!reason) return res.status(400).json({ error: 'Give a reason for withdrawing the offer - it goes in the Audit Log.' });
 
     const account = await prisma.account.findUnique({
       where: { id: req.params.id },
@@ -1980,6 +1984,14 @@ app.post('/api/accounts/:id/withdraw-discount', requireAuth, async (req, res) =>
       });
     }
 
+    const directorApproved = grant.approver.role === 'account_director';
+    if (directorApproved && !reason) {
+      return res.status(400).json({
+        error: `${account.name}'s ${offer} was approved by ${grant.approver.name}, the Account Director, so give a ` +
+               'reason for withdrawing it - it goes in the Audit Log.',
+      });
+    }
+
     const renewal = grant.discountStartsAt ? formatTermDate(grant.discountStartsAt) : 'the next renewal';
     await prisma.$transaction([
       prisma.auditLog.update({ where: { id: grant.id }, data: { withdrawnAt: new Date(), withdrawnById: user.id } }),
@@ -1992,10 +2004,11 @@ app.post('/api/accounts/:id/withdraw-discount', requireAuth, async (req, res) =>
           discountMonths: 0,
           approverId: user.id,
           verificationStatus: 'Manual Entry (Offer Withdrawn)',
+          reason: reason || null,
           details:
             `${user.name} withdrew ${account.name}'s ${offer}, scheduled for the renewal on ${renewal} and ` +
-            `approved by ${grant.approver.name}. Reason: "${reason}". The account has no discount for that ` +
-            `renewal unless a new offer is made.`,
+            `approved by ${grant.approver.name}.${reason ? ` Reason: "${reason}".` : ''} The account has no ` +
+            `discount for that renewal unless a new offer is made.`,
         },
       }),
     ]);
@@ -2013,8 +2026,6 @@ app.post('/api/discount-requests/:id/withdraw', requireAuth, async (req, res) =>
   try {
     const userId = (req as any).userId as string;
     const user = (req as any).user;
-    const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : '';
-    if (!reason) return res.status(400).json({ error: 'Give a reason for withdrawing the request - it goes in the Audit Log.' });
 
     const request = await prisma.discountRequest.findUnique({ where: { id: req.params.id }, include: { account: true } });
     if (!request) return res.status(404).json({ error: 'Request not found' });
@@ -2035,7 +2046,7 @@ app.post('/api/discount-requests/:id/withdraw', requireAuth, async (req, res) =>
           discountApplied: 0,
           approverId: userId,
           verificationStatus: 'Manual Entry (Request Withdrawn)',
-          details: `${user.name} withdrew the ${label} request for ${request.account.name} before the Account Director decided. Reason: "${reason}".`,
+          details: `${user.name} withdrew the ${label} request for ${request.account.name} before the Account Director decided.`,
         },
       }),
     ]);
@@ -2284,6 +2295,19 @@ app.post('/api/reviews/:id/sentiment-correction', requireAuth, async (req, res) 
     });
     if (!review) return res.status(404).json({ error: 'Review not found' });
 
+    // Nothing to change: clearing a correction that is not there, or re-sending the label already
+    // saved. Each such click used to write another audit row and re-run the models - one review
+    // collected twelve "Sentiment Correction Withdrawn" rows that withdrew nothing.
+    if (sentiment === (review.correctedSentiment ?? null)) {
+      return res.json({
+        ok: true,
+        unchanged: true,
+        modelSaid: review.sentimentPredictions[0]?.classification ?? null,
+        corrected: sentiment,
+        rescored: null,
+      });
+    }
+
     // Captured before the rescore so the audit row can state what actually moved.
     const scoreBefore = await prisma.fusionScore.findFirst({
       where: { accountId: review.accountId },
@@ -2298,12 +2322,17 @@ app.post('/api/reviews/:id/sentiment-correction', requireAuth, async (req, res) 
 
     // Passing null clears a correction — someone who decides the model had it right after
     // all should be able to withdraw their label rather than leave a wrong one in training.
-    await prisma.customerReview.update({
-      where: { id: review.id },
+    // Only if the reading is still the one read above. Two clicks arriving together both pass that
+    // check, and without this both applied and both wrote an audit row; now the second changes nothing.
+    const { count } = await prisma.customerReview.updateMany({
+      where: { id: review.id, correctedSentiment: review.correctedSentiment },
       data: sentiment === null
         ? { correctedSentiment: null, correctedById: null, correctedAt: null }
         : { correctedSentiment: sentiment, correctedById: userId, correctedAt: new Date() },
     });
+    if (count === 0) {
+      return res.json({ ok: true, unchanged: true, modelSaid, corrected: sentiment, rescored: null });
+    }
 
     // Rescore immediately. The account's fused risk was built partly on the reading just
     // overturned, and the uplift model reads sentiment_score when recommending a discount

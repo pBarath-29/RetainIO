@@ -86,7 +86,8 @@ export const AuditTrailView: React.FC<AuditTrailViewProps> = ({ auditLogs, curre
     const tableData = filteredLogs.map(log => [
       log.timestamp,
       log.accountName,
-      log.action,
+      // The reason, when one was asked for, belongs with the action it explains.
+      log.reason ? `${log.action}\nReason: "${log.reason}"` : log.action,
       log.discountApplied > 0 ? `${log.discountApplied}%${log.withdrawn ? ' (withdrawn)' : ''}` : 'None',
       `${log.approver}\n(${log.approverRole})`,
       log.verificationStatus
@@ -228,6 +229,9 @@ export const AuditTrailView: React.FC<AuditTrailViewProps> = ({ auditLogs, curre
 
                     <td className="py-3.5 px-4 text-slate-800 font-medium max-w-xs">
                       {log.action}
+                      {log.reason && (
+                        <span className="block mt-1 text-[11px] font-normal text-slate-500">Reason: “{log.reason}”</span>
+                      )}
                     </td>
 
                     <td className="py-3.5 px-4 font-bold text-emerald-700 whitespace-nowrap">

@@ -153,7 +153,9 @@ export default function App() {
       const body = await res.json();
       if (!res.ok) throw new Error(body.error || 'Could not record the correction.');
       showToast(
-        sentiment
+        body.unchanged
+          ? 'Already saved - nothing changed.'
+          : sentiment
           ? `Recorded: the model read this as ${body.modelSaid ?? 'unknown'}, you marked it ${sentiment}. Saved as a training example.`
           : 'Correction withdrawn.',
         'success',

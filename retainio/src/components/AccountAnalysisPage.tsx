@@ -119,7 +119,7 @@ interface AccountAnalysisPageProps {
   onDiscussWithAdvisor: (account: Account) => void;
   // Records a person's disagreement with the sentiment model. Passing null withdraws a
   // correction rather than leaving a label somebody no longer stands behind in training.
-  onCorrectSentiment: (reviewId: string, sentiment: 'Frustrated' | 'Neutral' | 'Satisfied' | null) => void;
+  onCorrectSentiment: (reviewId: string, sentiment: 'Frustrated' | 'Neutral' | 'Satisfied' | null) => void | Promise<void>;
   onApplyDiscount: (
     account: Account,
     discountPct: number,
@@ -275,22 +275,37 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
   // Lock the offer form while a request is awaiting the Account Director's decision
   const isAwaitingDirectorDecision = activeDirectorRequest?.status === 'pending';
 
-  // Withdrawing a scheduled discount, or this Manager's own pending request. Both take a reason,
-  // which the server writes into the Audit Log.
+  // One sentiment change at a time. The buttons stay on screen until the refresh lands (the account
+  // is rescored first), and every extra click used to reach the server as another change.
+  const [isCorrectingSentiment, setIsCorrectingSentiment] = useState(false);
+  const correctSentiment = async (sentiment: 'Frustrated' | 'Neutral' | 'Satisfied' | null) => {
+    if (!account.reviewId || isCorrectingSentiment) return;
+    setIsCorrectingSentiment(true);
+    try {
+      await onCorrectSentiment(account.reviewId, sentiment);
+    } finally {
+      setIsCorrectingSentiment(false);
+    }
+  };
+
+  // Withdrawing a scheduled discount, or this Manager's own pending request. A confirmation is
+  // enough, except for an offer an Account Director approved: taking back their decision needs a
+  // reason, which the server shows in the Audit Log.
   const [withdrawMode, setWithdrawMode] = useState<null | 'discount' | 'request'>(null);
   const [withdrawReason, setWithdrawReason] = useState('');
   const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const withdrawNeedsReason = withdrawMode === 'discount' && Boolean(account.discountApprovedByDirector);
   const handleWithdraw = async () => {
     if (!withdrawMode || isWithdrawing) return;
     const reason = withdrawReason.trim();
-    if (!reason) { showToast('Give a reason - it goes in the Audit Log.', 'error'); return; }
+    if (withdrawNeedsReason && !reason) { showToast('Give a reason - the Account Director approved this offer.', 'error'); return; }
     const url = withdrawMode === 'discount'
       ? `/api/accounts/${account.id}/withdraw-discount`
       : `/api/discount-requests/${globalReq?.id}/withdraw`;
     setIsWithdrawing(true);
     try {
       const res = await fetch(url, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(withdrawNeedsReason ? { reason } : {}),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { showToast(data.error || 'Could not withdraw it.', 'error'); return; }
@@ -826,8 +841,9 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
                         <span className="text-slate-500 font-medium">Is that right?</span>
                         {account.correctedSentiment && (
                           <button
-                            onClick={() => onCorrectSentiment(account.reviewId!, null)}
-                            className="text-[10px] font-semibold text-slate-500 hover:text-slate-800 underline cursor-pointer"
+                            onClick={() => correctSentiment(null)}
+                            disabled={isCorrectingSentiment}
+                            className="text-[10px] font-semibold text-slate-500 hover:text-slate-800 underline cursor-pointer disabled:opacity-50 disabled:cursor-wait"
                           >
                             clear
                           </button>
@@ -839,8 +855,9 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
                           return (
                             <button
                               key={s}
-                              onClick={() => onCorrectSentiment(account.reviewId!, chosen ? null : s)}
-                              className={`text-[11px] font-bold py-1.5 rounded-lg border transition cursor-pointer ${
+                              onClick={() => correctSentiment(chosen ? null : s)}
+                              disabled={isCorrectingSentiment}
+                              className={`text-[11px] font-bold py-1.5 rounded-lg border transition cursor-pointer disabled:opacity-50 disabled:cursor-wait ${
                                 chosen
                                   ? 'bg-slate-900 text-white border-slate-900'
                                   : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
@@ -1304,8 +1321,8 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
             )}
 
             {/* Active Discount Notice — blocks stacking a second discount on top of an existing one.
-                A SCHEDULED one can be withdrawn, with a reason, to make a different offer; a RUNNING
-                one cannot - the customer is already being billed at that price. */}
+                A SCHEDULED one can be withdrawn to make a different offer (with a reason if a Director
+                approved it); a RUNNING one cannot - the customer is already being billed at that price. */}
             {hasActiveDiscount && !isAwaitingDirectorDecision && !isDiscountWindowShut && (
               <div className={`p-4 rounded-xl border flex items-start space-x-2.5 text-xs ${
                 account.discountState === 'active'
@@ -1326,22 +1343,30 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
                   {account.discountState === 'offered' && currentUser?.role !== 'admin' && (
                     withdrawMode === 'discount' ? (
                       <div className="space-y-2 pt-1">
-                      <textarea
-                        rows={2}
-                        value={withdrawReason}
-                        onChange={(e) => setWithdrawReason(e.target.value)}
-                        placeholder="Why is it being withdrawn? e.g. customer declined; offering 20% instead"
-                        className="w-full text-xs p-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 resize-none focus:outline-none focus:ring-2 focus:ring-slate-700"
-                      />
+                        <p className="text-[11px] font-bold">Withdraw this offer?</p>
                         <p className="text-[11px]">
                           The account will have no discount for this renewal until a new offer is approved. If the
                           new one needs the Account Director and is rejected, the customer gets nothing.
                         </p>
+                        {withdrawNeedsReason && (
+                          <>
+                            <p className="text-[11px] font-semibold">
+                              The Account Director approved this offer, so say why it is being withdrawn. It goes in the Audit Log.
+                            </p>
+                            <textarea
+                              rows={2}
+                              value={withdrawReason}
+                              onChange={(e) => setWithdrawReason(e.target.value)}
+                              placeholder="e.g. customer declined; offering 20% instead"
+                              className="w-full text-xs p-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 resize-none focus:outline-none focus:ring-2 focus:ring-slate-700"
+                            />
+                          </>
+                        )}
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
                             onClick={handleWithdraw}
-                            disabled={isWithdrawing || !withdrawReason.trim()}
+                            disabled={isWithdrawing || (withdrawNeedsReason && !withdrawReason.trim())}
                             className="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-sky-900 text-white hover:bg-sky-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
                           >
                             {isWithdrawing ? 'Withdrawing...' : 'Withdraw offer'}
@@ -1697,18 +1722,14 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
                       {globalReq?.status === 'pending' && (
                         withdrawMode === 'request' ? (
                           <div className="space-y-2">
-                      <textarea
-                        rows={2}
-                        value={withdrawReason}
-                        onChange={(e) => setWithdrawReason(e.target.value)}
-                        placeholder="Why is it being withdrawn? e.g. customer declined; offering 20% instead"
-                        className="w-full text-xs p-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 resize-none focus:outline-none focus:ring-2 focus:ring-slate-700"
-                      />
+                            <p className="text-[11px] text-amber-900">
+                              Withdraw this request? You can make a new offer afterwards.
+                            </p>
                             <div className="flex items-center gap-2">
                               <button
                                 type="button"
                                 onClick={handleWithdraw}
-                                disabled={isWithdrawing || !withdrawReason.trim()}
+                                disabled={isWithdrawing}
                                 className="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-amber-900 text-white hover:bg-amber-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
                               >
                                 {isWithdrawing ? 'Withdrawing...' : 'Withdraw request'}

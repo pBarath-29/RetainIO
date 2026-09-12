@@ -167,15 +167,16 @@ worth learning from, because it is the one a manager could still have acted on.
 A discount that has been approved but has not started yet - its renewal has not arrived - can be
 withdrawn, for example when the customer turns it down and a different offer is needed. The account's
 Account Manager or their Director may withdraw it, even one a Director approved, because withdrawing
-never spends money; a reason is required and recorded in the Audit Log. A new offer can then be made in
-the usual way, under the usual approval rules - so if the new one needs a Director and is rejected, the
-customer is left with no discount for that renewal.
+never spends money. A confirmation is all it takes, unless an Account Director approved the offer: then
+withdrawing it takes back their decision, so a reason is required and shown in the Audit Log. A new offer
+can then be made in the usual way, under the usual approval rules - so if the new one needs a Director and
+is rejected, the customer is left with no discount for that renewal.
 
 A discount that is already running cannot be withdrawn: the customer is being billed at that price, and
 changing it is a contract change, not a retention decision.
 
 A discount request still waiting for the Director can be withdrawn by the Account Manager who sent it,
-also with a reason.
+with a confirmation - the Director has not decided anything yet, so there is nothing to explain.
 
 For the retention models, the discount in force at the renewal is the one that counts. A withdrawn offer
 stays in the Audit Log but is not recorded as the treatment.

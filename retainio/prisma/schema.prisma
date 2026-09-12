@@ -599,6 +599,9 @@ model AuditLog {
   // withdrawal itself is written as its own audit row.
   withdrawnAt            DateTime? @map("withdrawn_at")
   withdrawnById          String?   @map("withdrawn_by")
+  // Why it was done, where the person had to say: withdrawing an offer an Account Director approved.
+  // Shown under the action in the Audit Log. Null everywhere a reason is not asked for.
+  reason                 String?
 
   account     Account @relation(fields: [accountId], references: [id])
   approver    User    @relation("Approver", fields: [approverId], references: [id])
