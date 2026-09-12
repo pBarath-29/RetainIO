@@ -439,8 +439,8 @@ export default function App() {
               />
             )}
 
-            {/* RENEWALS TAB */}
-            {activeTab === 'renewals' && (
+            {/* RENEWALS TAB - not for Directors (see Navbar), even if the tab state says so */}
+            {activeTab === 'renewals' && currentUser.role !== 'account_director' && (
               <RenewalsView
                 accounts={accounts}
                 renewalRecords={renewalRecords}

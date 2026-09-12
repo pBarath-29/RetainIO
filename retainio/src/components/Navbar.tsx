@@ -76,17 +76,21 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             )}
 
-            <button
-              onClick={() => setActiveTab('renewals')}
-              className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-md text-xs font-semibold transition cursor-pointer ${
-                activeTab === 'renewals'
-                  ? 'bg-slate-900 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-              }`}
-            >
-              <CalendarClock className="w-3.5 h-3.5" />
-              <span>Renewals</span>
-            </button>
+            {/* Not for Directors: recording notices and correcting renewal outcomes is the
+                Account Manager's work on their own accounts. */}
+            {!isDirector && (
+              <button
+                onClick={() => setActiveTab('renewals')}
+                className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-md text-xs font-semibold transition cursor-pointer ${
+                  activeTab === 'renewals'
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                }`}
+              >
+                <CalendarClock className="w-3.5 h-3.5" />
+                <span>Renewals</span>
+              </button>
+            )}
 
             <button
               onClick={() => setActiveTab('audit')}
@@ -167,15 +171,17 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         )}
 
-        <button
-          onClick={() => setActiveTab('renewals')}
-          className={`flex-1 py-2 text-center flex items-center justify-center space-x-1 font-semibold ${
-            activeTab === 'renewals' ? 'text-slate-900 bg-white font-bold' : 'text-slate-600'
-          }`}
-        >
-          <CalendarClock className="w-3.5 h-3.5" />
-          <span>Renewals</span>
-        </button>
+        {!isDirector && (
+          <button
+            onClick={() => setActiveTab('renewals')}
+            className={`flex-1 py-2 text-center flex items-center justify-center space-x-1 font-semibold ${
+              activeTab === 'renewals' ? 'text-slate-900 bg-white font-bold' : 'text-slate-600'
+            }`}
+          >
+            <CalendarClock className="w-3.5 h-3.5" />
+            <span>Renewals</span>
+          </button>
+        )}
 
         <button
           onClick={() => setActiveTab('audit')}
