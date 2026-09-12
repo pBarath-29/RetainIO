@@ -379,7 +379,8 @@ async function resolveOneRenewal(
   // discount from a different renewal cycle, and a training row with the wrong treatment
   // is worse than no row: separating treatment from outcome is the uplift model's job.
   const discount = await prisma.auditLog.findFirst({
-    where: { accountId, discountApplied: { gt: 0 }, discountStartsAt: termEnd },
+    // A withdrawn offer is not what the renewal happened under.
+    where: { accountId, discountApplied: { gt: 0 }, discountStartsAt: termEnd, withdrawnAt: null },
     orderBy: { createdAt: 'desc' },
   });
 

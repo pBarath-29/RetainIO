@@ -19,7 +19,8 @@ waved through a year-long 10% while stopping a two-month 15% that cost less than
 Standard rates are 5,000/month for Enterprise, 2,500 for Pro and 1,000 for Basic.
 
 No discount may be stacked on top of an already-active discount for the same account — a new
-discount can only be applied once the prior one is removed or has run its months.
+discount can only be applied once the prior one is withdrawn (possible only before it starts) or
+has run its months.
 
 ## Contract Terms And Renewal Timing
 
@@ -161,6 +162,24 @@ the difference is large. An account might sit at 35 minutes a day and moderate r
 window opens, and at 17 minutes a day and high risk by the renewal. The first figure is the one
 worth learning from, because it is the one a manager could still have acted on.
 
+## Withdrawing An Offer
+
+A discount that has been approved but has not started yet - its renewal has not arrived - can be
+withdrawn, for example when the customer turns it down and a different offer is needed. The account's
+Account Manager or their Director may withdraw it, even one a Director approved, because withdrawing
+never spends money; a reason is required and recorded in the Audit Log. A new offer can then be made in
+the usual way, under the usual approval rules - so if the new one needs a Director and is rejected, the
+customer is left with no discount for that renewal.
+
+A discount that is already running cannot be withdrawn: the customer is being billed at that price, and
+changing it is a contract change, not a retention decision.
+
+A discount request still waiting for the Director can be withdrawn by the Account Manager who sent it,
+also with a reason.
+
+For the retention models, the discount in force at the renewal is the one that counts. A withdrawn offer
+stays in the Audit Log but is not recorded as the treatment.
+
 ## Walkthrough Offers
 
 A product walkthrough session may be offered independently of a discount, or bundled together
@@ -183,7 +202,7 @@ lever automatically.
 
 ## Audit & Compliance
 
-Every discount execution, request, approval, and rejection must be logged in the Audit Trail
+Every discount execution, request, approval, rejection and withdrawal must be logged in the Audit Trail
 with the approving user, verification method, and timestamp. The same goes for every renewal
 notice recorded or cancelled, every renewal the system resolves at a contract's end, and every
 correction to a recorded renewal outcome. Rejected discount requests must

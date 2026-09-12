@@ -137,6 +137,8 @@ interface AccountAnalysisPageProps {
   // Live intents only — /api/bootstrap filters out cancelled and applied ones already.
   renewalIntents?: RenewalIntent[];
   onIntentCancelled?: () => void;
+  // Reload after a scheduled discount or a pending request is withdrawn, so the form unlocks.
+  onDiscountWithdrawn?: () => void;
 }
 
 export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
@@ -152,7 +154,8 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
   onRejectDiscountRequest,
   onRescored,
   renewalIntents = [],
-  onIntentCancelled
+  onIntentCancelled,
+  onDiscountWithdrawn
 }) => {
   const [activeTab, setActiveTab] = useState<'fusion' | 'shap' | 'uplift' | 'discount'>(initialTab || 'fusion');
   // How many SHAP factors the user wants visible. The API returns every
@@ -271,6 +274,40 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
 
   // Lock the offer form while a request is awaiting the Account Director's decision
   const isAwaitingDirectorDecision = activeDirectorRequest?.status === 'pending';
+
+  // Withdrawing a scheduled discount, or this Manager's own pending request. Both take a reason,
+  // which the server writes into the Audit Log.
+  const [withdrawMode, setWithdrawMode] = useState<null | 'discount' | 'request'>(null);
+  const [withdrawReason, setWithdrawReason] = useState('');
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const handleWithdraw = async () => {
+    if (!withdrawMode || isWithdrawing) return;
+    const reason = withdrawReason.trim();
+    if (!reason) { showToast('Give a reason - it goes in the Audit Log.', 'error'); return; }
+    const url = withdrawMode === 'discount'
+      ? `/api/accounts/${account.id}/withdraw-discount`
+      : `/api/discount-requests/${globalReq?.id}/withdraw`;
+    setIsWithdrawing(true);
+    try {
+      const res = await fetch(url, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { showToast(data.error || 'Could not withdraw it.', 'error'); return; }
+      showToast(withdrawMode === 'discount'
+        ? 'Offer withdrawn. You can make a new one now.'
+        : 'Request withdrawn. You can make a new one now.', 'success');
+      setWithdrawMode(null);
+      setWithdrawReason('');
+      // The banner reads this local copy before the refreshed data arrives.
+      setPendingDirectorRequest(null);
+      onDiscountWithdrawn?.();
+    } catch {
+      showToast('Could not reach the server to withdraw it.', 'error');
+    } finally {
+      setIsWithdrawing(false);
+    }
+  };
 
   // Lock the offer form while a discount is scheduled or running — prevents stacking a
   // second discount on top of it. An ENDED discount does not lock: its months have
@@ -1266,7 +1303,9 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
               </div>
             )}
 
-            {/* Active Discount Notice — blocks stacking a second discount on top of an existing one */}
+            {/* Active Discount Notice — blocks stacking a second discount on top of an existing one.
+                A SCHEDULED one can be withdrawn, with a reason, to make a different offer; a RUNNING
+                one cannot - the customer is already being billed at that price. */}
             {hasActiveDiscount && !isAwaitingDirectorDecision && !isDiscountWindowShut && (
               <div className={`p-4 rounded-xl border flex items-start space-x-2.5 text-xs ${
                 account.discountState === 'active'
@@ -1276,13 +1315,56 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
                 {account.discountState === 'active'
                   ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                   : <Clock className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />}
-                <div>
+                <div className="flex-1 space-y-2">
                   <p className="font-bold uppercase tracking-wider text-[11px]">
                     {account.discountState === 'active' ? 'Discount Currently Active' : 'Discount Already Scheduled'}
                   </p>
                   <p className="mt-0.5">
                     {account.name} has {account.discountLabel}. A new discount can't be submitted on top of it.
+                    {account.discountState === 'active' && ' A running discount cannot be withdrawn: the customer is already paying that price.'}
                   </p>
+                  {account.discountState === 'offered' && currentUser?.role !== 'admin' && (
+                    withdrawMode === 'discount' ? (
+                      <div className="space-y-2 pt-1">
+                      <textarea
+                        rows={2}
+                        value={withdrawReason}
+                        onChange={(e) => setWithdrawReason(e.target.value)}
+                        placeholder="Why is it being withdrawn? e.g. customer declined; offering 20% instead"
+                        className="w-full text-xs p-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 resize-none focus:outline-none focus:ring-2 focus:ring-slate-700"
+                      />
+                        <p className="text-[11px]">
+                          The account will have no discount for this renewal until a new offer is approved. If the
+                          new one needs the Account Director and is rejected, the customer gets nothing.
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={handleWithdraw}
+                            disabled={isWithdrawing || !withdrawReason.trim()}
+                            className="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-sky-900 text-white hover:bg-sky-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                          >
+                            {isWithdrawing ? 'Withdrawing...' : 'Withdraw offer'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setWithdrawMode(null); setWithdrawReason(''); }}
+                            className="px-3 py-1.5 rounded-lg text-[11px] font-semibold hover:underline cursor-pointer"
+                          >
+                            Keep it
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => { setWithdrawMode('discount'); setWithdrawReason(''); }}
+                        className="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-white border border-sky-300 text-sky-900 hover:bg-sky-100 transition-colors cursor-pointer"
+                      >
+                        Withdraw this offer
+                      </button>
+                    )
+                  )}
                 </div>
               </div>
             )}
@@ -1515,7 +1597,7 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
             )}
 
             {/* Pending / Reviewed Request Status Container */}
-            {activeDirectorRequest && !(activeDirectorRequest.status !== 'pending' && isRequestBannerDismissed) && (
+            {activeDirectorRequest && activeDirectorRequest.status !== 'withdrawn' && !(activeDirectorRequest.status !== 'pending' && isRequestBannerDismissed) && (
               <div className={`p-5 rounded-xl border space-y-4 text-xs ${
                 activeDirectorRequest.status === 'pending'
                   ? 'bg-amber-50/90 border-amber-300 text-amber-950'
@@ -1606,10 +1688,50 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
                       </div>
                     </div>
                   ) : (
-                    <div className="pt-2 border-t border-amber-200">
+                    <div className="pt-2 border-t border-amber-200 space-y-2">
                       <p className="text-[11px] font-medium text-amber-900">
                         Request submitted to Account Director for review.
                       </p>
+                      {/* Only a saved request can be withdrawn - the one just submitted has no id until
+                          the refreshed data arrives. The server also checks it is the sender's own. */}
+                      {globalReq?.status === 'pending' && (
+                        withdrawMode === 'request' ? (
+                          <div className="space-y-2">
+                      <textarea
+                        rows={2}
+                        value={withdrawReason}
+                        onChange={(e) => setWithdrawReason(e.target.value)}
+                        placeholder="Why is it being withdrawn? e.g. customer declined; offering 20% instead"
+                        className="w-full text-xs p-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 resize-none focus:outline-none focus:ring-2 focus:ring-slate-700"
+                      />
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={handleWithdraw}
+                                disabled={isWithdrawing || !withdrawReason.trim()}
+                                className="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-amber-900 text-white hover:bg-amber-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                              >
+                                {isWithdrawing ? 'Withdrawing...' : 'Withdraw request'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => { setWithdrawMode(null); setWithdrawReason(''); }}
+                                className="px-3 py-1.5 rounded-lg text-[11px] font-semibold text-amber-900 hover:underline cursor-pointer"
+                              >
+                                Keep it
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => { setWithdrawMode('request'); setWithdrawReason(''); }}
+                            className="px-3 py-1.5 rounded-lg text-[11px] font-bold bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 transition-colors cursor-pointer"
+                          >
+                            Withdraw request
+                          </button>
+                        )
+                      )}
                     </div>
                   )
                 )}

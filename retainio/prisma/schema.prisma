@@ -67,6 +67,8 @@ enum DiscountStatus {
   pending
   approved
   rejected
+  // Taken back by the Account Manager who sent it, before the Director decided.
+  withdrawn
 }
 
 enum RiskBand {
@@ -164,6 +166,7 @@ model User {
   discountRequested DiscountRequest[] @relation("RequestedBy")
   discountApproved  DiscountRequest[] @relation("ApprovedBy")
   auditLogs         AuditLog[]        @relation("Approver")
+  discountsWithdrawn AuditLog[]       @relation("DiscountWithdrawnBy")
   sessions          Session[]
   faceSamples       FaceSample[]
   conversations     Conversation[]
@@ -590,9 +593,16 @@ model AuditLog {
   verificationStatus     String   @map("verification_status")
   details                String
   createdAt              DateTime @default(now()) @map("created_at")
+  // Set when a SCHEDULED discount is withdrawn before its renewal (POST
+  // /api/accounts/:id/withdraw-discount). The row keeps everything it said - the ledger is not
+  // rewritten - and every reader of "the account's current discount" skips a withdrawn one. The
+  // withdrawal itself is written as its own audit row.
+  withdrawnAt            DateTime? @map("withdrawn_at")
+  withdrawnById          String?   @map("withdrawn_by")
 
-  account  Account @relation(fields: [accountId], references: [id])
-  approver User    @relation("Approver", fields: [approverId], references: [id])
+  account     Account @relation(fields: [accountId], references: [id])
+  approver    User    @relation("Approver", fields: [approverId], references: [id])
+  withdrawnBy User?   @relation("DiscountWithdrawnBy", fields: [withdrawnById], references: [id])
 
   @@map("audit_logs")
 }

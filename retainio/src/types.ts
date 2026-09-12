@@ -80,7 +80,8 @@ export interface DiscountRequest {
   requestedDurationMonths: number;
   requestedBy: string;
   requestedAt: string;
-  status: 'pending' | 'approved' | 'rejected';
+  // 'withdrawn': taken back by the Account Manager who sent it, before the Director decided.
+  status: 'pending' | 'approved' | 'rejected' | 'withdrawn';
   // The Account Manager's justification — always present, since a request row
   // only exists for a >10% escalation that a Director has to judge.
   managerNote: string;
@@ -215,6 +216,8 @@ export interface AuditLog {
   timestamp: string;
   action: string;
   discountApplied: number;
+  // A scheduled discount taken back before its renewal. The row stays, marked, rather than vanishing.
+  withdrawn?: boolean;
   approver: string;
   // 'System' appears on rows written automatically — a renewal resolved at its term
   // boundary. Those genuinely have no human approver, and naming the system actor is

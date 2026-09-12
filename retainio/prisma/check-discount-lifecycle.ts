@@ -18,7 +18,7 @@ import { discountStatus, describeDiscountStatus, addMonths, formatTermDate, form
 const accounts = await prisma.account.findMany({
   include: {
     subscriptions: { orderBy: { termStart: 'desc' }, take: 1 },
-    auditLogs: { where: { discountApplied: { gt: 0 } }, orderBy: { createdAt: 'desc' }, take: 1 },
+    auditLogs: { where: { discountApplied: { gt: 0 }, withdrawnAt: null }, orderBy: { createdAt: 'desc' }, take: 1 },
   },
   orderBy: { name: 'asc' },
 });

@@ -87,7 +87,7 @@ export const AuditTrailView: React.FC<AuditTrailViewProps> = ({ auditLogs, curre
       log.timestamp,
       log.accountName,
       log.action,
-      log.discountApplied > 0 ? `${log.discountApplied}%` : 'None',
+      log.discountApplied > 0 ? `${log.discountApplied}%${log.withdrawn ? ' (withdrawn)' : ''}` : 'None',
       `${log.approver}\n(${log.approverRole})`,
       log.verificationStatus
     ]);
@@ -231,7 +231,12 @@ export const AuditTrailView: React.FC<AuditTrailViewProps> = ({ auditLogs, curre
                     </td>
 
                     <td className="py-3.5 px-4 font-bold text-emerald-700 whitespace-nowrap">
-                      {log.discountApplied > 0 ? `${log.discountApplied}%` : 'None'}
+                      {log.discountApplied > 0 ? (
+                        <>
+                          <span className={log.withdrawn ? 'line-through text-slate-400' : ''}>{log.discountApplied}%</span>
+                          {log.withdrawn && <span className="ml-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">withdrawn</span>}
+                        </>
+                      ) : 'None'}
                     </td>
 
                     <td className="py-3.5 px-4 whitespace-nowrap">

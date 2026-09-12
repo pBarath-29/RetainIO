@@ -532,7 +532,7 @@ async function loadDiscountState(accountId: string) {
   const [sub, lastApplied] = await Promise.all([
     prisma.subscription.findFirst({ where: { accountId }, orderBy: { termStart: 'desc' } }),
     prisma.auditLog.findFirst({
-      where: { accountId, discountApplied: { gt: 0 } },
+      where: { accountId, discountApplied: { gt: 0 }, withdrawnAt: null },
       orderBy: { createdAt: 'desc' },
     }),
   ]);
@@ -950,7 +950,7 @@ You cannot apply, approve or action a discount yourself. The only thing you can 
 - Before naming any specific percentage, call get_uplift_recommendation and use the tier it returns rather than guessing a number.
 - Offers come in fixed steps: ${OFFER_PCTS.join(', ')}% for ${OFFER_MONTHS.join(', ')} months. Never suggest any other percentage or duration - the uplift model cannot evaluate it and the Retention Offer tab will not accept it.
 - Every discount has a duration as well as a percentage - always state both, e.g. "10% for 6 months". A discount takes effect at the account's NEXT RENEWAL, not immediately, and runs for its months from there. Do not describe an approved discount as already reducing what the customer pays unless the account line above says it is active.
-- If the account already has a discount scheduled or active, a second one cannot be stacked on top. Say so instead of recommending another.
+- If the account already has a discount scheduled or active, a second one cannot be stacked on top. Say so instead of recommending another. A SCHEDULED one (not yet running) can be withdrawn first on the Retention Offer tab if the customer turned it down; a running one cannot.
 - Retention offers only open in the final ${OFFER_WINDOW_DAYS} days before a renewal. If the account line above says the window is not open, do not name a percentage — say when it opens and offer what you can help with in the meantime. The exception is a customer who has given notice that they are leaving: offers open for them straight away, and the account line above says so.
 - Approval depends on what an offer gives away, not its percentage: an Account Manager may approve up to 10% of annual contract value (monthly rate x percentage x months). Larger offers need Account Director sign-off. You may still recommend one, but say plainly it has to go through the Director via the Retention Offer tab.
 - Once you have recommended a concrete percentage, call propose_retention_offer with it so the card appears.
@@ -1320,8 +1320,9 @@ function mapAccount(a: any) {
     .filter((l: any) => l.includesWalkthrough)
     .sort((x: any, y: any) => y.createdAt.getTime() - x.createdAt.getTime())[0];
 
+  // A withdrawn discount is no longer the account's offer - it was taken back before it started.
   const lastAppliedLog = [...a.auditLogs]
-    .filter((l: any) => l.discountApplied > 0)
+    .filter((l: any) => l.discountApplied > 0 && !l.withdrawnAt)
     .sort((x: any, y: any) => y.createdAt.getTime() - x.createdAt.getTime())[0];
   const currentDiscountApproved = lastAppliedLog?.discountApplied ?? 0;
   // The same audit row carries how long the discount runs, so the account's current
@@ -1572,6 +1573,8 @@ function mapAuditLog(l: any) {
     timestamp: formatTimestamp(l.createdAt),
     action: l.action,
     discountApplied: l.discountApplied,
+    // The grant is kept, marked, when a scheduled discount is taken back - so the ledger can say so.
+    withdrawn: Boolean(l.withdrawnAt),
     approver: `${l.approver.name} (${roleLabel(l.approver.role)})`,
     approverRole: roleLabel(l.approver.role),
     verificationStatus: l.verificationStatus,
@@ -1801,6 +1804,12 @@ app.post('/api/discount-requests/:id/approve', requireAuth, async (req, res) => 
     const request = await prisma.discountRequest.findUnique({ where: { id }, include: { account: true } });
     if (!request) return res.status(404).json({ error: 'Request not found' });
 
+    // Only a request still waiting can be decided. Without this a Director on a stale screen could
+    // approve one its Manager had already withdrawn, or decide one twice.
+    if (request.status !== 'pending') {
+      return res.status(409).json({ error: `This request has already been ${request.status}.` });
+    }
+
     // Re-checked rather than trusted: a request can predate the fixed offer steps or have been
     // written by something other than the form, and approving one off the grid would record a
     // treatment the uplift model has no arm for.
@@ -1887,6 +1896,12 @@ app.post('/api/discount-requests/:id/reject', requireAuth, async (req, res) => {
     const request = await prisma.discountRequest.findUnique({ where: { id }, include: { account: true } });
     if (!request) return res.status(404).json({ error: 'Request not found' });
 
+    // Only a request still waiting can be decided. Without this a Director on a stale screen could
+    // approve one its Manager had already withdrawn, or decide one twice.
+    if (request.status !== 'pending') {
+      return res.status(409).json({ error: `This request has already been ${request.status}.` });
+    }
+
     // Built by the same helper every other audit action uses. This used to be
     // a hand-rolled `${pct}% Discount`, which read differently from every other
     // row in the ledger ("Retention Discount").
@@ -1912,6 +1927,122 @@ app.post('/api/discount-requests/:id/reject', requireAuth, async (req, res) => {
   } catch (error: any) {
     console.error('Error in POST /api/discount-requests/:id/reject:', error);
     res.status(500).json({ error: 'Failed to reject discount request.' });
+  }
+});
+
+// Withdraws a SCHEDULED discount: approved, but its renewal not reached, so the customer is not yet
+// paying less. Once it is running it is a price being billed, and changing that is a contract
+// change rather than a retention decision - refused. The grant row is marked, not edited or deleted,
+// so the ledger still says what was offered; the withdrawal is its own audit row. A new offer can
+// then be made through the normal form, with all the usual rules.
+//
+// The account's Manager or their Director may withdraw it - even one a Director approved, because
+// withdrawing never spends money. It does need a reason.
+app.post('/api/accounts/:id/withdraw-discount', requireAuth, async (req, res) => {
+  try {
+    const user = (req as any).user;
+    const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : '';
+    if (!reason) return res.status(400).json({ error: 'Give a reason for withdrawing the offer - it goes in the Audit Log.' });
+
+    const account = await prisma.account.findUnique({
+      where: { id: req.params.id },
+      include: {
+        accountManager: true,
+        subscriptions: { orderBy: { termStart: 'desc' }, take: 1 },
+        auditLogs: {
+          where: { discountApplied: { gt: 0 }, withdrawnAt: null },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          include: { approver: true },
+        },
+      },
+    });
+    if (!account) return res.status(404).json({ error: 'Account not found' });
+
+    const isOwner = user.role === 'account_manager' && account.accountManagerId === user.id;
+    const isTeamDirector = user.role === 'account_director' && account.accountManager?.directorId === user.id;
+    if (!isOwner && !isTeamDirector) {
+      return res.status(403).json({ error: `Only ${account.name}'s Account Manager or their Director can withdraw its offer.` });
+    }
+
+    const sub = account.subscriptions[0];
+    const grant = account.auditLogs[0];
+    if (!sub || !grant) return res.status(409).json({ error: `${account.name} has no discount to withdraw.` });
+    if (sub.status === 'churned') return res.status(409).json({ error: `${account.name} has churned, so there is no offer to withdraw.` });
+
+    const offer = describeDiscount(grant.discountApplied, grant.discountMonths);
+    const status = discountStatus(Number(sub.mrr), grant.discountApplied, grant.discountMonths, grant.discountStartsAt);
+    if (status.state !== 'offered') {
+      return res.status(409).json({
+        error: status.state === 'active'
+          ? `${account.name}'s ${offer} is already running - the customer is being billed at that price, so it cannot be withdrawn.`
+          : `${account.name} has no scheduled discount to withdraw.`,
+      });
+    }
+
+    const renewal = grant.discountStartsAt ? formatTermDate(grant.discountStartsAt) : 'the next renewal';
+    await prisma.$transaction([
+      prisma.auditLog.update({ where: { id: grant.id }, data: { withdrawnAt: new Date(), withdrawnById: user.id } }),
+      prisma.auditLog.create({
+        data: {
+          accountId: account.id,
+          action: `Retention Discount Withdrawn: ${offer}`,
+          // 0, so this row can never be read as the account's current offer.
+          discountApplied: 0,
+          discountMonths: 0,
+          approverId: user.id,
+          verificationStatus: 'Manual Entry (Offer Withdrawn)',
+          details:
+            `${user.name} withdrew ${account.name}'s ${offer}, scheduled for the renewal on ${renewal} and ` +
+            `approved by ${grant.approver.name}. Reason: "${reason}". The account has no discount for that ` +
+            `renewal unless a new offer is made.`,
+        },
+      }),
+    ]);
+    res.json({ ok: true });
+  } catch (error: any) {
+    console.error('Error in POST /api/accounts/:id/withdraw-discount:', error);
+    res.status(500).json({ error: 'Failed to withdraw the offer.' });
+  }
+});
+
+// Withdraws a PENDING request, before the Director has decided. Only the Manager who sent it - it is
+// their proposal to take back. Until now only the Director could clear one, by rejecting it, and the
+// offer form stayed locked in the meantime.
+app.post('/api/discount-requests/:id/withdraw', requireAuth, async (req, res) => {
+  try {
+    const userId = (req as any).userId as string;
+    const user = (req as any).user;
+    const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : '';
+    if (!reason) return res.status(400).json({ error: 'Give a reason for withdrawing the request - it goes in the Audit Log.' });
+
+    const request = await prisma.discountRequest.findUnique({ where: { id: req.params.id }, include: { account: true } });
+    if (!request) return res.status(404).json({ error: 'Request not found' });
+    if (request.requestedById !== userId) {
+      return res.status(403).json({ error: 'Only the Account Manager who sent a request can withdraw it.' });
+    }
+    if (request.status !== 'pending') {
+      return res.status(409).json({ error: `This request has already been ${request.status}, so it can no longer be withdrawn.` });
+    }
+
+    const label = buildActionLabel(request.requestedPct, request.includesWalkthrough, request.durationMonths);
+    await prisma.$transaction([
+      prisma.discountRequest.update({ where: { id: request.id }, data: { status: 'withdrawn' } }),
+      prisma.auditLog.create({
+        data: {
+          accountId: request.accountId,
+          action: `${label} Request Withdrawn`,
+          discountApplied: 0,
+          approverId: userId,
+          verificationStatus: 'Manual Entry (Request Withdrawn)',
+          details: `${user.name} withdrew the ${label} request for ${request.account.name} before the Account Director decided. Reason: "${reason}".`,
+        },
+      }),
+    ]);
+    res.json({ ok: true });
+  } catch (error: any) {
+    console.error('Error in POST /api/discount-requests/:id/withdraw:', error);
+    res.status(500).json({ error: 'Failed to withdraw the request.' });
   }
 });
 
@@ -1945,7 +2076,7 @@ async function validateOffer(accountId: string, pct: number, months: number) {
     include: {
       subscriptions: { orderBy: { termStart: 'desc' }, take: 1 },
       // The account's current offer, for the no-stacking rule below.
-      auditLogs: { where: { discountApplied: { gt: 0 } }, orderBy: { createdAt: 'desc' }, take: 1 },
+      auditLogs: { where: { discountApplied: { gt: 0 }, withdrawnAt: null }, orderBy: { createdAt: 'desc' }, take: 1 },
     },
   });
   if (!account) return { error: 'Account not found', status: 404 };
