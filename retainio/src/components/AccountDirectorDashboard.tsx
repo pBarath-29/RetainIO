@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { MONTHS_PER_TERM, annualContractValue, formatMoney, describeDiscount } from '../../pricing';
+import { MONTHS_PER_TERM, annualContractValue, formatMoney, describeDiscount, formatTermDate } from '../../pricing';
 import { Account, AuditLog, DiscountRequest, OfferResult, UserProfile } from '../types';
 import { FaceVerificationModal } from './FaceVerificationModal';
 import { DiscountEmailModal } from './DiscountEmailModal';
 import { CheckInboxButton } from './CheckInboxButton';
+import { splitByStatus } from '../accountStatus';
 import { useToast } from './Toast';
 import { useModalA11y } from '../hooks/useModalA11y';
 import {
@@ -71,11 +72,15 @@ export const AccountDirectorDashboard: React.FC<AccountDirectorDashboardProps> =
   const [selectedAmFilter, setSelectedAmFilter] = useState<string>('all');
   const [selectedRiskFilter, setSelectedRiskFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
 
+  // The working portfolio is the customers who can still be saved. Churned accounts are left out of
+  // every figure, the tiers, the per-manager table and the portfolio table, and listed on their own.
+  const { active: activeAccounts, churned: churnedAccounts } = splitByStatus(accounts);
+
   // Executive Metrics Calculations
   // Every figure on this page reports revenue, so all of them read effectiveMrr — what
   // the accounts actually bill today. `mrr` stays the list rate and is what offers are
   // priced against; mixing the two would let a discount compound against itself.
-  const totalPortfolioMrr = accounts.reduce((acc, a) => acc + a.effectiveMrr, 0);
+  const totalPortfolioMrr = activeAccounts.reduce((acc, a) => acc + a.effectiveMrr, 0);
   // Contracts are 12-month terms now, so the portfolio headline is stated annually.
   // ARR is derived, never stored — a second copy is what let the risk bands drift.
   const totalPortfolioArr = annualContractValue(totalPortfolioMrr);
@@ -85,17 +90,17 @@ export const AccountDirectorDashboard: React.FC<AccountDirectorDashboardProps> =
   // one is 30 - so an account scoring 32 showed as Medium everywhere else in
   // the app and Low here. fusionRiskCategory in fusionSnapshot.ts is the single
   // definition; every other component reads riskCategory off the account.
-  const highRiskAccounts = accounts.filter(a => a.riskCategory === 'High Risk');
+  const highRiskAccounts = activeAccounts.filter(a => a.riskCategory === 'High Risk');
   const totalMrrAtRisk = highRiskAccounts.reduce((acc, a) => acc + a.effectiveMrr, 0);
   const totalArrAtRisk = annualContractValue(totalMrrAtRisk);
   const pendingRequests = discountRequests.filter(r => r.status === 'pending');
   const approvedRequests = discountRequests.filter(r => r.status === 'approved');
 
   // Group stats by Account Manager
-  const accountManagers: string[] = Array.from(new Set(accounts.map(a => a.accountManager || 'Unassigned')));
+  const accountManagers: string[] = Array.from(new Set(activeAccounts.map(a => a.accountManager || 'Unassigned')));
 
   const amStats = accountManagers.map(amName => {
-    const amAccounts = accounts.filter(a => a.accountManager === amName);
+    const amAccounts = activeAccounts.filter(a => a.accountManager === amName);
     const totalMrr = amAccounts.reduce((sum, a) => sum + a.effectiveMrr, 0);
     const highRiskAccs = amAccounts.filter(a => a.riskCategory === 'High Risk');
     const highRiskMrr = highRiskAccs.reduce((sum, a) => sum + a.effectiveMrr, 0);
@@ -123,16 +128,16 @@ export const AccountDirectorDashboard: React.FC<AccountDirectorDashboardProps> =
   });
 
   // Risk Tier Summaries
-  const highRiskTier = accounts.filter(a => a.riskCategory === 'High Risk');
-  const mediumRiskTier = accounts.filter(a => a.riskCategory === 'Medium Risk');
-  const lowRiskTier = accounts.filter(a => a.riskCategory === 'Low Risk');
+  const highRiskTier = activeAccounts.filter(a => a.riskCategory === 'High Risk');
+  const mediumRiskTier = activeAccounts.filter(a => a.riskCategory === 'Medium Risk');
+  const lowRiskTier = activeAccounts.filter(a => a.riskCategory === 'Low Risk');
 
   const highRiskMrrTotal = highRiskTier.reduce((sum, a) => sum + a.effectiveMrr, 0);
   const mediumRiskMrrTotal = mediumRiskTier.reduce((sum, a) => sum + a.effectiveMrr, 0);
   const lowRiskMrrTotal = lowRiskTier.reduce((sum, a) => sum + a.effectiveMrr, 0);
 
   // Filtered Accounts
-  const filteredAccounts = accounts.filter(a => {
+  const filteredAccounts = activeAccounts.filter(a => {
     const matchesSearch = 
       a.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       a.industry.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -236,7 +241,7 @@ export const AccountDirectorDashboard: React.FC<AccountDirectorDashboardProps> =
           <p className="text-xs font-bold text-slate-500">Total Managed ARR</p>
           <div className="flex items-baseline space-x-2">
             <p className="text-2xl font-black text-slate-900">${(totalPortfolioArr / 1000).toFixed(0)}k</p>
-            <span className="text-xs text-slate-400 font-semibold">{accounts.length} Accounts</span>
+            <span className="text-xs text-slate-400 font-semibold">{activeAccounts.length} Accounts</span>
           </div>
           <p className="text-[11px] text-slate-500 pt-1">{formatMoney(totalPortfolioMrr)}/mo across {MONTHS_PER_TERM}-month terms</p>
         </div>
@@ -654,7 +659,7 @@ export const AccountDirectorDashboard: React.FC<AccountDirectorDashboardProps> =
                       : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                   }`}
                 >
-                  All AMs ({accounts.length})
+                  All AMs ({activeAccounts.length})
                 </button>
 
                 {accountManagers.map(am => (
@@ -850,6 +855,36 @@ export const AccountDirectorDashboard: React.FC<AccountDirectorDashboardProps> =
                 </tbody>
               </table>
             </div>
+
+            {/* Customers who have left: out of the table and every figure above, kept here so their
+                history stays one click away. */}
+            {churnedAccounts.length > 0 && (
+              <details className="border-t border-slate-200">
+                <summary className="cursor-pointer select-none px-4 py-3 text-xs font-bold text-slate-700 flex flex-wrap items-center justify-between gap-2">
+                  <span>Churned accounts ({churnedAccounts.length})</span>
+                  <span className="text-[11px] font-medium text-slate-500">Left at their renewal; not counted above</span>
+                </summary>
+                <div className="border-t border-slate-100 divide-y divide-slate-100">
+                  {churnedAccounts.map(account => (
+                    <button
+                      key={account.id}
+                      type="button"
+                      onClick={() => onSelectAccountDetail(account)}
+                      className="w-full flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-left text-xs hover:bg-slate-50 transition cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2 min-w-0">
+                        <span className="font-semibold text-slate-900 truncate">{account.name}</span>
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">Churned</span>
+                        <span className="text-[11px] text-slate-500">{account.accountManager}</span>
+                      </span>
+                      <span className="text-[11px] text-slate-500">
+                        Left at its renewal on {formatTermDate(account.contractRenewalDate)} · {account.fusionRiskScore != null ? `final risk ${account.fusionRiskScore}/100` : 'never scored'}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </details>
+            )}
 
           </div>
 

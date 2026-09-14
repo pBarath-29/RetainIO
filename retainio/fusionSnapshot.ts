@@ -610,6 +610,16 @@ export async function rollupMonthlyForAccount(accountId: string, monthStart: Dat
 // are a history of what the models said at a point in time, and rewriting them would lose
 // the fact that the reading changed.
 export async function rescoreAccountToday(accountId: string) {
+  // Refused for a customer who has left, so no caller - the Re-score button, the inbox check, a
+  // sentiment correction - can overwrite the score it left at (see runDailySnapshotForToday).
+  const latest = await prisma.subscription.findFirst({
+    where: { accountId },
+    orderBy: { termStart: 'desc' },
+    select: { status: true, account: { select: { name: true } } },
+  });
+  if (latest?.status === 'churned') {
+    throw new Error(`${latest.account.name} has churned; its last score is kept as the risk when it left.`);
+  }
   const snapshotDate = dateOnlyUTC();
   const monthStart = monthStartUTC(snapshotDate);
 
@@ -732,13 +742,23 @@ export async function runDailySnapshotForToday() {
   const snapshotDate = dateOnlyUTC();
   const monthStart = monthStartUTC(snapshotDate);
 
-  const accounts = await prisma.account.findMany({ select: { id: true, name: true } });
+  const accounts = await prisma.account.findMany({
+    select: { id: true, name: true, subscriptions: { orderBy: { termStart: 'desc' }, take: 1, select: { status: true } } },
+  });
 
   let succeeded = 0;
   let skipped = 0;
+  let churned = 0;
   const errors: { account: string; message: string }[] = [];
 
   for (const account of accounts) {
+    // A customer who has left is not re-scored. Its last score stays as the risk it left at; a
+    // fresh "risk of leaving" every day - with a paid Gemini summary each time - for a customer
+    // already gone would be both wrong and wasted.
+    if (account.subscriptions[0]?.status === 'churned') {
+      churned++;
+      continue;
+    }
     try {
       const existing = await prisma.fusionScore.findUnique({
         where: { accountId_snapshotDate: { accountId: account.id, snapshotDate } },
@@ -829,5 +849,5 @@ export async function runDailySnapshotForToday() {
     }
   }
 
-  return { date: snapshotDate.toISOString().substring(0, 10), succeeded, skipped, errors };
+  return { date: snapshotDate.toISOString().substring(0, 10), succeeded, skipped, churned, errors };
 }

@@ -9,6 +9,7 @@ import { annualContractValue, formatTermDate, daysUntil } from '../../pricing';
 import { Account, DiscountRequest } from '../types';
 import { Search, ShieldAlert, Bot, Eye, Filter, CheckCircle2, ArrowUpDown, Layers, Clock } from 'lucide-react';
 import { CheckInboxButton } from './CheckInboxButton';
+import { splitByStatus } from '../accountStatus';
 import { RiskSparkline } from './RiskSparkline';
 import { PortfolioTrajectoryCharts } from './PortfolioTrajectoryCharts';
 
@@ -41,12 +42,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [selectedTierFilter, setSelectedTierFilter] = useState<'All' | 'Enterprise' | 'Pro' | 'Basic'>('All');
   const [sortBy, setSortBy] = useState<'default' | 'churnRisk' | 'mrrValue' | 'daysToRenewal'>('default');
 
+  // The working portfolio is the customers who can still be saved. Churned accounts are left out of
+  // the grid and every figure, and listed in their own section at the bottom.
+  const { active: activeAccounts, churned: churnedAccounts } = splitByStatus(accounts);
+
   // One pass over the requests instead of a find() per rendered card.
   const pendingRequestByAccount = new Map(
     discountRequests.filter(r => r.status === 'pending').map(r => [r.accountId, r]),
   );
 
-  const filteredAccounts = accounts
+  const filteredAccounts = activeAccounts
     .filter(acc => {
       const matchesSearch = acc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                             acc.industry.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -71,11 +76,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
       return 0;
     });
 
-  const highRiskCount = accounts.filter(a => a.riskCategory === 'High Risk').length;
+  const highRiskCount = activeAccounts.filter(a => a.riskCategory === 'High Risk').length;
   // Stated annually: contracts are 12-month terms and a discount's cost is judged
   // over the term, so the monthly figure understated what is actually at stake.
   // ARR is derived here rather than stored - see pricing.ts.
-  const highRisk = accounts.filter(a => a.riskCategory === 'High Risk');
+  const highRisk = activeAccounts.filter(a => a.riskCategory === 'High Risk');
   // effectiveMrr, not mrr: an account part-way through a retention discount is billing
   // less than its list rate, and the revenue actually at stake is what it currently pays.
   const totalArrAtRisk = annualContractValue(highRisk.reduce((sum, a) => sum + a.effectiveMrr, 0));
@@ -90,8 +95,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   // Only discounts that are actually running. This counted every account ever given a
   // discount — including ones whose renewal is months away and ones whose months ran out
   // long ago — so the tile never went down and never meant anything.
-  const activeDiscountsCount = accounts.filter(a => a.discountState === 'active').length;
-  const scheduledDiscountsCount = accounts.filter(a => a.discountState === 'offered').length;
+  const activeDiscountsCount = activeAccounts.filter(a => a.discountState === 'active').length;
+  const scheduledDiscountsCount = activeAccounts.filter(a => a.discountState === 'offered').length;
 
   // A newly registered user manages nothing until accounts are assigned to
   // them. Showing the full command centre — empty KPI tiles, a flat portfolio
@@ -147,7 +152,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         
         <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-1 shadow-xs">
           <span className="text-slate-500 text-[11px] font-medium uppercase tracking-wider block">Total Accounts</span>
-          <div className="text-2xl font-bold text-slate-900">{accounts.length}</div>
+          <div className="text-2xl font-bold text-slate-900">{activeAccounts.length}</div>
           <span className="text-[11px] text-slate-500">Active SaaS Portfolios</span>
         </div>
 
@@ -185,7 +190,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       </div>
 
       {/* Portfolio Trajectory & Sentiment Health Charts */}
-      <PortfolioTrajectoryCharts accounts={accounts} monthlyData={portfolioTrend} />
+      <PortfolioTrajectoryCharts accounts={activeAccounts} monthlyData={portfolioTrend} />
 
       {/* Filter & Search Bar */}
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-3">
@@ -442,6 +447,35 @@ export const Dashboard: React.FC<DashboardProps> = ({
           })
         )}
       </div>
+
+      {/* Customers who have left: out of the grid and every figure above, kept here so their
+          history - the risk they left at, the renewal they left at - stays one click away. */}
+      {churnedAccounts.length > 0 && (
+        <details className="bg-white border border-slate-200 rounded-xl shadow-xs">
+          <summary className="cursor-pointer select-none px-5 py-3 text-xs font-bold text-slate-700 flex flex-wrap items-center justify-between gap-2">
+            <span>Churned accounts ({churnedAccounts.length})</span>
+            <span className="text-[11px] font-medium text-slate-500">Left at their renewal; not counted above</span>
+          </summary>
+          <div className="border-t border-slate-100 divide-y divide-slate-100">
+            {churnedAccounts.map(account => (
+              <button
+                key={account.id}
+                type="button"
+                onClick={() => onSelectAccount(account)}
+                className="w-full flex flex-wrap items-center justify-between gap-2 px-5 py-3 text-left text-xs hover:bg-slate-50 transition cursor-pointer"
+              >
+                <span className="flex items-center gap-2 min-w-0">
+                  <span className="font-semibold text-slate-900 truncate">{account.name}</span>
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">Churned</span>
+                </span>
+                <span className="text-[11px] text-slate-500">
+                  Left at its renewal on {formatTermDate(account.contractRenewalDate)} · {account.fusionRiskScore != null ? `final risk ${account.fusionRiskScore}/100` : 'never scored'}
+                </span>
+              </button>
+            ))}
+          </div>
+        </details>
+      )}
 
     </div>
   );

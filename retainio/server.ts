@@ -2631,9 +2631,16 @@ app.post('/api/accounts/:id/rescore', requireAuth, async (req, res) => {
 
     const account = await prisma.account.findUnique({
       where: { id },
-      include: { usageSnapshots: { orderBy: { capturedAt: 'desc' }, take: 1 } },
+      include: {
+        usageSnapshots: { orderBy: { capturedAt: 'desc' }, take: 1 },
+        subscriptions: { orderBy: { termStart: 'desc' }, take: 1 },
+      },
     });
     if (!account) return res.status(404).json({ error: 'Account not found' });
+    // A customer who has left keeps the score it left at (see runDailySnapshotForToday).
+    if (account.subscriptions[0]?.status === 'churned') {
+      return res.status(409).json({ error: `${account.name} has churned; its last score is kept as the risk when it left.` });
+    }
 
     const usage = account.usageSnapshots[0];
     if (!usage) {
@@ -3024,7 +3031,8 @@ async function startServer() {
 
     try {
       const summary = await runDailySnapshotForToday();
-      console.log(`Daily fusion snapshot (${summary.date}): ${summary.succeeded} computed, ${summary.skipped} already done, ${summary.errors.length} failed.`);
+      console.log(`Daily fusion snapshot (${summary.date}): ${summary.succeeded} computed, ${summary.skipped} already done, ` +
+        `${summary.churned ? `${summary.churned} churned and left as they were, ` : ''}${summary.errors.length} failed.`);
       if (summary.errors.length) console.warn('Daily snapshot errors:', summary.errors);
     } catch (err: any) {
       console.warn('Daily fusion snapshot skipped — model service or database unavailable:', err.message || err);

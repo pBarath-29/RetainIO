@@ -12,6 +12,7 @@ import { AIAdvisorChat } from './components/AIAdvisorChat';
 import { AuditTrailView } from './components/AuditTrailView';
 import { RenewalsView } from './components/RenewalsView';
 import { SettingsAndProfileView } from './components/SettingsAndProfileView';
+import { isChurned } from './accountStatus';
 import { useToast } from './components/Toast';
 
 export default function App() {
@@ -297,11 +298,13 @@ export default function App() {
     setSelectedAccountForDetail(account);
   };
 
-  const highRiskCount = accounts.filter(a => a.riskCategory === 'High Risk').length;
+  // Customers who have left are not at risk of leaving, so the top bar counts active accounts only.
+  const nonChurnedAccounts = accounts.filter(a => !isChurned(a));
+  const highRiskCount = nonChurnedAccounts.filter(a => a.riskCategory === 'High Risk').length;
   // effectiveMrr: what those accounts actually bill today, which is less than list for
   // any of them part-way through a retention discount.
   const totalArrAtRisk = annualContractValue(
-    accounts.filter(a => a.riskCategory === 'High Risk').reduce((sum, a) => sum + a.effectiveMrr, 0)
+    nonChurnedAccounts.filter(a => a.riskCategory === 'High Risk').reduce((sum, a) => sum + a.effectiveMrr, 0)
   );
 
   // Checking for an existing session before deciding what to render at all

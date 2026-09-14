@@ -7,6 +7,7 @@ import {
 import { Account, UserProfile, DiscountRequest, RenewalIntent, OfferResult } from '../types';
 import { FaceVerificationModal } from './FaceVerificationModal';
 import { DiscountEmailModal } from './DiscountEmailModal';
+import { isChurned } from '../accountStatus';
 import { RiskSparkline } from './RiskSparkline';
 import { useToast } from './Toast';
 import { 
@@ -511,7 +512,10 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
   // commercially wrong answer (it will still name a "best" tier, because some
   // tier always scores highest), so the advisor is scoped to High/Medium Risk
   // — the same > 70 / > 30 bands fusionRiskCategory assigns in the backend.
-  const isUpliftApplicable = account.riskCategory !== 'Low Risk';
+  // A customer who has left: the page stays readable - the score it left at, its history - but
+  // nothing that acts on the account is offered: no re-score, no offer, no uplift estimate.
+  const hasChurned = isChurned(account);
+  const isUpliftApplicable = account.riskCategory !== 'Low Risk' && !hasChurned;
 
   // Real model call — fetched when the Uplift tab is actually opened rather
   // than on every render.
@@ -664,6 +668,15 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
                   <span>Retention Discount: {activeDirectorRequest.discountPct}% Pending Director Approval</span>
                 </div>
               )}
+
+              {/* Said at the top, before anything else on the page: this customer has gone. */}
+              {hasChurned && (
+                <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-slate-500/25 text-slate-100 border border-slate-400/50 text-xs font-bold mt-1">
+                  <span>
+                    Churned{account.contractRenewalDate ? `: left at its renewal on ${formatTermDate(account.contractRenewalDate)}` : ''}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -698,22 +711,27 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
                 leave every account looking exactly as current as before. The amber state is
                 the point of it. */}
             <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-700/70">
-              <span className={`text-[11px] ${isScoreStale ? 'text-amber-400 font-semibold' : 'text-slate-500'}`}>
+              {/* For a churned account the score is deliberately frozen, not stale: it is the risk it left at. */}
+              <span className={`text-[11px] ${isScoreStale && !hasChurned ? 'text-amber-400 font-semibold' : 'text-slate-500'}`}>
                 {account.scoredAt
-                  ? isScoreStale
-                    ? `Scored ${formatTermDate(account.scoredAt)} · ${scoreAgeDays} days ago`
-                    : `Scored ${formatTermDate(account.scoredAt)}`
+                  ? hasChurned
+                    ? `Final score, ${formatTermDate(account.scoredAt)}`
+                    : isScoreStale
+                      ? `Scored ${formatTermDate(account.scoredAt)} · ${scoreAgeDays} days ago`
+                      : `Scored ${formatTermDate(account.scoredAt)}`
                   : 'Not yet scored'}
               </span>
-              <button
-                onClick={handleRescore}
-                disabled={isRescoring}
-                title="Re-run the churn, sentiment and fusion models for this account using its current usage reading"
-                className="flex items-center space-x-1 text-[11px] font-semibold text-slate-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
-              >
-                <RefreshCw className={`w-3 h-3 ${isRescoring ? 'animate-spin' : ''}`} />
-                <span>{isRescoring ? 'Re-scoring…' : 'Re-score'}</span>
-              </button>
+              {!hasChurned && (
+                <button
+                  onClick={handleRescore}
+                  disabled={isRescoring}
+                  title="Re-run the churn, sentiment and fusion models for this account using its current usage reading"
+                  className="flex items-center space-x-1 text-[11px] font-semibold text-slate-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+                >
+                  <RefreshCw className={`w-3 h-3 ${isRescoring ? 'animate-spin' : ''}`} />
+                  <span>{isRescoring ? 'Re-scoring…' : 'Re-score'}</span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -1120,7 +1138,15 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
               </p>
             </div>
 
-            {!isUpliftApplicable ? (
+            {hasChurned ? (
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-2 text-xs text-slate-700">
+                <p className="font-extrabold uppercase tracking-wider text-slate-900">Not run — the customer has left</p>
+                <p>
+                  {account.name} left at its renewal{account.contractRenewalDate ? ` on ${formatTermDate(account.contractRenewalDate)}` : ''}.
+                  The advisor estimates whether a discount would change a renewal, and this account has no renewal left.
+                </p>
+              </div>
+            ) : !isUpliftApplicable ? (
               /* Low Risk — the advisor is deliberately not run. A retention
                  discount is a tool for saving accounts that might leave, and
                  the model will always name a "best" tier even when no discount
@@ -1291,8 +1317,23 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
           </div>
         )}
 
+        {/* A customer who has left: no offer can be made (the server refuses one too), so the form, the
+            withdraw buttons and the email window are not offered at all. */}
+        {!isDirector && activeTab === 'discount' && hasChurned && (
+          <div className="p-6 sm:p-8">
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-2 text-xs text-slate-700">
+              <p className="font-bold uppercase tracking-wider text-[11px] text-slate-900">No offer can be made</p>
+              <p>
+                {account.name} left at its renewal{account.contractRenewalDate ? ` on ${formatTermDate(account.contractRenewalDate)}` : ''},
+                so there is no renewal left to offer a discount or a walkthrough against. If it was recorded as churned
+                by mistake, correct the outcome on the Renewals page and the account comes back.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* TAB 5: RETENTION DISCOUNT & BIOMETRIC EXECUTION (Account Manager only — Directors review requests from their own dashboard) */}
-        {!isDirector && activeTab === 'discount' && (
+        {!isDirector && activeTab === 'discount' && !hasChurned && (
           <div className="p-6 sm:p-8 space-y-6">
 
             {/* Window closed. Shown before anything else in the tab, because it is the reason

@@ -166,13 +166,17 @@ const RISK_BAND_ENUM: Record<string, RiskBandEnum> = {
 };
 
 async function loadAccounts() {
-  return prisma.account.findMany({
+  const rows = await prisma.account.findMany({
     include: {
       usageSnapshots: { orderBy: { capturedAt: 'desc' }, take: 1 },
       customerReviews: { orderBy: { submittedAt: 'desc' }, take: 1 },
+      subscriptions: { orderBy: { termStart: 'desc' }, take: 1, select: { status: true } },
     },
     orderBy: { name: 'asc' },
   });
+  // A customer who has left produces no usage. Inventing readings for one would hand the daily
+  // pass something to score for an account it deliberately leaves alone.
+  return rows.filter(a => a.subscriptions[0]?.status !== 'churned');
 }
 
 async function status() {

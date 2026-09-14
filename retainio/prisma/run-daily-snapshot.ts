@@ -15,7 +15,7 @@ import { prisma } from '../db';
 async function main() {
   const summary = await runDailySnapshotForToday();
   console.log(`Daily fusion snapshot for ${summary.date}:`);
-  console.log(`  ${summary.succeeded} computed, ${summary.skipped} already done today, ${summary.errors.length} failed.`);
+  console.log(`  ${summary.succeeded} computed, ${summary.skipped} already done today, ${summary.churned} churned (not re-scored), ${summary.errors.length} failed.`);
   if (summary.errors.length) {
     console.log('Errors:');
     for (const e of summary.errors) console.log(`  ${e.account}: ${e.message}`);

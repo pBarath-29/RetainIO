@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { isChurned } from '../accountStatus';
 import { Account, AdvisorMessage } from '../types';
 import { blocksNewOffer } from '../../pricing';
 import { Bot, Send, ShieldCheck, ChevronDown, ChevronRight, Terminal, ArrowRight } from 'lucide-react';
@@ -62,7 +63,10 @@ export const AIAdvisorChat: React.FC<AIAdvisorChatProps> = ({
   accounts,
   onOpenRetentionOffer
 }) => {
-  const [selectedAccount, setSelectedAccount] = useState<Account>(initialAccount || accounts[0]);
+  // Opens on a live account unless one was handed over; a churned one can still be picked.
+  const [selectedAccount, setSelectedAccount] = useState<Account>(
+    initialAccount || accounts.find(a => !isChurned(a)) || accounts[0]
+  );
   const [messages, setMessages] = useState<AdvisorMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isThinking, setIsThinking] = useState(false);
@@ -266,9 +270,13 @@ What would you like to know?`,
               }}
               className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-lg p-2.5 font-semibold focus:outline-none focus:border-slate-400"
             >
-              {accounts.map(a => (
+              {/* Customers who have left come last and are marked, so the advisor can still be asked why one
+                  left without it reading as a live account. */}
+              {[...accounts.filter(a => !isChurned(a)), ...accounts.filter(a => isChurned(a))].map(a => (
                 <option key={a.id} value={a.id}>
-                  {a.name} ({a.fusionRiskScore}% Risk)
+                  {isChurned(a)
+      ? `${a.name} (churned, ${a.fusionRiskScore != null ? `last risk ${a.fusionRiskScore}%` : 'never scored'})`
+      : `${a.name} (${a.fusionRiskScore}% Risk)`}
                 </option>
               ))}
             </select>
