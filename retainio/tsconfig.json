@@ -22,12 +22,5 @@
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
-  },
-  // prisma/archive holds one-shot scripts that have already run and never will
-  // again (see its README). They're kept as a record of past data migrations,
-  // so they're deliberately not type-checked against the current schema —
-  // which has moved on since, and which they must not be "fixed" to match.
-  "exclude": [
-    "prisma/archive"
-  ]
+  }
 }

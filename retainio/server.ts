@@ -2828,9 +2828,8 @@ app.post('/api/renewals/:id/correct', requireAuth, async (req, res) => {
 //
 // This was a keyword substring match in the browser (AccountAnalysisPage's old
 // classifyReviewLocal), which tied on anything like "the API is too expensive"
-// and silently fell through to "technical". The prompt below is the one from
-// scratch_decision_matrix.py, which prototyped exactly this and was never
-// wired in.
+// and silently fell through to "technical". The prompt below was first tried in a
+// standalone prototype script, since removed, that was never wired in.
 //
 // Cached on the review row: the text never changes, so re-classifying on every
 // page load would be a paid call for a guaranteed-identical answer. Falls back
