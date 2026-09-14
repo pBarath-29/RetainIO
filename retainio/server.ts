@@ -2147,9 +2147,6 @@ app.post('/api/accounts/:id/offer-email', requireAuth, async (req, res) => {
   }
 });
 
-// Direct apply, no request needed — an AM applying <=10% themselves, or the
-// director's own quick-approve path. Just an audit_logs entry; discount
-// requests only exist for the >10% escalation path.
 // Validates a proposed offer against the account's own contract value.
 //
 // Neither write endpoint checked anything before this: both took the percentage
@@ -2260,6 +2257,8 @@ async function validateOffer(accountId: string, pct: number, months: number) {
   };
 }
 
+// An Account Manager's offer within their limit, granted directly: just an audit row. A request to
+// the Director (POST /api/discount-requests) exists only for an offer above that limit.
 app.post('/api/accounts/:id/apply-discount', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;

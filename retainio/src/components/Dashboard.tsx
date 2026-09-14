@@ -21,7 +21,6 @@ interface DashboardProps {
   discountRequests?: DiscountRequest[];
   onSelectAccount: (account: Account) => void;
   onDiscussWithAdvisor: (account: Account) => void;
-  onQuickApproveDiscount: (account: Account, discountPct: number) => void;
   // Reload after the mailbox check pulls in a review, so the new text and the re-scored
   // risk appear without the page having to be refreshed by hand.
   onInboxChecked?: () => void;
@@ -34,7 +33,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
   discountRequests = [],
   onSelectAccount,
   onDiscussWithAdvisor,
-  onQuickApproveDiscount,
   onInboxChecked
 }) => {
   const [searchQuery, setSearchQuery] = useState('');

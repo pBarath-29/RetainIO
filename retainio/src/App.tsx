@@ -185,8 +185,8 @@ export default function App() {
     ): Promise<{ ok: boolean; grantId?: string }> => {
       if (!currentUser) return { ok: false };
 
-    // Prevent stacking a second discount on top of one that's already active, regardless
-    // of which UI surface (offer form, AI Advisor chat, quick-approve) triggered this.
+    // Prevent stacking a second discount on top of one that's already active; the server
+    // refuses it as well.
     // An ended discount does not block: its months have elapsed and the account is back
     // at list price. This used to check `currentDiscountApproved > 0`, which locked an
     // account out of every future offer over a discount that had long since expired.
@@ -288,11 +288,6 @@ export default function App() {
       console.error('Failed to reject discount request:', err);
       showToast('Could not reach the database — the rejection was not saved.', 'error');
     }
-  };
-
-  // Quick 10% Discount Handler from Dashboard
-  const handleQuickApproveDiscount = (account: Account, discountPct: number) => {
-    handleApplyDiscount(account, discountPct, 'Direct Approval (Within Manager Limit)');
   };
 
   // Chat "Open Retention Offer" Handler — the chatbot only recommends; executing a
@@ -437,7 +432,6 @@ export default function App() {
                     setSelectedAccountForDetail(acc);
                   }}
                   onDiscussWithAdvisor={handleDiscussWithAdvisor}
-                  onQuickApproveDiscount={handleQuickApproveDiscount}
                   onInboxChecked={refreshData}
                 />
               )
