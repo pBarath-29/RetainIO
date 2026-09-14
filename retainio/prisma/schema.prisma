@@ -381,6 +381,9 @@ model Account {
   name             String
   logoInitials     String   @map("logo_initials")
   industry         String
+  // Where the retention offer email goes (POST /api/accounts/:id/offer-email). Nullable: an
+  // account without one cannot be emailed, and the offer window says so.
+  contactEmail     String?  @map("contact_email")
   accountManagerId String   @map("account_manager_id")
   createdAt        DateTime @default(now()) @map("created_at")
 

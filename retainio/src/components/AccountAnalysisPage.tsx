@@ -4,7 +4,7 @@ import {
   needsDirectorApproval, describeDiscount, formatMoney, blocksNewOffer, formatTermDate, addMonths,
   OFFER_WINDOW_DAYS, daysUntil, daysAgo, OFFER_PCTS, OFFER_MONTHS, discountsOpen,
 } from '../../pricing';
-import { Account, UserProfile, DiscountRequest, RenewalIntent } from '../types';
+import { Account, UserProfile, DiscountRequest, RenewalIntent, OfferResult } from '../types';
 import { FaceVerificationModal } from './FaceVerificationModal';
 import { DiscountEmailModal } from './DiscountEmailModal';
 import { RiskSparkline } from './RiskSparkline';
@@ -127,9 +127,10 @@ interface AccountAnalysisPageProps {
     snapshot?: string,
     managerNote?: string,
     includeWalkthrough?: boolean,
-    discountMonths?: number
-  ) => void;
-  onApproveDiscountRequest?: (requestId: string, matchedName?: string) => void;
+      discountMonths?: number
+    ) => Promise<OfferResult>;
+    // Resolves with the offer row the approval wrote, which the offer email then names.
+    onApproveDiscountRequest?: (requestId: string, matchedName?: string) => Promise<OfferResult>;
   onRejectDiscountRequest?: (requestId: string, reason: string) => void;
   // Reload after an on-demand re-score, so the panel shows the numbers that were just
   // written rather than the ones it was rendered with.
@@ -449,37 +450,49 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
   // The captured frame is only used to perform the match inside
   // FaceVerificationModal; nothing downstream keeps it, so the approval
   // records who was verified rather than a photograph of them.
+  //
+  // The match only STAGES the approval. It is made when the Director confirms the offer email, as on
+  // the Director's dashboard. Approving here and then applying again from the email window tried to
+  // grant the same offer twice - the second attempt refused, next to a toast saying it had worked.
+  const [stagedMatchedName, setStagedMatchedName] = useState<string | undefined>(undefined);
   const handleFaceVerified = (_snapshot: string, matchedName?: string) => {
     setShowFaceModal(false);
     setEmailVerificationStatus('Face Verified (Biometric Pass)');
-    if (globalReq && onApproveDiscountRequest) {
-      onApproveDiscountRequest(globalReq.id, matchedName);
-    }
-    setPendingDirectorRequest(prev => prev ? {
-      ...prev,
-      status: 'approved',
-      directorNote: directorNote.trim() || 'Approved by Account Director via facial verification.'
-    } : {
-      discountPct: selectedDiscount,
-      managerNote: managerNote || 'Submitted for Director review',
-      requestedAt: 'Just now',
-      status: 'approved',
-      directorNote: directorNote.trim() || 'Approved by Account Director via facial verification.',
-      includesWalkthrough: includeWalkthrough
-    });
+    setStagedMatchedName(matchedName);
     setShowEmailModal(true);
   };
 
-  const handleSendAndApplyEmail = () => {
-    onApplyDiscount(account, selectedDiscount, emailVerificationStatus, undefined, undefined, includeWalkthrough, selectedMonths);
-    setShowEmailModal(false);
-    const parts: string[] = [];
-    if (selectedDiscount > 0) parts.push(describeDiscount(selectedDiscount, selectedMonths) + ' discount');
-    if (includeWalkthrough) parts.push('product walkthrough');
-    showToast(
-      `Retention offer email dispatched to ${account.name} and ${parts.join(' + ') || 'retention action'} successfully executed!`,
-      'success'
-    );
+  // A Director confirming the email is approving the Manager's request, so the email must describe
+  // that request - not the offer form, which a Director never fills in.
+  const isApprovingRequest = emailVerificationStatus === 'Face Verified (Biometric Pass)';
+  const emailPct = isApprovingRequest && globalReq ? globalReq.requestedDiscountPct : selectedDiscount;
+  const emailMonths = isApprovingRequest && globalReq ? globalReq.requestedDurationMonths : selectedMonths;
+  const emailWalkthrough = isApprovingRequest && globalReq ? Boolean(globalReq.includesWalkthrough) : includeWalkthrough;
+
+  // What the email window's button does before the email goes out: approve the request (a Director,
+  // after the face check) or apply the offer (a Manager within their limit). Resolves with the id of
+  // the offer row written, so the email names exactly the offer that was granted.
+  const confirmOffer = async (): Promise<OfferResult> => {
+    if (!isApprovingRequest) {
+      return onApplyDiscount(account, selectedDiscount, emailVerificationStatus, undefined, undefined, includeWalkthrough, selectedMonths);
+    }
+    if (!globalReq || !onApproveDiscountRequest) return { ok: false };
+    const result = await onApproveDiscountRequest(globalReq.id, stagedMatchedName);
+    if (result.ok) {
+      setPendingDirectorRequest(prev => prev ? {
+        ...prev,
+        status: 'approved',
+        directorNote: directorNote.trim() || 'Approved by Account Director via facial verification.'
+      } : {
+        discountPct: emailPct,
+        managerNote: managerNote || 'Submitted for Director review',
+        requestedAt: 'Just now',
+        status: 'approved',
+        directorNote: directorNote.trim() || 'Approved by Account Director via facial verification.',
+        includesWalkthrough: emailWalkthrough
+      });
+    }
+    return result;
   };
 
   const isHighRisk = account.riskCategory === 'High Risk';
@@ -1804,17 +1817,18 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
         onVerified={handleFaceVerified}
       />
 
-      {/* Email Offer Review & Dispatch Modal */}
+      {/* Offer email: review it, then grant the offer (apply or approve) and send it */}
       <DiscountEmailModal
         isOpen={showEmailModal}
         onClose={() => setShowEmailModal(false)}
         account={account}
-        discountPct={selectedDiscount}
-        discountMonths={selectedMonths}
+        discountPct={emailPct}
+        discountMonths={emailMonths}
         verificationStatus={emailVerificationStatus}
         currentUser={currentUser}
-        onSendAndApply={handleSendAndApplyEmail}
-        includeWalkthrough={includeWalkthrough}
+        onConfirm={confirmOffer}
+        confirmVerb={isApprovingRequest ? 'Approve' : 'Apply'}
+        includeWalkthrough={emailWalkthrough}
       />
 
     </div>

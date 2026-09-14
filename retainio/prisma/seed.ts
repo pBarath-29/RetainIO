@@ -91,6 +91,8 @@ async function main() {
         name: a.name,
         logoInitials: a.logo,
         industry: a.industry,
+        // Demo customers' offers go to an inbox you control (see prisma/set-contact-emails.ts).
+        contactEmail: process.env.DEMO_CONTACT_EMAIL || process.env.INGEST_IMAP_USER || null,
         accountManagerId: usersByName.get(a.manager)!.id,
       },
     });

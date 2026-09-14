@@ -181,9 +181,9 @@ export default function App() {
     _snapshot?: string,
     managerNote?: string,
     includeWalkthrough?: boolean,
-    discountMonths: number = MONTHS_PER_TERM
-  ) => {
-    if (!currentUser) return;
+      discountMonths: number = MONTHS_PER_TERM
+    ): Promise<{ ok: boolean; grantId?: string }> => {
+      if (!currentUser) return { ok: false };
 
     // Prevent stacking a second discount on top of one that's already active, regardless
     // of which UI surface (offer form, AI Advisor chat, quick-approve) triggered this.
@@ -193,12 +193,15 @@ export default function App() {
     if (blocksNewOffer(account.discountState)) {
       showToast(
         `${account.name} has ${account.discountLabel} — cannot apply another.`,
-        'error'
-      );
-      return;
-    }
+            'error'
+          );
+          return { ok: false };
+        }
 
-    try {
+        // The audit row a direct apply writes, returned so the offer email that follows names exactly this
+        // offer. A request sent to the Director grants nothing yet, so it has none.
+        let grantId: string | undefined;
+        try {
       // Routed on what the offer gives away rather than its headline percentage, so a
       // cheap short discount is no longer escalated and an expensive year-long one no
       // longer slips through. The server enforces the same rule - this only decides
@@ -230,35 +233,43 @@ export default function App() {
             includesWalkthrough: includeWalkthrough || false
           })
         });
-        if (!res.ok) {
-          // The server prices the offer against the account's own contract and refuses
-          // anything over the Manager's limit. Show that reason rather than a generic
-          // failure, or a refused discount looks like an outage.
-          const body = await res.json().catch(() => null);
-          throw new Error(body?.error || `apply failed: ${res.status}`);
+            const body = await res.json().catch(() => null);
+            if (!res.ok) {
+              // The server prices the offer against the account's own contract and refuses
+              // anything over the Manager's limit. Show that reason rather than a generic
+              // failure, or a refused discount looks like an outage.
+              throw new Error(body?.error || `apply failed: ${res.status}`);
+            }
+            grantId = body?.grantId;
+          }
+          await refreshData();
+          return { ok: true, grantId };
+        } catch (err: any) {
+          console.error('Failed to apply/submit discount:', err);
+          showToast(err?.message || 'Could not reach the database — the discount was not saved.', 'error');
+          return { ok: false };
         }
-      }
-      await refreshData();
-    } catch (err: any) {
-      console.error('Failed to apply/submit discount:', err);
-      showToast(err?.message || 'Could not reach the database — the discount was not saved.', 'error');
-    }
-  };
+        };
 
   // Director Approval of Discount Request with Facial Verification
-  const handleApproveDiscountRequest = async (requestId: string, matchedName?: string) => {
-    if (!currentUser) return;
+  const handleApproveDiscountRequest = async (requestId: string, matchedName?: string): Promise<{ ok: boolean; grantId?: string }> => {
+    if (!currentUser) return { ok: false };
     try {
       const res = await fetch(`/api/discount-requests/${requestId}/approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ approvedById: currentUser.id, matchedName })
       });
-      if (!res.ok) throw new Error(`approve failed: ${res.status}`);
+      const body = await res.json().catch(() => null);
+      // The server's reason when it refuses (already decided, off the offer grid, window closed),
+      // rather than blaming the database for all of them.
+      if (!res.ok) throw new Error(body?.error || `approve failed: ${res.status}`);
       await refreshData();
-    } catch (err) {
+      return { ok: true, grantId: body?.grantId };
+    } catch (err: any) {
       console.error('Failed to approve discount request:', err);
-      showToast('Could not reach the database — the approval was not saved.', 'error');
+      showToast(err?.message || 'Could not reach the database — the approval was not saved.', 'error');
+      return { ok: false };
     }
   };
 

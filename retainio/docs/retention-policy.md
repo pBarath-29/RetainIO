@@ -206,6 +206,7 @@ lever automatically.
 Every discount execution, request, approval, rejection and withdrawal must be logged in the Audit Trail
 with the approving user, verification method, and timestamp. The same goes for every renewal
 notice recorded or cancelled, every renewal the system resolves at a contract's end, and every
-correction to a recorded renewal outcome. Rejected discount requests must
+correction to a recorded renewal outcome, and every retention offer emailed to a customer from the
+platform, with the address it went to. Rejected discount requests must
 include a director remark explaining the rejection reason. No retention action of any kind
 should be taken on an account without a corresponding audit log entry.

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { MONTHS_PER_TERM, annualContractValue, formatMoney, describeDiscount } from '../../pricing';
-import { Account, AuditLog, DiscountRequest, UserProfile } from '../types';
+import { Account, AuditLog, DiscountRequest, OfferResult, UserProfile } from '../types';
 import { FaceVerificationModal } from './FaceVerificationModal';
 import { DiscountEmailModal } from './DiscountEmailModal';
 import { useToast } from './Toast';
@@ -37,7 +37,8 @@ interface AccountDirectorDashboardProps {
   accounts: Account[];
   discountRequests: DiscountRequest[];
   auditLogs: AuditLog[];
-  onApproveDiscountRequest: (requestId: string, matchedName?: string) => void;
+  // Resolves with the offer row the approval wrote, which the offer email then names.
+  onApproveDiscountRequest: (requestId: string, matchedName?: string) => Promise<OfferResult>;
   onRejectDiscountRequest: (requestId: string, reason: string) => void;
   onSelectAccountDetail: (account: Account) => void;
 }
@@ -153,18 +154,12 @@ export const AccountDirectorDashboard: React.FC<AccountDirectorDashboardProps> =
     }
   };
 
-  const handleSendAndApplyDiscount = () => {
-    if (verifiedRequestForEmail) {
-      const includesWalkthrough = verifiedRequestForEmail.request.includesWalkthrough;
-      onApproveDiscountRequest(verifiedRequestForEmail.request.id, verifiedRequestForEmail.matchedName);
-      setVerifiedRequestForEmail(null);
-      showToast(
-        includesWalkthrough
-          ? 'Discount and walkthrough approved and retention offer sent.'
-          : 'Discount approved and retention offer sent.',
-        'success'
-      );
-    }
+  // The approval itself, made when the Director confirms the offer email. The email window then sends
+  // the email and says what actually happened. This used to announce the offer as sent when no email
+  // had gone anywhere.
+  const confirmApproval = async (): Promise<OfferResult> => {
+    if (!verifiedRequestForEmail) return { ok: false };
+    return onApproveDiscountRequest(verifiedRequestForEmail.request.id, verifiedRequestForEmail.matchedName);
   };
 
   // Same reasoning as the Account Manager dashboard: with nothing to oversee,
@@ -872,7 +867,8 @@ export const AccountDirectorDashboard: React.FC<AccountDirectorDashboardProps> =
         discountMonths={verifiedRequestForEmail?.request.requestedDurationMonths || MONTHS_PER_TERM}
         verificationStatus="Face Verified (Biometric Pass)"
         currentUser={currentUser}
-        onSendAndApply={handleSendAndApplyDiscount}
+        onConfirm={confirmApproval}
+        confirmVerb="Approve"
         includeWalkthrough={verifiedRequestForEmail?.request.includesWalkthrough}
       />
 

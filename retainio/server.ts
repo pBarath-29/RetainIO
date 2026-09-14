@@ -31,7 +31,8 @@ import {
   type SentimentClassValue,
 } from './fusionSnapshot';
 import { runRenewalsForToday, isRetained, liveIntentFor, describeIntent, recordRenewalIntent } from './renewals';
-import { ingestInbox, mailIngestConfigured, SUBJECT_PREFIX, NOTICE_PREFIX } from './mailIngest';
+import { ingestInbox, mailIngestConfigured, isIngestSubject, SUBJECT_PREFIX, NOTICE_PREFIX } from './mailIngest';
+import { sendMail, mailSendConfigured } from './mailSend';
 
 dotenv.config();
 
@@ -1470,6 +1471,8 @@ function mapAccount(a: any) {
     apiUtilizationRate: usage?.apiUtilizationRate,
     reviewText: review?.reviewText,
     reviewId: review?.id,
+    // Where the retention offer email goes. Blank means the offer window cannot email this account.
+    contactEmail: a.contactEmail ?? undefined,
     // A person's correction of the sentiment model. sentimentClassification above is the
     // EFFECTIVE reading (corrected when one exists); modelSentiment is what the model
     // itself said, so the UI can show the disagreement rather than hiding either side.
@@ -1851,7 +1854,7 @@ app.post('/api/discount-requests/:id/approve', requireAuth, async (req, res) => 
         : ` NOTE: biometric match was "${matchedName}", which does not match the logged-in approver "${approver.name}".`
       : '';
 
-    await prisma.$transaction([
+    const [, grant] = await prisma.$transaction([
       prisma.discountRequest.update({
         where: { id },
         data: { status: 'approved', approvedById, approvedAt: new Date() },
@@ -1880,11 +1883,12 @@ app.post('/api/discount-requests/:id/approve', requireAuth, async (req, res) => 
       try {
         await captureIndexSnapshot(request.accountId, 'offer_approved');
       } catch (err: any) {
-        console.warn('Index snapshot failed after Director approval:', err.message || err);
-      }
-    }
+            console.warn('Index snapshot failed after Director approval:', err.message || err);
+          }
+        }
 
-    res.json({ ok: true });
+        // grantId lets the offer email that follows name exactly this offer (POST .../offer-email).
+        res.json({ ok: true, grantId: grant.id });
   } catch (error: any) {
     console.error('Error in POST /api/discount-requests/:id/approve:', error);
     res.status(500).json({ error: 'Failed to approve discount request.' });
@@ -2057,6 +2061,92 @@ app.post('/api/discount-requests/:id/withdraw', requireAuth, async (req, res) =>
   }
 });
 
+// Emails a customer the offer just granted to them, from the project mailbox.
+//
+// The offer is granted first - by apply-discount, or by the Director's approval - and this is called
+// with the id of the audit row that recorded it, so nothing can be emailed that was not actually
+// granted. Kept apart from those routes so a failed send can be retried without granting twice.
+const GRANT_STATUSES = ['Direct Approval (Within Manager Limit)', 'Face Verified (Biometric Pass)'];
+
+app.post('/api/accounts/:id/offer-email', requireAuth, async (req, res) => {
+  try {
+    const user = (req as any).user;
+    const grantId = typeof req.body?.grantId === 'string' ? req.body.grantId : '';
+    const subject = typeof req.body?.subject === 'string' ? req.body.subject.trim() : '';
+    const body = typeof req.body?.body === 'string' ? req.body.body.trim() : '';
+
+    const account = await prisma.account.findUnique({ where: { id: req.params.id }, include: { accountManager: true } });
+    if (!account) return res.status(404).json({ error: 'Account not found' });
+
+    const isOwner = user.role === 'account_manager' && account.accountManagerId === user.id;
+    const isTeamDirector = user.role === 'account_director' && account.accountManager?.directorId === user.id;
+    if (!isOwner && !isTeamDirector) {
+      return res.status(403).json({ error: `Only ${account.name}'s Account Manager or their Director can email its offer.` });
+    }
+
+    // Only a row written by a self-approval or a Director's approval is an offer. A request that was
+    // merely submitted, rejected or withdrawn is not, even when it mentions a walkthrough.
+    const grant = grantId ? await prisma.auditLog.findUnique({ where: { id: grantId } }) : null;
+    if (!grant || grant.accountId !== account.id || !GRANT_STATUSES.includes(grant.verificationStatus)
+        || (grant.discountApplied <= 0 && !grant.includesWalkthrough)) {
+      return res.status(404).json({ error: `There is no such offer for ${account.name} to email.` });
+    }
+    if (grant.withdrawnAt) {
+      return res.status(409).json({ error: 'That offer has been withdrawn, so it cannot be emailed.' });
+    }
+
+    if (!account.contactEmail) {
+      return res.status(422).json({ error: `${account.name} has no contact email on file.` });
+    }
+    if (!subject || !body) return res.status(400).json({ error: 'The email needs a subject and a body.' });
+    if (subject.length > 200 || body.length > 20_000) {
+      return res.status(400).json({ error: 'The email is too long to send.' });
+    }
+    // The project mailbox is also the inbox mailIngest reads. A subject in one of its formats would
+    // come back round as customer feedback or a renewal notice from this very account.
+    if (isIngestSubject(subject)) {
+      return res.status(400).json({
+        error: `The subject cannot start with "${SUBJECT_PREFIX}" or "${NOTICE_PREFIX}" - that is how customer feedback and renewal notices arrive.`,
+      });
+    }
+    if (!mailSendConfigured()) {
+      return res.status(503).json({ error: 'Sending email is not set up on this server (SMTP_HOST and the mailbox login in .env).' });
+    }
+
+    try {
+      await sendMail({
+        fromName: `${user.name} (RetainIO)`,
+        to: { name: account.name, address: account.contactEmail },
+        subject,
+        text: body,
+      });
+    } catch (err: any) {
+      console.warn(`Offer email to ${account.name} failed:`, err.message || err);
+      return res.status(502).json({ error: `The mail server did not accept it: ${err.message || 'unknown error'}` });
+    }
+
+    const offer = grant.discountApplied > 0
+      ? describeDiscount(grant.discountApplied, grant.discountMonths) + (grant.includesWalkthrough ? ' + walkthrough' : '')
+      : 'product walkthrough';
+    await prisma.auditLog.create({
+      data: {
+        accountId: account.id,
+        action: 'Retention Offer Email Sent',
+        // 0, so this row can never be read as the account's current offer.
+        discountApplied: 0,
+        discountMonths: 0,
+        approverId: user.id,
+        verificationStatus: 'Manual Entry (Offer Email)',
+        details: `${user.name} emailed ${account.name} the ${offer} offer at ${account.contactEmail}. Subject: "${subject}".`,
+      },
+    });
+    res.json({ ok: true, to: account.contactEmail });
+  } catch (error: any) {
+    console.error('Error in POST /api/accounts/:id/offer-email:', error);
+    res.status(500).json({ error: 'Failed to send the offer email.' });
+  }
+});
+
 // Direct apply, no request needed — an AM applying <=10% themselves, or the
 // director's own quick-approve path. Just an audit_logs entry; discount
 // requests only exist for the >10% escalation path.
@@ -2191,7 +2281,7 @@ app.post('/api/accounts/:id/apply-discount', requireAuth, async (req, res) => {
     const label = buildActionLabel(discountPct, includesWalkthrough, discountMonths);
     const verificationStatus = 'Direct Approval (Within Manager Limit)';
 
-    await prisma.auditLog.create({
+    const grant = await prisma.auditLog.create({
       data: {
         accountId: id,
         action: `${label} ${buildActionVerb(discountPct, includesWalkthrough)}`,
@@ -2220,11 +2310,12 @@ app.post('/api/accounts/:id/apply-discount', requireAuth, async (req, res) => {
       try {
         await captureIndexSnapshot(id, 'offer_approved');
       } catch (err: any) {
-        console.warn('Index snapshot failed after self-approval:', err.message || err);
-      }
-    }
+            console.warn('Index snapshot failed after self-approval:', err.message || err);
+          }
+        }
 
-    res.json({ ok: true });
+        // grantId lets the offer email that follows name exactly this offer (POST .../offer-email).
+        res.json({ ok: true, grantId: grant.id });
   } catch (error: any) {
     console.error('Error in POST /api/accounts/:id/apply-discount:', error);
     res.status(500).json({ error: 'Failed to apply discount.' });

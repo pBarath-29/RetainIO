@@ -208,10 +208,19 @@ export interface Account {
   // walkthrough costs nothing, so there is no spend to control, and an arbitrary block
   // would refuse a legitimate second session. The Manager gets the fact and makes the call.
   lastWalkthroughAt?: string;
-  lastWalkthroughBy?: string;
-}
+    lastWalkthroughBy?: string;
+    // Where the retention offer email is sent. Blank means the app cannot email this account.
+    contactEmail?: string;
+  }
 
-export interface AuditLog {
+  // What applying or approving an offer returned. grantId names the audit row that recorded it, so the
+  // offer email that follows refers to exactly that offer (POST /api/accounts/:id/offer-email).
+  export interface OfferResult {
+    ok: boolean;
+    grantId?: string;
+  }
+
+  export interface AuditLog {
   id: string;
   accountId: string;
   accountName: string;
