@@ -263,7 +263,14 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
   };
 
   // Check for active or previous discount request for this account
-  const globalReq = discountRequests.find(r => r.accountId === account.id);
+  // The request the banner and the Approve / Withdraw buttons act on: the one still waiting, if
+  // there is one, otherwise the most recent. Asked for explicitly rather than taking the first of
+  // the account's requests: that was only right because the server happens to send them newest
+  // first, and a change of order would have put an old, decided request here without any error.
+  const accountRequests = discountRequests
+    .filter(r => r.accountId === account.id)
+    .sort((a, b) => b.requestedAt.localeCompare(a.requestedAt));
+  const globalReq = accountRequests.find(r => r.status === 'pending') ?? accountRequests[0];
   const activeDirectorRequest = pendingDirectorRequest || (globalReq ? {
     discountPct: globalReq.requestedDiscountPct,
     managerNote: globalReq.managerNote,
