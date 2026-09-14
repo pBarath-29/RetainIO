@@ -31,7 +31,9 @@ import {
   type SentimentClassValue,
 } from './fusionSnapshot';
 import { runRenewalsForToday, isRetained, liveIntentFor, describeIntent, recordRenewalIntent } from './renewals';
-import { ingestInbox, mailIngestConfigured, isIngestSubject, SUBJECT_PREFIX, NOTICE_PREFIX } from './mailIngest';
+import {
+  ingestInbox, mailIngestConfigured, isIngestSubject, describeMailboxError, SUBJECT_PREFIX, NOTICE_PREFIX,
+} from './mailIngest';
 import { sendMail, mailSendConfigured } from './mailSend';
 
 dotenv.config();
@@ -2121,8 +2123,9 @@ app.post('/api/accounts/:id/offer-email', requireAuth, async (req, res) => {
         text: body,
       });
     } catch (err: any) {
-      console.warn(`Offer email to ${account.name} failed:`, err.message || err);
-      return res.status(502).json({ error: `The mail server did not accept it: ${err.message || 'unknown error'}` });
+      const reason = describeMailboxError(err, 'send');
+      console.warn(`Offer email to ${account.name} failed:`, reason);
+      return res.status(502).json({ error: reason });
     }
 
     const offer = grant.discountApplied > 0
@@ -2566,7 +2569,7 @@ app.post('/api/inbox/check', requireAuth, async (req, res) => {
     res.json({ ...result.summary, rescored: result.rescored.length });
   } catch (error: any) {
     console.error('Error in POST /api/inbox/check:', error);
-    res.status(502).json({ error: error.message || 'Could not reach the mailbox.' });
+    res.status(502).json({ error: describeMailboxError(error) });
   }
 });
 
@@ -3123,7 +3126,7 @@ async function startServer() {
           for (const note of s.notes) console.log(`  ${note}`);
         }
       } catch (err: any) {
-        console.warn('Inbox check skipped:', err.message || err);
+        console.warn('Inbox check skipped:', describeMailboxError(err));
       }
     };
     console.log(`Watching ${process.env.INGEST_IMAP_USER} for "${SUBJECT_PREFIX}" and "${NOTICE_PREFIX}" every 2 minutes.`);

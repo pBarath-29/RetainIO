@@ -416,6 +416,7 @@ export default function App() {
                   auditLogs={auditLogs}
                   onApproveDiscountRequest={handleApproveDiscountRequest}
                   onRejectDiscountRequest={handleRejectDiscountRequest}
+                  onInboxChecked={refreshData}
                   onSelectAccountDetail={(acc) => {
                     setAnalysisInitialTab('fusion');
                     setSelectedAccountForDetail(acc);

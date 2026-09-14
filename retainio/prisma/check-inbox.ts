@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { prisma } from '../db';
-import { ingestInbox, mailIngestConfigured, SUBJECT_PREFIX, NOTICE_PREFIX } from '../mailIngest';
+import { ingestInbox, mailIngestConfigured, describeMailboxError, SUBJECT_PREFIX, NOTICE_PREFIX } from '../mailIngest';
 import { rescoreAccountToday } from '../fusionSnapshot';
 
 /**
@@ -39,5 +39,5 @@ async function main() {
 }
 
 main()
-  .catch(e => { console.error(e); process.exit(1); })
+  .catch(e => { console.error(describeMailboxError(e)); process.exit(1); })
   .finally(() => prisma.$disconnect());

@@ -3,6 +3,7 @@ import { MONTHS_PER_TERM, annualContractValue, formatMoney, describeDiscount } f
 import { Account, AuditLog, DiscountRequest, OfferResult, UserProfile } from '../types';
 import { FaceVerificationModal } from './FaceVerificationModal';
 import { DiscountEmailModal } from './DiscountEmailModal';
+import { CheckInboxButton } from './CheckInboxButton';
 import { useToast } from './Toast';
 import { useModalA11y } from '../hooks/useModalA11y';
 import {
@@ -41,6 +42,8 @@ interface AccountDirectorDashboardProps {
   onApproveDiscountRequest: (requestId: string, matchedName?: string) => Promise<OfferResult>;
   onRejectDiscountRequest: (requestId: string, reason: string) => void;
   onSelectAccountDetail: (account: Account) => void;
+  // Reload after the mailbox check pulls in a review or a notice.
+  onInboxChecked?: () => void;
 }
 
 export const AccountDirectorDashboard: React.FC<AccountDirectorDashboardProps> = ({
@@ -50,7 +53,8 @@ export const AccountDirectorDashboard: React.FC<AccountDirectorDashboardProps> =
   auditLogs,
   onApproveDiscountRequest,
   onRejectDiscountRequest,
-  onSelectAccountDetail
+  onSelectAccountDetail,
+  onInboxChecked
 }) => {
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<'pending' | 'portfolio'>('pending');
@@ -206,16 +210,21 @@ export const AccountDirectorDashboard: React.FC<AccountDirectorDashboardProps> =
           </p>
         </div>
 
-        <div className="flex items-center space-x-3 bg-slate-900/80 p-3 rounded-xl border border-slate-700/80 backdrop-blur-sm">
-          <div className="w-10 h-10 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold border border-amber-500/30">
-            <ShieldCheck className="w-5 h-5" />
-          </div>
-          <div className="text-xs">
-            <p className="font-bold text-slate-200">Facial Verification Status</p>
-            <p className="text-emerald-400 font-medium flex items-center space-x-1">
-              <CheckCircle2 className="w-3 h-3 inline" />
-              <span>SOC2 Biometric Active</span>
-            </p>
+        <div className="flex flex-wrap items-center gap-3">
+          {/* The same check the Account Managers have. Directors see every team account, so a
+              notice or review that just arrived is theirs to see straight away too. */}
+          <CheckInboxButton onChecked={onInboxChecked} />
+          <div className="flex items-center space-x-3 bg-slate-900/80 p-3 rounded-xl border border-slate-700/80 backdrop-blur-sm">
+            <div className="w-10 h-10 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold border border-amber-500/30">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <div className="text-xs">
+              <p className="font-bold text-slate-200">Facial Verification Status</p>
+              <p className="text-emerald-400 font-medium flex items-center space-x-1">
+                <CheckCircle2 className="w-3 h-3 inline" />
+                <span>SOC2 Biometric Active</span>
+              </p>
+            </div>
           </div>
         </div>
       </div>

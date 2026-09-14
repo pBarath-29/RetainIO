@@ -250,7 +250,7 @@ def finalise(filename, new_model, X_test, y_test, mix, dry_run, multiclass=False
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--dry-run", action="store_true", help="train and report without writing any model")
+    ap.add_argument("--dry-run", action="store_true", help="train and report without writing any file")
     ap.add_argument("--force", action="store_true", help="retrain before the 6-month interval has elapsed")
     args = ap.parse_args()
 
@@ -304,9 +304,15 @@ def main():
         synth["is_real"] = 0
         real = uplift_real.drop(columns=[c for c in ["is_assumed"] if c in uplift_real.columns]).copy()
         real["is_real"] = 1
-        pd.concat([synth, real], ignore_index=True).to_csv(merged, index=False)
+        combined = pd.concat([synth, real], ignore_index=True)
         report_mix(len(real), len(synth), "training rows")
-        print(f"\n  written: Datasets/{merged.name}")
+        # uplift_model.ipynb trains on this file whenever it exists, so writing it IS a change:
+        # a dry run that left one behind would alter what the next notebook run learns from.
+        if args.dry_run:
+            print(f"\n  dry run - Datasets/{merged.name} not written")
+        else:
+            combined.to_csv(merged, index=False)
+            print(f"\n  written: Datasets/{merged.name}")
 
         # The notebook trains one model per arm and drops any real row whose arm is not on its
         # grid, so name those renewals here: usually an offer made before the form was limited
@@ -334,11 +340,16 @@ def main():
     print("  expected to be effectively unchanged. That is the arithmetic, not a fault: the")
     print("  deliverable is a working pipeline, not a demonstrated improvement.")
 
+    # This file is also how the six-month rule knows when the models were last replaced
+    # (last_run_at). A dry run overwrote it, erasing that record, so the next real run went
+    # ahead however recently the models had been retrained. A dry run now leaves it alone.
+    if args.dry_run:
+        print("\n  dry run - models/retrain_provenance.json left as it was\n")
+        return
     (MODELS / "retrain_provenance.json").write_text(json.dumps({
         "run_at": datetime.now().isoformat(timespec="seconds"),
         "next_due": (datetime.now() + timedelta(days=RETRAIN_INTERVAL_DAYS)).date().isoformat(),
         "retrain_interval_days": RETRAIN_INTERVAL_DAYS,
-        "dry_run": args.dry_run,
         "results": results,
     }, indent=2, default=float), encoding="utf-8")
     print(f"\n  provenance written to models/retrain_provenance.json\n")

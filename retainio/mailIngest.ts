@@ -480,3 +480,30 @@ export async function ingestInbox(log = false): Promise<IngestSummary> {
 
   return summary;
 }
+
+// ── Explaining a mailbox failure ────────────────────────────────────────────
+
+const NETWORK_CODES = ['ECONNREFUSED', 'ENOTFOUND', 'ETIMEDOUT', 'EAI_AGAIN', 'ECONNRESET', 'EHOSTUNREACH', 'ECONNECTION', 'ESOCKET'];
+
+/**
+ * A mailbox failure in words someone can act on.
+ *
+ * The libraries' own messages are not that. A refused login reaches here from imapflow as "Command
+ * failed", which was all the server log and the Check inbox button said when Gmail blocked the app.
+ * imapflow marks a refused login with authenticationFailed, and nodemailer with the code EAUTH, so
+ * those are recognised rather than any wording.
+ */
+export function describeMailboxError(err: any, action: 'read' | 'send' = 'read'): string {
+  if (err?.authenticationFailed || err?.code === 'EAUTH') {
+    return `The mailbox refused the app's login${action === 'send' ? ' to send email' : ''}. Its app password may ` +
+      'have been revoked or changed: create a new one and put it in INGEST_IMAP_PASSWORD in .env.';
+  }
+  const host = action === 'send' ? process.env.SMTP_HOST : process.env.INGEST_IMAP_HOST;
+  const code = NETWORK_CODES.find(c => `${err?.code ?? ''} ${err?.message ?? ''}`.includes(c));
+  if (code) {
+    return `Could not reach the mail server${host ? ` (${host})` : ''}: ${code}. Check the internet connection and ` +
+      `${action === 'send' ? 'SMTP_HOST / SMTP_PORT' : 'INGEST_IMAP_HOST / INGEST_IMAP_PORT'} in .env.`;
+  }
+  const detail = err?.responseText && err.responseText !== err.message ? ` (${err.responseText})` : '';
+  return `${err?.message || String(err)}${detail}`;
+}

@@ -7,8 +7,8 @@ import React, { useState } from 'react';
 // bands out of step with the canonical ones.
 import { annualContractValue, formatTermDate, daysUntil } from '../../pricing';
 import { Account, DiscountRequest } from '../types';
-import { Search, ShieldAlert, Bot, Eye, Filter, CheckCircle2, ArrowUpDown, Layers, Clock, Mail } from 'lucide-react';
-import { useToast } from './Toast';
+import { Search, ShieldAlert, Bot, Eye, Filter, CheckCircle2, ArrowUpDown, Layers, Clock } from 'lucide-react';
+import { CheckInboxButton } from './CheckInboxButton';
 import { RiskSparkline } from './RiskSparkline';
 import { PortfolioTrajectoryCharts } from './PortfolioTrajectoryCharts';
 
@@ -36,42 +36,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onInboxChecked
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [isCheckingInbox, setIsCheckingInbox] = useState(false);
-  const { showToast } = useToast();
 
   const [selectedRiskFilter, setSelectedRiskFilter] = useState<'All' | 'High Risk' | 'Medium Risk' | 'Low Risk'>('All');
   const [selectedTierFilter, setSelectedTierFilter] = useState<'All' | 'Enterprise' | 'Pro' | 'Basic'>('All');
   const [sortBy, setSortBy] = useState<'default' | 'churnRisk' | 'mrrValue' | 'daysToRenewal'>('default');
-
-  // Pulls any waiting feedback emails in now, rather than waiting out the two-minute poll.
-  // The server does the matching and re-scoring; this only reports what happened.
-  const handleCheckInbox = async () => {
-    if (isCheckingInbox) return;
-    setIsCheckingInbox(true);
-    try {
-      const res = await fetch('/api/inbox/check', { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) { showToast(data.error || 'Could not check the mailbox.', 'error'); return; }
-
-      // Unmatched emails are reported as loudly as ingested ones. An email naming an account
-      // that does not exist produces no review and no visible change, so silence here would
-      // read as "nothing had arrived" rather than "something arrived and was rejected".
-      const parts: string[] = [];
-      if (data.ingested) parts.push(`${data.ingested} review${data.ingested === 1 ? '' : 's'} ingested`);
-      if (data.notices) parts.push(`${data.notices} renewal notice${data.notices === 1 ? '' : 's'} recorded`);
-      if (data.unmatched) parts.push(`${data.unmatched} could not be matched to an account`);
-      if (data.failed) parts.push(`${data.failed} failed`);
-      showToast(
-        parts.length ? parts.join(', ') + '.' : 'No new emails.',
-        data.unmatched || data.failed ? 'info' : data.ingested || data.notices ? 'success' : 'info',
-      );
-      if (data.ingested || data.notices) onInboxChecked?.();
-    } catch {
-      showToast('Could not reach the server to check the mailbox.', 'error');
-    } finally {
-      setIsCheckingInbox(false);
-    }
-  };
 
   // One pass over the requests instead of a find() per rendered card.
   const pendingRequestByAccount = new Map(
@@ -171,15 +139,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </p>
         </div>
 
-        <button
-          onClick={handleCheckInbox}
-          disabled={isCheckingInbox}
-          title="Pull in any customer feedback and renewal notice emails waiting in the inbox now"
-          className="flex items-center space-x-2 px-3.5 py-2 rounded-lg text-xs font-bold bg-slate-800 text-slate-200 border border-slate-700 hover:bg-slate-700 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
-        >
-          <Mail className={`w-3.5 h-3.5 ${isCheckingInbox ? 'animate-pulse' : ''}`} />
-          <span>{isCheckingInbox ? 'Checking inbox...' : 'Check inbox now'}</span>
-        </button>
+        <CheckInboxButton onChecked={onInboxChecked} />
       </div>
 
       {/* Stats KPI Cards */}
