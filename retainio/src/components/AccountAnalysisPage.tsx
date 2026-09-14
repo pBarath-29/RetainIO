@@ -727,7 +727,7 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
             }`}
           >
             <Activity className="w-4 h-4 text-slate-700" />
-            <span>1. RAG Fusion & Risk Overview</span>
+            <span>1. Risk Overview</span>
           </button>
 
           <button
@@ -739,7 +739,7 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
             }`}
           >
             <Zap className="w-4 h-4 text-amber-600" />
-            <span>2. SHAP Feature Attribution (XAI)</span>
+            <span>2. Why This Score</span>
           </button>
 
           <button
@@ -1097,7 +1097,7 @@ export const AccountAnalysisPage: React.FC<AccountAnalysisPageProps> = ({
           </div>
         )}
 
-        {/* TAB 4: DISCOUNT UPLIFT ADVISOR — simulated client-side, no backend call */}
+        {/* TAB 3: DISCOUNT UPLIFT ADVISOR — the trained uplift model, fetched from GET /api/accounts/:id/uplift */}
         {activeTab === 'uplift' && (
           <div className="p-6 sm:p-8 space-y-6">
 

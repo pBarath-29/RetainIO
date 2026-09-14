@@ -1,20 +1,32 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# RetainIO web app
 
-# Run and deploy your AI Studio app
+The React front end and the Express API that serves it. See the [project README](../README.md) for
+what RetainIO does, how the parts fit together, the models, and the logins.
 
-This contains everything you need to run your app locally.
+## Run
 
-View your app in AI Studio: https://ai.studio/apps/e03d3ff3-5191-4b90-85d9-93f7288f9b64
+```bash
+npm install
+cp .env.example .env        # every setting is explained in the file
+npx prisma migrate deploy
+npm run dev                 # http://localhost:3000; the model service must be running on :8000
+```
 
-## Run Locally
+`npm run lint` type-checks. `npm run build` then `npm start` (with `NODE_ENV=production`) runs the
+production build.
 
-**Prerequisites:**  Node.js
+## Scripts
 
+All run from this folder with `npx tsx prisma/<script>`.
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+| Script | What it does |
+|---|---|
+| `seed.ts` | Fills an empty database: the nine demo accounts and two Account Managers |
+| `seed-admin.ts` | The admin login, and links both Managers to the Director once one has signed up |
+| `seed-historical-cases.ts` | The past cases the AI advisor searches |
+| `set-password.ts <email> <password>` | Gives a user a password, e.g. a seeded Manager |
+| `set-contact-emails.ts` | Gives every account a contact email for offer emails (address from `.env`) |
+| `demo-renewal.ts create` / `remove` | Throwaway accounts whose renewals have already passed |
+| `check-inbox.ts` | Runs one inbox check by hand |
+| `run-daily-snapshot.ts` | Runs the daily re-score by hand |
+| `export-renewal-outcomes.ts` | Writes renewal outcomes and sentiment corrections to `../Datasets/feedback/` for retraining |
