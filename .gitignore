@@ -28,7 +28,7 @@ playwright-report/
 
 # The usage simulator's record of the rows it created in your own database. The ids mean
 # nothing to any other database and the file is rewritten on every run, so it stays local;
-# `simulate-usage.ts reset` reads it from there (see README-simulation.md).
+# `simulate-usage.ts reset` reads it from there (see "Simulated usage" in README.md).
 retainio/prisma/.simulation-manifest.json
 
 # NOTE: models/ and Datasets/ are deliberately NOT ignored. The FastAPI service loads the
