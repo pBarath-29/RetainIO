@@ -1,6 +1,5 @@
-# Secrets. Both .env files hold live credentials — the root one a Gemini API key, and
-# retainio/.env the Supabase connection strings. A pattern with no slash matches at every
-# level, so this covers both.
+# Secrets. retainio/.env holds live credentials (retainio/.env.example lists what goes in
+# it). A pattern with no slash matches at every level, so this covers it wherever it is.
 .env
 .env.*
 !.env.example
@@ -27,9 +26,11 @@ probe*.png
 test-results/
 playwright-report/
 
+# The usage simulator's record of the rows it created in your own database. The ids mean
+# nothing to any other database and the file is rewritten on every run, so it stays local;
+# `simulate-usage.ts reset` reads it from there (see README-simulation.md).
+retainio/prisma/.simulation-manifest.json
+
 # NOTE: models/ and Datasets/ are deliberately NOT ignored. The FastAPI service loads the
 # pickles from models/ and reads Datasets/Churn.csv at import time to rebuild its SHAP
 # background sample, so both have to be in the repo for a deploy to boot.
-
-# Local rollback copies of model artefacts. The originals are in git history anyway.
-backups/

@@ -36,6 +36,7 @@ the app; an unscored day would never be repaired at all.
 ## Undoing all of it
 
 Every row the simulator creates is recorded by id in `retainio/prisma/.simulation-manifest.json`.
+The file stays on your machine and is not in git: the ids belong to your own database.
 
 ```
 cd retainio && npx tsx prisma/simulate-usage.ts reset
