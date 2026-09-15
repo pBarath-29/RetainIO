@@ -18,8 +18,7 @@ import { MONTHS_PER_TERM, TIER_MONTHLY_RATE, annualContractValue, formatMoney } 
  * derived from the most recent audit row carrying a discount, and rows written before
  * this change have no duration on them. A discount with no duration cannot be costed,
  * which is the whole thing this change exists to fix — so they go rather than being
- * guessed at. This deletes audit_logs and discount_requests, the same reset
- * prisma/wipe-discount-activity.ts performs.
+ * guessed at. This deletes audit_logs and discount_requests.
  */
 async function main() {
   const subs = await prisma.subscription.findMany({ include: { account: true } });
