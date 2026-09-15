@@ -4,11 +4,10 @@ import { OFFER_WINDOW_DAYS } from './pricing';
 
 // Real daily fusion snapshots + monthly rollups. Not inside server.ts:
 // server.ts boots an Express+Vite server as a side effect of being imported
-// (see its startServer() call at module load), so a standalone script (or
-// server.ts's own startup hook) needs to reach this logic without that
-// side effect. Both server.ts (its two live-computation endpoints, and its
-// startup/interval daily check) and the standalone
-// prisma/run-daily-snapshot.ts script import from here.
+// (see its startServer() call at module load), so the prisma/ scripts (and
+// server.ts's own startup hook) need to reach this logic without that side
+// effect. server.ts (its live-computation endpoints and its startup/interval
+// daily check), renewals.ts and the prisma/ scripts all import from here.
 
 const MODEL_SERVICE_URL = process.env.MODEL_SERVICE_URL || 'http://127.0.0.1:8000';
 

@@ -91,7 +91,7 @@ async function main() {
         name: a.name,
         logoInitials: a.logo,
         industry: a.industry,
-        // Demo customers' offers go to an inbox you control (see prisma/set-contact-emails.ts).
+        // Demo customers' offers go to an inbox you control: DEMO_CONTACT_EMAIL, or else the ingest mailbox.
         contactEmail: process.env.DEMO_CONTACT_EMAIL || process.env.INGEST_IMAP_USER || null,
         accountManagerId: usersByName.get(a.manager)!.id,
       },

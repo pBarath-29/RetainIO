@@ -2343,22 +2343,6 @@ app.get('/api/accounts/:id/fusion', requireAuth, async (req, res) => {
   }
 });
 
-// Manual trigger for the daily fusion snapshot job (see fusionSnapshot.ts) —
-// idempotent, safe to call more than once the same day. Useful for testing
-// without waiting for the startup/interval check in startServer() below, and
-// for getting the first real sample into a new month immediately after this
-// feature ships. Requires being logged in; there's no separate admin role in
-// this app, so any authenticated session can trigger it.
-app.post('/api/admin/run-daily-snapshot', requireAuth, async (_req, res) => {
-  try {
-    const summary = await runDailySnapshotForToday();
-    res.json(summary);
-  } catch (error: any) {
-    console.error('Error in POST /api/admin/run-daily-snapshot:', error);
-    res.status(500).json({ error: error.message || 'Daily snapshot run failed.' });
-  }
-});
-
 // Correct the sentiment model's read of a review.
 //
 // The only feedback signal that can retrain the sentiment model. Renewal outcomes cannot:
