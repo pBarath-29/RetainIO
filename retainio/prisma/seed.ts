@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { MONTHS_PER_TERM, TIER_MONTHLY_RATE, addMonths } from '../pricing';
 
 // Bootstraps an EMPTY database with the demo organisation: staff logins,
 // customer accounts, their subscriptions, usage telemetry and support
@@ -10,9 +11,12 @@ import { PrismaPg } from '@prisma/adapter-pg';
 //
 // Seeds the two Account Managers (Sarah Jenkins, Elena Rostova) and splits
 // all 9 accounts between them — balanced on risk (2 High Risk accounts each)
-// and MRR (~$56k vs ~$50k), not just on count. mockData.ts's original
+// and MRR ($16k vs $18.5k), not just on count. mockData.ts's original
 // "Alex Rivera" / "Jordan Vance" managers were dropped; their accounts are
 // reassigned in the accountSeeds list below.
+//
+// Every subscription is priced at its tier's standard rate and runs the standard
+// 12-month term (both from pricing.ts), with renewals spread across the coming year.
 //
 // No Account Director is seeded. A Director's approvals are gated on a
 // biometric check, and a face can only be enrolled by the person themselves
@@ -26,12 +30,6 @@ import { PrismaPg } from '@prisma/adapter-pg';
 
 const adapter = new PrismaPg(process.env.DATABASE_URL!);
 const prisma = new PrismaClient({ adapter });
-
-function monthsBefore(date: Date, months: number): Date {
-  const d = new Date(date);
-  d.setMonth(d.getMonth() - months);
-  return d;
-}
 
 function loginBucket(loginsPerMonth: number): 'Daily' | 'Weekly' | 'Rarely' {
   if (loginsPerMonth < 10) return 'Rarely';
@@ -54,34 +52,46 @@ async function main() {
 
   // ---- accounts + subscriptions + usage_snapshots + support_tickets --
   const accountSeeds = [
-    { name: 'Acme Corp', logo: 'AC', industry: 'Enterprise Software', manager: 'Sarah Jenkins', mrr: 12083, plan: 'Enterprise' as const, renewal: '2026-08-12', duration: 1,
+    { name: 'Acme Corp', logo: 'AC', industry: 'Enterprise Software', manager: 'Sarah Jenkins', plan: 'Enterprise' as const,
       accountAgeDays: 912, dailyUsageMins: 17, loginsPerMonth: 12, supportTickets90Days: 8, apiUsageRate: 2400, apiBenchmark: 15000,
       ticketBody: 'Integration keeps failing after the recent v3 upgrade and API latency increased significantly. Our team is struggling to meet SLA.' },
-    { name: 'Globex Inc', logo: 'GI', industry: 'Global Manufacturing & Logistics', manager: 'Elena Rostova', mrr: 15833, plan: 'Enterprise' as const, renewal: '2026-08-19', duration: 1,
+    { name: 'Globex Inc', logo: 'GI', industry: 'Global Manufacturing & Logistics', manager: 'Elena Rostova', plan: 'Enterprise' as const,
       accountAgeDays: 654, dailyUsageMins: 21, loginsPerMonth: 18, supportTickets90Days: 9, apiUsageRate: 3100, apiBenchmark: 18000,
       ticketBody: 'Budget freezes across operational units require 20% cost reduction or non-renewal in Q4.' },
-    { name: 'Umbrella Tech', logo: 'UT', industry: 'Cybersecurity & Infrastructure', manager: 'Elena Rostova', mrr: 7333, plan: 'Enterprise' as const, renewal: '2026-08-25', duration: 1,
+    { name: 'Umbrella Tech', logo: 'UT', industry: 'Cybersecurity & Infrastructure', manager: 'Elena Rostova', plan: 'Enterprise' as const,
       accountAgeDays: 418, dailyUsageMins: 29, loginsPerMonth: 24, supportTickets90Days: 4, apiUsageRate: 8500, apiBenchmark: 12000,
       ticketBody: 'Downsized security team by 30 seats; requesting 12% fee adjustment to retain enterprise tier.' },
-    { name: 'CloudPulse Technologies', logo: 'CP', industry: 'Cloud Infrastructure', manager: 'Elena Rostova', mrr: 17500, plan: 'Enterprise' as const, renewal: '2026-08-15', duration: 1,
+    { name: 'CloudPulse Technologies', logo: 'CP', industry: 'Cloud Infrastructure', manager: 'Elena Rostova', plan: 'Enterprise' as const,
       accountAgeDays: 214, dailyUsageMins: 8, loginsPerMonth: 5, supportTickets90Days: 12, apiUsageRate: 800, apiBenchmark: 25000,
       ticketBody: 'We are completely blocked by downtime in US-East cluster. We are requesting immediate termination of contract and refund.' },
-    { name: 'FinTech Nexus Solutions', logo: 'FN', industry: 'Financial Technology', manager: 'Elena Rostova', mrr: 7333, plan: 'Pro' as const, renewal: '2026-09-02', duration: 1,
+    { name: 'FinTech Nexus Solutions', logo: 'FN', industry: 'Financial Technology', manager: 'Elena Rostova', plan: 'Pro' as const,
       accountAgeDays: 507, dailyUsageMins: 36, loginsPerMonth: 28, supportTickets90Days: 4, apiUsageRate: 9200, apiBenchmark: 12000,
       ticketBody: 'Product works overall, but pricing feels high compared to new market alternatives.' },
-    { name: 'BioHealth Systems', logo: 'BH', industry: 'Healthcare SaaS', manager: 'Sarah Jenkins', mrr: 14583, plan: 'Enterprise' as const, renewal: '2026-08-22', duration: 1,
+    { name: 'BioHealth Systems', logo: 'BH', industry: 'Healthcare SaaS', manager: 'Sarah Jenkins', plan: 'Enterprise' as const,
       accountAgeDays: 763, dailyUsageMins: 47, loginsPerMonth: 38, supportTickets90Days: 3, apiUsageRate: 18400, apiBenchmark: 18000,
       ticketBody: 'HIPAA compliance audit export took longer than expected during our internal review.' },
-    { name: 'Apex Logistics Global', logo: 'AL', industry: 'Supply Chain & Logistics', manager: 'Sarah Jenkins', mrr: 26667, plan: 'Enterprise' as const, renewal: '2026-09-04', duration: 1,
+    { name: 'Apex Logistics Global', logo: 'AL', industry: 'Supply Chain & Logistics', manager: 'Sarah Jenkins', plan: 'Enterprise' as const,
       accountAgeDays: 1104, dailyUsageMins: 84, loginsPerMonth: 92, supportTickets90Days: 2, apiUsageRate: 48000, apiBenchmark: 35000,
       ticketBody: 'RetainIO / platform has automated our tracking workflows tremendously. Looking forward to expansion next quarter.' },
-    { name: 'Novus Media Labs', logo: 'NM', industry: 'Digital Media & Marketing', manager: 'Sarah Jenkins', mrr: 2917, plan: 'Basic' as const, renewal: '2026-08-09', duration: 1,
+    { name: 'Novus Media Labs', logo: 'NM', industry: 'Digital Media & Marketing', manager: 'Sarah Jenkins', plan: 'Basic' as const,
       accountAgeDays: 331, dailyUsageMins: 23, loginsPerMonth: 14, supportTickets90Days: 5, apiUsageRate: 1200, apiBenchmark: 5000,
       ticketBody: 'Pricing on basic tier feels too steep given recent decrease in active marketing campaigns.' },
-    { name: 'Synergy AI Studio', logo: 'SA', industry: 'Design & AI Agency', manager: 'Elena Rostova', mrr: 2000, plan: 'Basic' as const, renewal: '2026-08-28', duration: 1,
+    { name: 'Synergy AI Studio', logo: 'SA', industry: 'Design & AI Agency', manager: 'Elena Rostova', plan: 'Basic' as const,
       accountAgeDays: 958, dailyUsageMins: 56, loginsPerMonth: 42, supportTickets90Days: 1, apiUsageRate: 6400, apiBenchmark: 4000,
       ticketBody: 'Basic tier fits our boutique agency needs perfectly. Great API performance.' },
   ];
+
+  // Renewals are spread across the coming year in name order, one roughly every six weeks,
+  // rather than all landing on the same day: contracts that all expire at once make the
+  // renewal column and every "days to renewal" sort meaningless. The first falls about six
+  // weeks out, so a fresh install opens with a few accounts already inside the offer window.
+  const byName = [...accountSeeds].sort((a, b) => a.name.localeCompare(b.name));
+  const today = new Date();
+  const renewalOf = new Map(byName.map((a, i) => {
+    const termEnd = new Date(today);
+    termEnd.setDate(termEnd.getDate() + Math.max(14, Math.round(((i + 1) / byName.length) * 365)));
+    return [a.name, termEnd] as const;
+  }));
 
   const accountsByName = new Map<string, { id: string }>();
 
@@ -98,15 +108,15 @@ async function main() {
     });
     accountsByName.set(a.name, account);
 
-    const termEnd = new Date(a.renewal);
+    const termEnd = renewalOf.get(a.name)!;
     await prisma.subscription.create({
       data: {
         accountId: account.id,
         planTier: a.plan,
-        mrr: a.mrr,
-        termStart: monthsBefore(termEnd, a.duration),
+        mrr: TIER_MONTHLY_RATE[a.plan],
+        termStart: addMonths(termEnd, -MONTHS_PER_TERM),
         termEnd,
-        durationMonths: a.duration,
+        durationMonths: MONTHS_PER_TERM,
         status: 'active',
       },
     });

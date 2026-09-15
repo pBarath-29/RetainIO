@@ -13,6 +13,10 @@ import { HistoricalCase } from '../src/types';
 // What's real is the retrieval over them (Gemini embeddings + cosine
 // similarity, and the structural match in knowledgeGraph.ts). Adding genuine
 // cases here improves the advisor without touching any code.
+//
+// Every discount states its duration, and no case promises more than the standard
+// 12-month term: the advisor cites these as precedent, and the duration is exactly
+// the part of an offer a Manager has to decide.
 
 // The corpus lives here rather than in a shared mock file: this script is
 // the one place that needs it, and keeping it inline means the app itself
@@ -24,7 +28,7 @@ const HISTORICAL_RAG_CASES: HistoricalCase[] = [
     industry: 'Enterprise Software',
     initialRisk: 86,
     primaryIssue: 'v2 API migration breaking changes + 50% login reduction',
-    actionTaken: 'Offered 12% renewal discount with dedicated engineering office hours for integration',
+    actionTaken: 'Offered a 12% renewal discount for 6 months with dedicated engineering office hours for integration',
     outcome: 'Retained (Renewed Full Term)',
     learnings: 'Technical friction combined with pricing concerns responds best to a combined discount + technical assistance package.'
   },
@@ -34,7 +38,7 @@ const HISTORICAL_RAG_CASES: HistoricalCase[] = [
     industry: 'Media & Streaming',
     initialRisk: 92,
     primaryIssue: 'Executive sponsor turnover and non-usage of premium features',
-    actionTaken: 'Conducted executive re-onboarding session, provided 10% discount',
+    actionTaken: 'Conducted executive re-onboarding session, provided a 10% discount for 6 months',
     outcome: 'Retained (Upsold)',
     learnings: 'When sponsor leaves, re-engaging new VP within 14 days with tailored executive summary prevents churn.'
   },
@@ -54,7 +58,7 @@ const HISTORICAL_RAG_CASES: HistoricalCase[] = [
     industry: 'Supply Chain SaaS',
     initialRisk: 81,
     primaryIssue: 'Integration failures and recurring API timeouts during peak shipping season',
-    actionTaken: 'Assigned a dedicated integration engineer and offered a 10% discount for the disruption',
+    actionTaken: 'Assigned a dedicated integration engineer and offered a 10% discount for 3 months for the disruption',
     outcome: 'Retained (Renewed Full Term)',
     learnings: 'A pure technical problem still benefits from a small discount as a goodwill gesture, as long as the underlying fix ships too.'
   },
@@ -64,7 +68,7 @@ const HISTORICAL_RAG_CASES: HistoricalCase[] = [
     industry: 'Healthcare SaaS',
     initialRisk: 74,
     primaryIssue: 'Procurement freeze and budget cuts flagged during renewal conversations',
-    actionTaken: 'Offered a 15% retention discount tied to a 2-year commitment',
+    actionTaken: 'Offered a 15% retention discount for 12 months tied to a full-term renewal commitment',
     outcome: 'Retained (Renewed Full Term)',
     learnings: 'Pure budget-driven risk responds strongly and predictably to a discount lever — the classic price-sensitive case.'
   },
@@ -84,7 +88,7 @@ const HISTORICAL_RAG_CASES: HistoricalCase[] = [
     industry: 'Industrial Manufacturing Tech',
     initialRisk: 78,
     primaryIssue: 'Competitor undercut pricing by roughly 25% during a renewal cycle',
-    actionTaken: 'Matched competitive pressure with a 20% discount',
+    actionTaken: 'Matched competitive pressure with a 20% discount for 6 months',
     outcome: 'Retained (Renewed Full Term)',
     learnings: 'Competitor price pressure needs a price response — technical reassurance alone does not address a price-driven objection.'
   },
@@ -104,7 +108,7 @@ const HISTORICAL_RAG_CASES: HistoricalCase[] = [
     industry: 'FinTech',
     initialRisk: 85,
     primaryIssue: 'Persistent data synchronization errors between core banking system and the platform',
-    actionTaken: 'Offered a 10% discount without addressing the underlying sync bug',
+    actionTaken: 'Offered a 10% discount for 6 months without addressing the underlying sync bug',
     outcome: 'Churned',
     learnings: 'A discount aimed at a technical problem the customer actually cares about fixing does not work — this is the exact failure mode the uplift model is built to avoid.'
   },
@@ -114,7 +118,7 @@ const HISTORICAL_RAG_CASES: HistoricalCase[] = [
     industry: 'InsurTech',
     initialRisk: 76,
     primaryIssue: 'Customer flagged a 40% year-over-year renewal price increase as unacceptable',
-    actionTaken: 'Offered a 10% discount plus a quarterly payment plan to soften the increase',
+    actionTaken: 'Offered a 10% discount for 12 months plus a quarterly payment plan to soften the increase',
     outcome: 'Retained (Renewed Full Term)',
     learnings: 'Sticker-shock renewal pricing responds well to a combination of a modest discount and payment-term flexibility, not discount alone.'
   },
@@ -144,7 +148,7 @@ const HISTORICAL_RAG_CASES: HistoricalCase[] = [
     industry: 'AdTech',
     initialRisk: 87,
     primaryIssue: 'Company-wide budget freeze announced mid-contract',
-    actionTaken: 'Offered a discount, but it arrived after the internal budget decision had already been finalized',
+    actionTaken: 'Offered a 10% discount for 6 months, but it arrived after the internal budget decision had already been finalized',
     outcome: 'Churned',
     learnings: 'Timing matters — even the right lever (discount for a budget-driven case) fails if it comes after the customer has already decided.'
   },
@@ -204,7 +208,7 @@ const HISTORICAL_RAG_CASES: HistoricalCase[] = [
     industry: 'Energy & Utilities',
     initialRisk: 84,
     primaryIssue: 'Sector-wide budget cuts following a downturn in energy markets',
-    actionTaken: 'Offered a discount bundled with an extended multi-year contract term',
+    actionTaken: 'Offered a 15% discount for 12 months bundled with an early commitment to the next annual renewal',
     outcome: 'Retained (Renewed Full Term)',
     learnings: 'Macro/sector-driven budget pressure responds well to a discount when it is paired with a longer commitment that also benefits the vendor.'
   },
@@ -214,7 +218,7 @@ const HISTORICAL_RAG_CASES: HistoricalCase[] = [
     industry: 'Gaming & Media',
     initialRisk: 90,
     primaryIssue: 'Aggressive API rate limiting was blocking core product functionality',
-    actionTaken: 'Offered a discount without resolving the rate-limiting issue',
+    actionTaken: 'Offered a 10% discount for 3 months without resolving the rate-limiting issue',
     outcome: 'Churned',
     learnings: 'A second confirmation that discounting a blocking technical issue, without fixing it, does not move the outcome.'
   },
@@ -224,7 +228,7 @@ const HISTORICAL_RAG_CASES: HistoricalCase[] = [
     industry: 'Health & Wellness',
     initialRisk: 82,
     primaryIssue: 'Multiple unresolved support escalations had eroded trust in the account team',
-    actionTaken: 'Executive apology call, discount offer, and a dedicated support track — combined package',
+    actionTaken: 'Executive apology call, a 15% discount for 6 months, and a dedicated support track — combined package',
     outcome: 'Retained (Renewed Full Term)',
     learnings: 'Trust-erosion cases from repeated poor support need a multi-part response — a discount alone would have read as tone-deaf.'
   },
@@ -234,7 +238,7 @@ const HISTORICAL_RAG_CASES: HistoricalCase[] = [
     industry: 'Logistics',
     initialRisk: 79,
     primaryIssue: 'Aggressive undercut pricing from a new market entrant',
-    actionTaken: 'Matched the competitive discount and added a loyalty-tier upgrade',
+    actionTaken: 'Matched the competitive discount at 20% for 6 months and added a loyalty-tier upgrade',
     outcome: 'Retained (Upsold)',
     learnings: 'Matching a competitor discount can be turned into an upsell opportunity rather than a pure defensive cost.'
   }
