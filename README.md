@@ -128,10 +128,10 @@ flowchart LR
 
 | Model | What it is | Result on held-out data | Notebook |
 |---|---|---|---|
-| Churn | Gradient boosting, with the decision threshold tuned to 0.56 for the churned class | 87.2% accuracy, F1 0.82 on churned customers (376 test customers) | `churn_model.ipynb` |
-| Sentiment | TF-IDF with Naive Bayes: Frustrated, Neutral or Satisfied | 74.1% accuracy, weighted F1 0.74 (135 validation reviews) | `sentiment_model.ipynb` |
-| Fusion | Stacking: a logistic regression over the churn probability and the sentiment reading, threshold 0.54 | 87.8% accuracy, F1 0.83 on the same 376 customers; not a significant gain over churn alone (McNemar p = 0.69) | `late_fusion.ipynb` |
-| Discount uplift | X-learner over the 21 offers and 11 features, trained on 238,000 rows | Following its offers gives an estimated 75.8% retention, against 61.0% for the offers in the data and 54.1% with no discount | `uplift_model.ipynb` |
+| Churn | Gradient boosting, with the decision threshold tuned to 0.56 for the churned class | 87.2% accuracy, F1 0.82 on churned customers (376 test customers) | [notebooks/churn_model.ipynb](notebooks/churn_model.ipynb) |
+| Sentiment | TF-IDF with Naive Bayes: Frustrated, Neutral or Satisfied | 74.1% accuracy, weighted F1 0.74 (135 validation reviews) | [notebooks/sentiment_model.ipynb](notebooks/sentiment_model.ipynb) |
+| Fusion | Stacking: a logistic regression over the churn probability and the sentiment reading, threshold 0.54 | 87.8% accuracy, F1 0.83 on the same 376 customers; not a significant gain over churn alone (McNemar p = 0.69) | [notebooks/late_fusion.ipynb](notebooks/late_fusion.ipynb) |
+| Discount uplift | X-learner over the 21 offers and 11 features, trained on 238,000 rows | Following its offers gives an estimated 75.8% retention, against 61.0% for the offers in the data and 54.1% with no discount | [notebooks/uplift_model.ipynb](notebooks/uplift_model.ipynb) |
 | Face match | FaceNet embeddings (keras-facenet, pretrained) | — | — |
 
 - **Sentiment.** The sentiment notebook's own winner, by cross-validation, is Linear SVM. The fusion
@@ -156,10 +156,11 @@ flowchart LR
 ## Repository layout
 
 ```
-churn_model.ipynb        churn model: baselines, class weighting, threshold tuning, SHAP
-sentiment_model.ipynb    sentiment model
-late_fusion.ipynb        combining churn and sentiment (average, weighted, stacking)
-uplift_model.ipynb       discount uplift model: T- and X-learners, Qini, policy value
+notebooks/               the four model notebooks
+  churn_model.ipynb      churn model: baselines, class weighting, threshold tuning, SHAP
+  sentiment_model.ipynb  sentiment model
+  late_fusion.ipynb      combining churn and sentiment (average, weighted, stacking)
+  uplift_model.ipynb     discount uplift model: T- and X-learners, Qini, policy value
 fusion_mcnemar_test.py   significance test: fusion against the churn model alone
 Datasets/                training data and splits, the uplift data generator, the retraining script
 models/                  the trained models

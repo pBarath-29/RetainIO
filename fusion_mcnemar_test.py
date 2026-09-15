@@ -71,7 +71,7 @@ print('1. Saved predictions re-created from the production model files')
 for what, ok in checks.items():
     print(f'   {"match" if ok else "MISMATCH"}  {what}')
 if not all(checks.values()):
-    raise SystemExit('The saved predictions no longer match the model files - re-run late_fusion.ipynb first.')
+    raise SystemExit('The saved predictions no longer match the model files - re-run notebooks/late_fusion.ipynb first.')
 
 
 # ── 2. McNemar, and a paired bootstrap for F1 ───────────────────────────────────────────────
