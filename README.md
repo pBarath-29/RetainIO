@@ -85,7 +85,6 @@ Datasets/                  training data and splits, test predictions, the uplif
 models/                    the trained models the model service loads
 model_service/app.py       FastAPI: /predict/churn, /explain/churn, /predict/sentiment,
                            /predict/fusion, /predict/uplift, /face/embed, /health
-Dockerfile                 container image for the model service
 retainio/                  the web app
   server.ts                Express API: sign-in, approval rules, scheduled jobs
   src/                     React front end
