@@ -167,6 +167,7 @@ models/                  the trained models
 model_service/           the FastAPI service that serves every model
 retainio/                the web app: React front end, Express API, database schema and scripts
 screenshots/             the images in this README
+school/                  course documents: weekly progress reports, meeting minutes and the rubrics
 ```
 
 ## Limitations
