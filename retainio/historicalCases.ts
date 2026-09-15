@@ -13,9 +13,8 @@ import { HistoricalCase } from './src/types';
 // this list.
 //
 // The cache revalidates itself against a cheap fingerprint (row count + the
-// newest updatedAt) rather than being held until someone calls the invalidator
-// - which nothing ever did, so an added or edited case stayed invisible to the
-// chatbot until the server restarted.
+// newest updatedAt), so an added or edited case is picked up on the next read
+// without a server restart. (ragSearch's embeddings are the exception; see there.)
 
 // Prisma enum identifiers can't contain spaces or parentheses, so the stored
 // values map back to the display strings the UI and prompts already use.
@@ -58,9 +57,4 @@ export async function getHistoricalCases(): Promise<HistoricalCase[]> {
   }));
   cacheKey = fingerprint;
   return cache;
-}
-
-export function invalidateHistoricalCases(): void {
-  cache = null;
-  cacheKey = '';
 }

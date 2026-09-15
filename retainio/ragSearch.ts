@@ -19,8 +19,8 @@ function caseToText(c: HistoricalCase): string {
 }
 
 // Embeds the full corpus once per server process and caches it — embedding is an API call
-// per case, and the corpus changes far less often than questions arrive. Call
-// invalidateCorpusCache() (and historicalCases' invalidator) after adding cases.
+// per case, and the corpus changes far less often than questions arrive. A case added while
+// the server is running is searched from its next restart.
 async function embedCorpus(ai: GoogleGenAI): Promise<EmbeddedCase[]> {
   if (corpusCache) return corpusCache;
 
@@ -28,10 +28,6 @@ async function embedCorpus(ai: GoogleGenAI): Promise<EmbeddedCase[]> {
   const vectors = await embedTexts(ai, cases.map(caseToText));
   corpusCache = cases.map((c, i) => ({ case: c, vector: vectors[i] }));
   return corpusCache;
-}
-
-export function invalidateCorpusCache(): void {
-  corpusCache = null;
 }
 
 export async function searchHistoricalCases(

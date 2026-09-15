@@ -309,9 +309,8 @@ function monthStartUTC(d: Date = new Date()): Date {
 
 // Chains all three real trained models — churn, sentiment, fusion — using an
 // account's actual usage/subscription/ticket rows. Pure compute: never
-// writes to the database itself. Used by server.ts's on-demand
-// GET /api/accounts/:id/fusion and POST /api/pipeline/process-email, and by
-// runDailySnapshotForToday below (which does the writing).
+// writes to the database itself. Used by rescoreAccountToday and
+// runDailySnapshotForToday below (which do the writing), and by the usage simulator.
 // A specific usage reading to score against, instead of the account's latest. The
 // simulator uses this to score a historical day; without it, scoring 180 past days would
 // mean re-chaining churn -> sentiment -> fusion in a second place, and a stored score and

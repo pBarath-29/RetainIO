@@ -25,7 +25,7 @@ import {
   OFFER_PCTS, OFFER_MONTHS, isAllowedOffer, discountsOpen, isWithinOfferWindow,
 } from './pricing';
 import {
-  computeRealFusion, runDailySnapshotForToday, loadModelFeatures, fusionRiskCategory,
+  runDailySnapshotForToday, loadModelFeatures, fusionRiskCategory,
   deriveDominantDriver, classifyReviewCategory, rescoreAccountToday,
   SENTIMENT_RISK_WEIGHT, captureIndexSnapshot, captureDueIndexSnapshots, dateOnlyUTC,
   type SentimentClassValue,
@@ -2324,25 +2324,6 @@ app.post('/api/accounts/:id/apply-discount', requireAuth, async (req, res) => {
   }
 });
 
-// On-demand real recompute of an account's fusion score, using the same
-// chain as computeRealFusion above.
-app.get('/api/accounts/:id/fusion', requireAuth, async (req, res) => {
-  try {
-    const { churnData, sentData, fusionData } = await computeRealFusion(req.params.id);
-    res.json({
-      churnProba: churnData.churn_proba,
-      churnRiskBand: churnData.risk_band,
-      sentimentClassification: sentData.classification,
-      sentimentScore: sentData.score,
-      fusionProba: fusionData.fusion_proba,
-      fusionScore: Math.round(fusionData.fusion_proba * 100),
-    });
-  } catch (error: any) {
-    console.error('Error in GET /api/accounts/:id/fusion:', error);
-    res.status(502).json({ error: error.message || 'Failed to compute a real fusion score.' });
-  }
-});
-
 // Correct the sentiment model's read of a review.
 //
 // The only feedback signal that can retrain the sentiment model. Renewal outcomes cannot:
@@ -2487,17 +2468,6 @@ app.post('/api/reviews/:id/sentiment-correction', requireAuth, async (req, res) 
   } catch (error: any) {
     console.error('Error in POST /api/reviews/:id/sentiment-correction:', error);
     res.status(500).json({ error: 'Failed to record the sentiment correction.' });
-  }
-});
-
-// Manual trigger for the renewal pass, so a renewal can be resolved without waiting for
-// the 6-hourly interval. Idempotent for the same reasons the job is.
-app.post('/api/admin/run-renewals', requireAuth, async (_req, res) => {
-  try {
-    res.json(await runRenewalsForToday());
-  } catch (error: any) {
-    console.error('Error in POST /api/admin/run-renewals:', error);
-    res.status(500).json({ error: error.message || 'Renewal run failed.' });
   }
 });
 
